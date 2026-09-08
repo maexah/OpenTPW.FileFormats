@@ -46,7 +46,7 @@ everything else is a gap of unknown content, not a claim that nothing is there.
 | 0x54   | 4 bytes  | Frame data table offset (see **Textures**, below)                                     |
 | 0x58 - 0x6C | 4 bytes each | Six pointers, purposes unknown (engine-confirmed pointers)                   |
 | 0x70   | 4 bytes  | Mesh table offset - **0 marks this file as animation data**, see **Animation** below  |
-| 0x74   | 4 bytes  | Non-mesh node table - `(0x42 - 0x44)` records of 88 bytes (engine-confirmed)          |
+| 0x74   | 4 bytes  | Transform-only node table - `(0x42 - 0x44)` records of 88 bytes - see **Node hierarchy** |
 | 0x78   | 4 bytes  | Pointer, purpose unknown (engine-confirmed pointer)                                   |
 | 0x7C   | 4 bytes  | Table of 0x48 records, 20 bytes each (engine-confirmed)                               |
 | 0x80   | -        | Start of the model's overall bounding box (not yet parsed - see Open questions)       |
@@ -61,7 +61,6 @@ allocation to 0xB0 at load time, so those two are runtime scratch rather than fi
 ### Open questions
 
 - The meaning of the 0x0C field, and of the six pointers between 0x58 and 0x6C.
-- What the non-mesh nodes at 0x74 actually are, and what the 88-byte record contains.
 - The exact shape of the bounding box at 0x80 (min/max as two vectors, one vector plus extents,
   etc.) - its presence is inferred only from animation files never containing a float triple
   that reproduces it, not from having parsed it directly.
@@ -71,6 +70,57 @@ allocation to 0xB0 at load time, so those two are runtime scratch rather than fi
 A static mesh file has a non-zero mesh table offset at 0x70. Everything the mesh needs -
 vertices, UVs, faces, materials, texture names - is reachable from the header fields above plus
 the per-mesh table this section describes.
+
+### Node hierarchy
+
+**A model is a tree of nodes, not a flat list of meshes**, and a node's transform is relative to
+its parent. Ignoring that leaves child meshes piled at the model origin.
+
+The ushort at 0x42 is the total node count and the ushort at 0x44 the mesh count. The meshes are
+the first `0x44` nodes, in the 160-byte records at 0x70; the remainder are **transform-only
+nodes** in 88-byte records at 0x74. The engine indexes them with one rule (engine-confirmed):
+
+```c
+if (node < meshCount)  ptr = meshTable(0x70) + node * 0xA0;
+else                   ptr = nodeTable(0x74) + (node - meshCount) * 0x58;
+```
+
+Both record kinds begin with the same header, which is what makes that work:
+
+| Offset | Size     | Description                                                          |
+| ------ | -------- | ---------------------------------------------------------------------- |
+| 0x00   | 4 bytes  | Flags - bit `0x200` marks a transform-only node                        |
+| 0x04   | 4 bytes  | **Parent** node (a file offset; 0 for a root)                          |
+| 0x08   | 4 bytes  | **Next sibling** node                                                  |
+| 0x0C   | 4 bytes  | **First child** node                                                   |
+| 0x10   | 64 bytes | This node's transform, relative to its parent                          |
+| 0x54   | 4 bytes  | Offset of the node's null-terminated ASCII name                        |
+
+The three links are stored as file offsets into whichever of the two tables the target lives in,
+so a reader converts an offset back to a node index by testing which table's range it falls in.
+Bit `0x200` is how the engine tells the kinds apart - it skips material processing for any node
+that has it set.
+
+`Jun_isle.MD2` shows why this matters. Its three palm trees hang off two dummy nodes plus the
+island mesh:
+
+```
+ 0 Island     parent -            firstChild node[25]
+25 l_tree1    parent mesh[0]      firstChild mesh[1]     local (-11.92, 8.99, 8.40)
+    1 Box77   parent node[25]     sibling   mesh[2]      local (  0.00, 0.00, 0.00)
+    2 Box78   parent node[25]                            local (  0.00, 0.00, 0.00)
+26 l_tree2    parent mesh[0]      firstChild mesh[7]     local (  2.28, 14.88, 8.81)
+    7 Box69   parent node[26]     sibling   mesh[8]      local ( -1.15, -1.83, 0.00)
+    8 Box70   parent node[26]                            local (  0.00,  3.66, 0.00)
+```
+
+Two of the trees store their trunk and leaves at a local `(0, 0, 0)` and `(0, 3.66, 0)` - the
+leaves are 3.66 units above *their trunk*, and mean nothing until `l_tree1`/`l_tree2` supply the
+position. Read flat, those four meshes land on top of each other at the model origin.
+
+Animation targets index this same node list, which is why a target can legitimately point past
+the mesh count: it is naming a transform-only node. Rotating such a node should carry its whole
+subtree.
 
 ### Textures
 

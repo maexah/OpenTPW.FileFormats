@@ -13,13 +13,6 @@ holds for 1274 of the 1279 animation files in the game; the five exceptions are 
 `ROTATE.MD2`, `FLY.MD2`, `anim.MD2` and `scatM1.md2`, which don't sit next to an identifiable
 base model.
 
-Nothing in the format says how a model's animations are sequenced or when they should play - in
-particular, a gate's "doors open" and "doors close" animations are just two more `M`-suffixed
-files, indistinguishable from each other by anything in the `.md2` data. In the original game
-this is almost certainly driven externally, by a `TRIGANIM` instruction in that ride's
-[compiled script](/formats/rsse) - see the `.closed`/gate example on the
-[RSS](/formats/rss) page, which triggers an animation by index in response to game state.
-
 > This page reflects an ongoing reverse-engineering effort - see **Open questions** at the end
 > of each section for what isn't nailed down yet. Every offset and rule stated as fact here has
 > been checked against the game's full model data (over 2,300 files), not inferred from one or
@@ -221,40 +214,126 @@ approach. There's no format detail here; it's purely a rendering choice.
 
 An animation file has a mesh table offset of **exactly 0** at 0x70 - the same field that's a
 real pointer for static meshes. Animation files carry no vertex positions, texture names, or
-mesh geometry of their own; instead they carry one or more **tracks**, each of which poses part
-of the base model (identified by the shared filename prefix) over a range of authoring frames.
+mesh geometry of their own. Instead they carry a list of **tracks**, each posing one node of the
+base model (identified by the shared filename prefix) over a range of authoring frames.
 
-Across all 1279 animation files in the game, two distinct track kinds have been decoded, reached
-via two different, independently-located tables within the same file:
+A track is not one kind of animation. It is a bundle of independent **channels** - a fountain's
+water mesh morphs its vertices, scrolls its texture and carries a timing scalar all on the same
+track - and each channel kind owns its own slot in the track descriptor. That is what makes the
+format safe to read incrementally: a channel you don't understand costs nothing, because its
+data lives in a slot you simply don't read.
 
-| Track kind        | Files          | Poses                                              |
-| ------------------ | -------------- | --------------------------------------------------- |
-| Vertex (morph)      | 282 (22%)      | Reshapes a single mesh, vertex by vertex             |
-| Rotation             | 686 (54%)      | Turns one or more whole meshes about their own origin |
-| *(undecoded)*        | 311 (24%)      | Loads with no tracks - see Open questions            |
+Of the game's 1279 animation files, 1164 (91%) carry at least one of the three channel kinds
+documented below.
 
-No file in the game's data has been found to use both kinds together, though nothing in the
-format rules it out - each kind's table is located independently of the other.
+### Locating the tracks
 
-### Vertex (morph) animation
+The uint at 0x98 points at a 72-byte **animation block**. That pointer is valid in 1278 of the
+1279 animation files.
 
-This kind reshapes exactly one mesh: a "channel" exists for every vertex of the mesh it
-targets, plus two trailing channels whose purpose isn't identified, so the channel count is
-always (target mesh's vertex count) + 2. That's how a consumer identifies which mesh an
-animation drives - by matching this count against each of the base model's meshes.
+| Offset (from block start) | Size    | Description                                       |
+| -------------------------- | ------- | --------------------------------------------------- |
+| 0x08                        | 4 bytes | Last frame of the animation                         |
+| 0x10                        | 2 bytes | Sum of every track's rotation keyframe count (a cross-check, not needed to parse) |
+| 0x12                        | 2 bytes | Track count                                          |
+| 0x2C                        | 4 bytes | Track table offset                                   |
 
-The track table is located via two header fields:
+The track table offset is trustworthy on its own terms, which matters because there's nothing
+else to check it against: the table is exactly `trackCount * 64` bytes and **ends exactly where
+the animation block begins**, i.e. `tableOffset + trackCount * 64 == blockOffset`. That identity
+holds for 1189 of the 1279 files. A reader should apply it and treat a file that fails as
+carrying no readable animation, rather than reading a table that isn't one.
 
-| Offset | Size    | Description                        |
-| ------ | ------- | ------------------------------------ |
-| 0xBA   | 2 bytes | Track record count                   |
-| 0xC4   | 4 bytes | Track record table offset            |
+### Track descriptors
 
-Some animation files put unrelated data in these two slots - notably the ones with an
-undecoded track kind. A reader must validate the records below rather than trust this table
-unconditionally, and must fail soft (skip the file) rather than throw when validation fails.
+Each track is a 64-byte descriptor:
 
-Each record is 20 bytes:
+| Offset (from descriptor start) | Size    | Description                                          |
+| -------------------------------- | ------- | ------------------------------------------------------ |
+| 0x00                               | 4 bytes | This track's own index (0-based, sequential - a validity check) |
+| 0x04                               | 4 bytes | Channel flags - see below                              |
+| 0x0C                               | 4 bytes | A frame value, close to but not always the track's last keyframe |
+| 0x10                               | 2 bytes | Rotation keyframe count (channel `0x8` only)          |
+| 0x14                               | 2 bytes | **Target node** - see **Target resolution** below      |
+| 0x16                               | 2 bytes | Unknown, but **not** part of the target                |
+| 0x18                               | 4 bytes | Data pointer for channel `0x1` (undecoded)             |
+| 0x1C                               | 4 bytes | Rotation keyframes (channel `0x8`)                     |
+| 0x28                               | 4 bytes | Vertex morph descriptor (channel `0x1000`)             |
+| 0x2C                               | 4 bytes | UV animation descriptor (channel `0x10000`)            |
+| 0x30                               | 4 bytes | Timing scalar, 16.16 fixed point (channel `0x20000`)   |
+
+The flag word at 0x04 says which channels the track carries, and every bit owns exactly one
+slot. Counted across every track in every animation file in the game:
+
+| Flag bit | Owns slot | Channel                    | Decoded? |
+| -------- | ---------- | --------------------------- | -------- |
+| 0x00008   | count at +0x10, data at +0x1C | Rotation      | Yes      |
+| 0x01000   | +0x28      | Vertex morph                | Yes      |
+| 0x10000   | +0x2C      | UV animation                | Yes      |
+| 0x20000   | +0x30      | A 16.16 fixed-point scalar  | Partly - the encoding is clear, the meaning isn't |
+| 0x00001   | +0x18      | Unidentified                | No       |
+
+The correspondence is exact: across all 1279 files, no track sets one of those bits without
+filling its slot, or fills a slot without setting the bit.
+
+> **The target at 0x14 is a ushort, not a uint.** 0x16 holds an unrelated value and is nonzero
+> on 595 of the game's rotation tracks, so reading 32 bits there produces a garbage node index -
+> large enough that a range check discards a track that was perfectly good.
+
+### Target resolution
+
+The target indexes the base model's **node** list, which for models with no extra hierarchy is
+simply its mesh list. `Jun_gateM1.MD2` has two rotation tracks targeting nodes 0 and 1, which
+are `Jun_gate.MD2`'s two door meshes.
+
+Some models have more nodes than meshes and index past the mesh list - `Advisor.MD2` has 25
+meshes but its animations reach node 28 - and a handful land *within* the mesh list on a mesh
+that clearly isn't the intended one (`droidm2.MD2` names a 16-vertex mesh while carrying 3561
+morph channels). A range check alone is therefore not enough. For morph tracks there is a
+reliable second test, described below; without one, a reader should prefer skipping a track to
+applying it to the wrong mesh.
+
+### Rotation (bit 0x8)
+
+Turns a whole node about its own origin. The keyframe count is the **ushort** at descriptor
+0x10 and the data offset the uint at 0x1C. Each keyframe is 20 bytes:
+
+| Size    | Description                                              |
+| ------- | ----------------------------------------------------------|
+| 2 bytes | Frame index                                                |
+| 2 bytes | Flags - only `0x0000` and `0xFFFF` are observed; meaning unconfirmed |
+| 4 bytes | Quaternion X                                               |
+| 4 bytes | Quaternion Y                                               |
+| 4 bytes | Quaternion Z                                               |
+| 4 bytes | Quaternion W                                               |
+
+Frame indices strictly ascend within a track, and every one of the 3039 rotation tracks in the
+game decodes to a unit quaternion (within 0.01) at every keyframe. That pair of properties is
+what a reader should validate before trusting a track.
+
+Model space is Y-up, so a quarter turn about Y is a door swinging. `Jun_gateM1` takes the gate's
+two doors from identity to a quarter turn, and `Jun_gateM2` is exactly the inverse - open, then
+shut.
+
+### Vertex morph (bit 0x1000)
+
+Reshapes a mesh vertex by vertex. The slot at descriptor 0x28 points at a 16-byte descriptor:
+
+| Offset  | Size    | Description          |
+| ------- | ------- | ---------------------- |
+| 0x02    | 2 bytes | Record count           |
+| 0x0C    | 4 bytes | Record table offset    |
+
+Each track has its **own** descriptor and its own channel space, so one animation morphs as many
+meshes as it has morph tracks. 768 animation files carry morph tracks, 368 of them more than
+one, 1766 tracks in total - `ratraceM1.MD2` morphs four meshes at once.
+
+> Because each morph track is self-contained, a reader that only looks at a fixed header offset
+> finds just the first one. Three of `ratrace`'s four morphing meshes have 64 vertices each, so
+> matching a track to a mesh by vertex count cannot tell them apart either - the target index is
+> the only thing that can.
+
+Each record in the table is 20 bytes:
 
 | Size    | Description                                                          |
 | ------- | ---------------------------------------------------------------------- |
@@ -262,27 +341,31 @@ Each record is 20 bytes:
 | 2 bytes | Channel count (`b`)                                                     |
 | 4 bytes | Offset of a `b`-entry array of channel IDs (`ushort` each)              |
 | 4 bytes | Offset of an `a`-entry array of ascending frame indices (`ushort` each) |
-| 4 bytes | Offset of an `a * b`-entry array of packed values (see below)          |
+| 4 bytes | Offset of an `a * b`-entry array of packed values                       |
 | 4 bytes | Unknown                                                                 |
 
 The channel ID and frame index arrays are each padded up to a 4-byte boundary, so the gap
-between the channel ID array and the frame index array is `2*b` or `2*b + 2` bytes, and the gap
-between the frame index array and the value array is `2*a` or `2*a + 2` bytes - a reader has to
-accept either, not just the unpadded size.
+between the channel IDs and the frame indices is `2*b` or `2*b + 2` bytes, and between the frame
+indices and the values `2*a` or `2*a + 2`. A reader has to accept either.
 
-The value array is **entry-major**: the value for keyframe `e` of the record's channel slot `k`
-sits at `valueOffset + (e * b + k) * 4` - i.e. all channels for keyframe 0 first, then all
-channels for keyframe 1, and so on, not grouped by channel.
+The value array is **entry-major**: the value for keyframe `e` of channel slot `k` sits at
+`valueOffset + (e * b + k) * 4` - all channels of keyframe 0 first, then all channels of
+keyframe 1, not grouped by channel.
 
-Channels the animation doesn't actually move are still present, in their own record holding a
-single keyframe of that channel's rest value - so a full mesh pose can always be reconstructed
-by sampling every channel, moving or not.
+A morph track has exactly **one channel per vertex of its target mesh, plus two** trailing
+channels that aren't vertices. 457 of the 465 tracks whose base model resolves satisfy that
+exactly, and the 8 that don't are the mistargeted ones described under **Target resolution** -
+which makes `channelCount == targetMesh.vertexCount + 2` a good validity test as well as a
+description.
 
-**Value decoding.** Each 4-byte value is a vertex position, quantised into three signed 10-bit
-fields packed into the 32 bits - X in bits 0-9, Y in bits 10-19, Z in bits 20-29 (bits 30-31
-unused). Each field is a signed value from -512 to 511, mapped linearly onto the *owning mesh's*
-bounding box (from its mesh table record - see **Mesh table**, above): -512 maps to that axis's
-box minimum, +511 to its maximum.
+Channels the animation doesn't actually move are still present, in a record holding a single
+keyframe of that channel's rest value, so a full mesh pose is always reconstructible by sampling
+every channel.
+
+**Value decoding.** Each 4-byte value is a vertex position quantised into three signed 10-bit
+fields - X in bits 0-9, Y in 10-19, Z in 20-29 (bits 30-31 unused). Each field is a signed value
+from -512 to 511 mapped linearly onto the *target mesh's* bounding box (from its mesh table
+record): -512 is that axis's box minimum, +511 its maximum.
 
 ```
 component(raw, shift, min, max):
@@ -291,99 +374,62 @@ component(raw, shift, min, max):
     return centre + field * (max - min) / 1023
 ```
 
-Verified against real game data to R² ≥ 0.999997 per axis (max error ~0.028 units, consistent
-with exactly the quantisation step), by decoding every channel's rest keyframe and comparing
-against a known mesh's actual vertex positions.
+Verified to R² >= 0.999997 per axis (max error ~0.028 units, exactly the quantisation step) by
+decoding every channel's rest keyframe and comparing against a known mesh's actual vertices.
 
-#### Open questions
+### UV animation (bit 0x10000)
 
-- What the two trailing non-vertex channels represent.
-- The meaning of the record's final 4-byte "unknown" field.
-- How multiple `M`-suffixed animations of the same mesh are meant to be sequenced or blended -
-  nothing in the file format addresses this (see the note on `TRIGANIM` at the top of this
-  page).
+Slides texture coordinates - this is how the game animates water. The slot at descriptor 0x2C
+points at a 20-byte descriptor:
 
-### Rotation animation
+| Offset  | Size    | Description                                |
+| ------- | ------- | -------------------------------------------- |
+| 0x00    | 4 bytes | Entry count `n`                              |
+| 0x04    | 4 bytes | Offset of the index table                    |
+| 0x08    | 4 bytes | Total component count `c`                    |
+| 0x0C    | 4 bytes | Offset of the duration table                 |
+| 0x10    | 4 bytes | Offset of the value table                    |
 
-This kind turns one or more whole meshes about their own origin - a gate's two doors, say,
-independently swinging open. Unlike vertex animation, one file can drive several meshes at
-once, each with its own track.
+The three tables are contiguous, in the order index, value, duration, and exactly sized by those
+two counts:
 
-The rotation track table sits inside a 72-byte **animation data block**, whose offset is given
-by the header field at 0x98 (valid - i.e. actually pointing at a well-formed block - in 1278 of
-the game's 1279 animation files):
+- **Index table**, `n * 4` bytes: per entry, a ushort first component and a ushort component
+  count. UV components are two per coordinate, so an entry covering a whole UV is `(2i, 2)`.
+- **Value table**, `c * 8` bytes: per entry, its component count of start floats followed by the
+  same number of end floats. So a 2-component entry is `(u_start, v_start, u_end, v_end)`.
+- **Duration table**, `n * 4` bytes: per entry, a ushort pair whose **high** half is the end
+  frame.
 
-| Offset (from block start) | Size    | Description                                                      |
-| -------------------------- | ------- | ------------------------------------------------------------------ |
-| 0x08                        | 4 bytes | Last frame of the animation                                        |
-| 0x10                        | 2 bytes | Sum of every track's keyframe count (a cross-check, not required for parsing) |
-| 0x12                        | 2 bytes | Track count                                                         |
-| 0x2C                        | 4 bytes | Track table offset                                                  |
+All 690 UV channels in the game satisfy every one of those invariants - the per-entry component
+counts sum to the stated total, and both `indexTable + 4n == valueTable` and
+`valueTable + 8c == durationTable` hold without exception.
 
-The track table offset is trustworthy on its own terms: the table is exactly
-`trackCount * 64` bytes long, and **ends exactly where the animation block begins** - i.e.
-`tableOffset + trackCount * 64 == blockOffset`. That identity holds for 1189 of the 1279
-animation files and is the check a reader should apply; files that fail it should be treated
-as not carrying a (decodable) rotation track table, not as an error.
+A channel that animates every UV of its mesh has the identity index table `(2i, 2)` with `n`
+equal to the mesh's **vertex order length** (the UV count, not the vertex count). One that
+animates a subset names the components it wants - `arcadeM1`'s `screen` mesh animates 6 entries
+out of 53 UVs.
 
-Each 64-byte **track descriptor** can carry more than one kind of channel, distinguished by bits
-of a flags word - only the rotation channel (bit `0x8`) is decoded so far:
+`Jun_isleM1.MD2` is a clear worked example: it scrolls all 128 of `Post Ripples01`'s UVs by
+`(-1, -1)` over 100 frames, and 104 of the `Island` mesh's 298 UVs by the same delta - the
+shoreline foam lapping the beach, with the rest of the island held still.
 
-| Offset (from descriptor start) | Size    | Description                                              |
-| -------------------------------- | ------- | ------------------------------------------------------------ |
-| 0x00                               | 4 bytes | This track's own index (0-based, sequential - a validity check) |
-| 0x04                               | 4 bytes | Flags - which channel kinds this track carries (see below)   |
-| 0x10                               | 2 bytes | Rotation keyframe count (meaningful only when flag `0x8` is set) |
-| 0x14                               | 4 bytes | Target index - see **Target resolution**, below              |
-| 0x1C                               | 4 bytes | Rotation keyframe data offset (meaningful only when flag `0x8` is set) |
+### Sequencing
 
-Counted across every track in every animation file in the game, the flags word's bits and the
-data-pointer slot each one owns:
+Nothing in the format says how a model's `M1`, `M2`, ... animations are ordered, when they
+should play, or whether they loop. A gate's "doors open" and "doors close" are just two files,
+indistinguishable by anything in the `.md2` data. In the original game this is driven externally,
+by a `TRIGANIM` instruction in that ride's [compiled script](/formats/rsse) - see the gate
+example on the [RSS](/formats/rss) page.
 
-| Flag bit | Data pointer (from descriptor start) | Tracks in the game | Decoded? |
-| -------- | --------------------------------------- | ------------------- | -------- |
-| 0x00008   | Count at +0x10, data at +0x1C            | 3,039                | Yes - rotation, documented above |
-| 0x00001   | Data at +0x18                            | 3,039                | No       |
-| 0x01000   | Data at +0x28                            | 1,058                | No       |
-| 0x10000   | Data at +0x2C                            | 704                  | No       |
-| 0x20000   | Data at +0x30                            | 2,178                | No       |
+### Open questions
 
-A track's flags aren't exclusive - one track can carry several channel kinds at once, each
-sitting in its own slot of the same 64-byte descriptor. A reader only needs to look at the bit
-for the channel kind it understands and can leave the others alone.
-
-**Rotation keyframes** are 20 bytes each, an array of *rotation keyframe count* entries at the
-descriptor's data offset:
-
-| Size    | Description                                              |
-| ------- | ----------------------------------------------------------|
-| 2 bytes | Frame index                                                |
-| 2 bytes | Flags - observed values are only `0x0000` or `0xFFFF`; meaning unconfirmed |
-| 4 bytes | Quaternion X                                               |
-| 4 bytes | Quaternion Y                                               |
-| 4 bytes | Quaternion Z                                               |
-| 4 bytes | Quaternion W                                               |
-
-Frame indices strictly ascend within a track. Every one of the 3,039 rotation tracks in the
-game's data decodes to a unit quaternion (length within 0.01 of 1) at every keyframe - that,
-plus strictly-ascending frames, is what a reader should validate before trusting a track.
-
-**Target resolution.** The 4-byte target index at descriptor +0x14 addresses a node in the base
-model, and for models whose only nodes are their meshes, that's simply the mesh index - two
-rotation tracks with target indices 0 and 1 in `Jun_gateM1.MD2`/`Jun_gateM2.MD2` turn
-`Jun_gate.MD2`'s two door meshes from identity to a quarter turn about the model's up axis and
-back, i.e. the gate swinging open and shut.
-
-Models with additional hierarchy beyond their meshes index past the mesh list - `Advisor.MD2`
-has 25 meshes but its animations reach target index 28. What those extra three nodes are (and
-therefore what a target index in that range should actually move) is unresolved; a reader
-should treat an out-of-range target index as "skip this track" rather than guess.
-
-#### Open questions
-
-- Data pointer meaning for flag bits `0x1`, `0x1000`, `0x10000` and `0x20000` - locations are
-  known (see the flags table above), record layout is not.
-- The three extra hierarchy node(s) referenced by target indices beyond a model's mesh count.
-- The meaning of the 20-byte keyframe's flags field.
-- The remaining ~24% of animation files that validate against neither this table nor the vertex
-  animation table above - what track kind(s) they actually contain hasn't been identified.
+- The channel at flag `0x1` (data pointer at descriptor +0x18) - location known, contents not.
+- The channel at flag `0x20000` is a single 16.16 fixed-point scalar at +0x30 rather than a
+  pointer, so it's a per-track constant rather than a keyframed channel. Values are small
+  fractions (0.01 - 0.15); what they scale is unknown.
+- The frame-ish value at descriptor +0x0C, and the unknown 4 bytes ending each morph record.
+- What the two extra channels beyond a morph track's vertex count represent.
+- Why a few models' target indices don't land on the mesh the data clearly belongs to - i.e.
+  what the node list actually contains for models that have more nodes than meshes.
+- The 90 animation files that fail the track table identity, and the 25 that pass it but carry
+  only the undecoded channel kinds.

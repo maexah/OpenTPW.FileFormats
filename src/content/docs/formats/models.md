@@ -32,8 +32,6 @@ everything else is a gap of unknown content, not a claim that nothing is there.
 
 | Offset | Size     | Description                                                                          |
 | ------ | -------- | ------------------------------------------------------------------------------------- |
-| Offset | Size     | Description                                                                          |
-| ------ | -------- | ------------------------------------------------------------------------------------- |
 | 0x00   | 4 bytes  | Magic number - `46 5D D1 1C` (little-endian `0x1CD15D46`)                             |
 | 0x04   | 4 bytes  | **Format version** - the engine requires `<= 0xDD` (engine-confirmed)                 |
 | 0x08   | 4 bytes  | **Animation format version** - must be exactly `0xCB` or the animation block is discarded (engine-confirmed) |
@@ -85,13 +83,13 @@ material's index into it.
 The frame data table (offset at 0x54) is a second, parallel array of *frame count* 16-byte
 records, indexed the same way:
 
-| Size    | Description                                                    |
-| ------- | --------------------------------------------------------------- |
-| 4 bytes | Value - unknown                                                 |
-| 4 bytes | Always 0                                                         |
-| 2 bytes | Padding                                                          |
-| 2 bytes | Always 1                                                         |
-| 4 bytes | Offset of this frame's 20-byte texture filename string           |
+| Offset  | Size    | Description                                                             |
+| ------- | ------- | ------------------------------------------------------------------------ |
+| 0x00    | 4 bytes | Flags - bit 0 is tested by the engine (engine-confirmed)                 |
+| 0x04    | 4 bytes | Zeroed at load time, so runtime scratch rather than file data (engine-confirmed) |
+| 0x08    | 2 bytes | Padding                                                                  |
+| 0x0A    | 2 bytes | Set to 1 by the engine under one load option (engine-confirmed)          |
+| 0x0C    | 4 bytes | Offset of this frame's 20-byte texture filename string (engine-confirmed pointer) |
 
 In practice this points at the very same filename strings that follow the frame table - the
 two tables describe the same textures, reached two different ways. A material resolves its
@@ -101,9 +99,14 @@ directly.
 A material's `FrameOffset` of exactly 0 is a sentinel meaning "no texture", not a real offset -
 real offsets always start at the frame table's own offset.
 
+The 8-byte frame table entries also begin with a **flags byte**: the engine tests bits `0x40`
+and `0x80` of byte 0 and propagates them into the model-wide flags at header 0x30
+(engine-confirmed).
+
 #### Open questions
 
-- The 8 bytes of each frame table entry, and the 4-byte "Value" field of each frame data record.
+- The remaining 7 bytes of each frame table entry, and which bits of the two flags fields mean
+  what.
 
 ### Mesh table
 
@@ -112,7 +115,8 @@ one per mesh:
 
 | Offset | Size     | Description                                                              |
 | ------ | -------- | ------------------------------------------------------------------------- |
-| 0x00   | 16 bytes | Unknown                                                                    |
+| 0x00   | 4 bytes  | **Flags** - the engine tests `0x200` and sets `0x20`/`0x80000010` (engine-confirmed) |
+| 0x04   | 12 bytes | Three pointers, purposes unknown (engine-confirmed pointers)              |
 | 0x10   | 64 bytes | 4x4 transform matrix (16 floats, row-major) - this mesh's placement       |
 | 0x50   | 4 bytes  | Unknown                                                                    |
 | 0x54   | 4 bytes  | Offset of this mesh's null-terminated ASCII name                          |
@@ -121,7 +125,7 @@ one per mesh:
 | 0x5C   | 2 bytes  | Face count                                                                 |
 | 0x5E   | 2 bytes  | Vertex order length (see **Vertex order**, below)                         |
 | 0x60   | 4 bytes  | Vertex data offset                                                         |
-| 0x64   | 4 bytes  | Unknown                                                                    |
+| 0x64   | 4 bytes  | Pointer, purpose unknown (engine-confirmed pointer)                        |
 | 0x68   | 4 bytes  | UV data offset                                                             |
 | 0x6C   | 4 bytes  | Material table offset                                                     |
 | 0x70   | 4 bytes  | Face data offset                                                           |
@@ -135,10 +139,16 @@ one per mesh:
 This mesh's bounding box (0x78/0x84) matters beyond just culling: it's also the box that
 animation files quantise vertex positions into - see **Animation** below.
 
+A node index below the model's mesh count selects one of these 160-byte records; a higher index
+selects an 88-byte record from the table at header 0x74 instead (engine-confirmed) - see
+**Target resolution** under Animation.
+
 #### Open questions
 
-- The four unknown fields (0x00, 0x50, 0x64, 0x74, 0x90, 0x98) - none have been narrowed down
-  beyond "not used by anything this project's renderer needs".
+- The remaining unknown fields (0x50, 0x74, 0x90, 0x98) and the three pointers at 0x04-0x0C -
+  none have been narrowed down beyond "not used by anything this project's renderer needs".
+- Which bits of the flags word at 0x00 mean what; only `0x200`, `0x20` and `0x80000010` are
+  observed being tested or set.
 
 ### Vertex data
 
@@ -242,8 +252,11 @@ track - and each channel kind owns its own slot in the track descriptor. That is
 format safe to read incrementally: a channel you don't understand costs nothing, because its
 data lives in a slot you simply don't read.
 
-Of the game's 1279 animation files, 1164 (91%) carry at least one of the three channel kinds
-documented below.
+Of the game's 1279 animation files, **1151 (90%)** carry at least one of the three channel kinds
+documented below. A further 38 have a readable track table but carry only undecoded channels.
+The remaining 90 contain no animation at all - 89 declare a track count of zero and one has no
+animation block. **The track table identity never fails on any file in the game**, so nothing is
+rejected for being unreadable.
 
 ### Locating the tracks
 
@@ -287,23 +300,29 @@ Each track is a 64-byte descriptor:
 The flag word at 0x04 says which channels the track carries, and every bit owns exactly one
 slot. Counted across every track in every animation file in the game:
 
-| Flag bit | Owns slot | Channel                    | Decoded? |
-| -------- | ---------- | --------------------------- | -------- |
-| 0x00008   | count at +0x10, data at +0x1C | Rotation      | Yes      |
-| 0x01000   | +0x28      | Vertex morph                | Yes      |
-| 0x10000   | +0x2C      | UV animation                | Yes      |
-| 0x20000   | +0x30      | Unidentified                | No       |
-| 0x00001   | +0x18      | Unidentified                | No       |
+| Flag bit    | Owns slot                     | Channel      | Tracks | Decoded? |
+| ----------- | ----------------------------- | ------------ | ------ | -------- |
+| `0x00008`   | count at +0x10, data at +0x1C | Rotation     | 3039   | Yes      |
+| `0x01000`   | +0x28                         | Vertex morph | 1766   | Yes      |
+| `0x10000`   | +0x2C                         | UV animation | 690    | Yes      |
+| `0x20000`   | +0x30                         | Unidentified | 2536   | No       |
+| `0x00001`   | +0x18                         | Unidentified | 1216   | No       |
+| `0x80`+`0x100` | +0x20                      | Unidentified | 644    | No       |
+| `0x00200`   | +0x24                         | Unidentified | 71     | No       |
 
-The correspondence is exact: across all 1279 files, no track sets one of those bits without
-filling its slot, or fills a slot without setting the bit.
+Every one of those correspondences is **exact** - across all 1279 files, not one track sets a
+bit without filling its slot or fills a slot without setting the bit. `0x80` and `0x100` always
+appear together and share the single slot at +0x20.
 
-The descriptor holds **eight** pointer slots in all - 0x18, 0x1C, 0x20, 0x24, 0x28, 0x2C, 0x30
-and 0x34 - every one of which the engine relocates (engine-confirmed). So the three with no
-flag bit identified yet (0x20, 0x24, 0x34) are further channels, not padding.
+There is an eighth pointer, at **+0x34, that no flag bit owns**. It is set on 1768 tracks and
+every one of them is a rotation track (out of 3039), so it is an optional extra *for rotation*
+rather than a channel in its own right. What it points at looks like a byte ramp -
+`32, 66, 105, 141, 176, 208, 233, 249` in `Advisorm1` - which would be an easing curve, but the
+records are not a fixed length and about a third are not monotonic, so that is an observation
+rather than a decode.
 
 > **Bit `0x4000` is a modifier, not a channel.** It makes the `+0x28` slot point at a different
-> structure, and the engine branches on it *before* reading any morph table. Twelve tracks in
+> structure, and the engine branches on it *before* reading any morph table. Thirty tracks in
 > the game set it, always alongside `0x1000`. Reading those as vertex morph follows offsets into
 > the wrong structure, so a reader must exclude them.
 
@@ -318,11 +337,16 @@ simply its mesh list. `Jun_gateM1.MD2` has two rotation tracks targeting nodes 0
 are `Jun_gate.MD2`'s two door meshes.
 
 The **total node count is the ushort at the model's 0x42**, and the meshes are only the first
-`0x44` of those nodes (engine-confirmed - the loader walks the remainder as a separate table of
-88-byte records at header 0x74). `Advisor.MD2` has 29 nodes and 25 meshes, which is why its
-animations reach node 28.
+`0x44` of those nodes. The engine indexes a node directly (engine-confirmed):
 
-Across the game, **5934 of 5940 animation targets fall inside the node count** against only 4544
+```c
+if (node < meshCount)  ptr = meshTable(0x70) + node * 0xA0;              // 160-byte mesh record
+else                   ptr = nodeTable(0x74) + (node - meshCount) * 0x58; // 88-byte node record
+```
+
+`Advisor.MD2` has 29 nodes and 25 meshes, which is why its animations reach node 28.
+
+Across the game, **2967 of 2970 animation targets fall inside the node count** against only 2272
 inside the mesh count - so a target above the mesh count is a real node the model simply has no
 geometry for, not a misread. A reader with no representation for non-mesh nodes should skip
 those tracks.
@@ -364,8 +388,9 @@ Reshapes a mesh vertex by vertex. The slot at descriptor 0x28 points at a 16-byt
 | 0x0C    | 4 bytes | Record table offset    |
 
 Each track has its **own** descriptor and its own channel space, so one animation morphs as many
-meshes as it has morph tracks. 768 animation files carry morph tracks, 368 of them more than
-one, 1766 tracks in total - `ratraceM1.MD2` morphs four meshes at once.
+meshes as it has morph tracks. 752 animation files carry readable morph tracks, 360 of them
+more than one - `ratraceM1.MD2` morphs four meshes at once. There are 1766 morph tracks in all,
+30 of which set `0x4000` and are skipped.
 
 > Because each morph track is self-contained, a reader that only looks at a fixed header offset
 > finds just the first one. Three of `ratrace`'s four morphing meshes have 64 vertices each, so
@@ -392,8 +417,8 @@ The value array is **entry-major**: the value for keyframe `e` of channel slot `
 keyframe 1, not grouped by channel.
 
 A morph track has exactly **one channel per vertex of its target mesh, plus two** trailing
-channels that aren't vertices. 457 of the 465 tracks whose base model resolves satisfy that
-exactly, and the 8 that don't are the mistargeted ones described under **Target resolution** -
+channels that aren't vertices. 457 of the 464 tracks whose base model resolves satisfy that
+exactly, and the 7 that don't are the mistargeted ones described under **Target resolution** -
 which makes `channelCount == targetMesh.vertexCount + 2` a good validity test as well as a
 description.
 

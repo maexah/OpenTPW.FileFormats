@@ -155,6 +155,14 @@ directly.
 A material's `FrameOffset` of exactly 0 is a sentinel meaning "no texture", not a real offset -
 real offsets always start at the frame table's own offset.
 
+A texture name that resolves to nothing is not an error. The engine searches two directories for
+each name, logs `Could not load texture '%s' from '%s' or '%s'`, and then assigns the frame the
+**first entry of the texture cache**, which the cache fills at startup with
+`Data\Generic\defaulttexture\NotFound.tga` - a 64x64 brown noise tile (engine-confirmed). The
+shipped data does rely on this: `Hal_isle.MD2`'s sign mesh names a `signgrab` texture that exists
+nowhere in the game, and its frame draws as that brown tile rather than as anything the artists
+authored.
+
 The 8-byte frame table entries also begin with a **flags byte**: the engine tests bits `0x40`
 and `0x80` of byte 0 and propagates them into the model-wide flags at header 0x30
 (engine-confirmed).
@@ -532,6 +540,14 @@ out of 53 UVs.
 `Jun_isleM1.MD2` is a clear worked example: it scrolls all 128 of `Post Ripples01`'s UVs by
 `(-1, -1)` over 100 frames, and 104 of the `Island` mesh's 298 UVs by the same delta - the
 shoreline foam lapping the beach, with the rest of the island held still.
+
+An entry has no start frame: it always ramps from the beginning of the animation to the end frame
+its duration table names. That makes the duration table the **only** statement of how long a
+UV-only animation runs, which is worth saying outright, because rotation and vertex morph both
+carry explicit frame indices and UV does not. `Fan_isleM1` and `Hal_isleM1` scroll water and do
+nothing else; work an animation's length out from its rotation and morph keyframes alone and
+those files span zero frames, so their water never moves. 98 of the game's 1151 animation files
+are in that position.
 
 ### Sequencing
 

@@ -122,6 +122,12 @@ Animation targets index this same node list, which is why a target can legitimat
 the mesh count: it is naming a transform-only node. Rotating such a node should carry its whole
 subtree.
 
+> **Don't decompose these transforms into translation/rotation/scale.** About 1.7% of nodes in
+> the game (130 of 7533) are *sheared* - their axes are not perpendicular - and a TRS cannot
+> represent that, so the shear is silently dropped. `Jun_isle`'s tallest palm trunk is one of
+> them, and decomposing skewed it more than 5 units out of place, into the dinosaur that stands
+> next to it. Keep the 4x4 and multiply it.
+
 ### Textures
 
 The frame table (offset at 0x50) is an array of *frame count* (0x36) 8-byte entries, immediately

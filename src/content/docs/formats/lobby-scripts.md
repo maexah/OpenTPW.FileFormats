@@ -59,21 +59,67 @@ hallow).
 `"Fantasy"`, `"Halloween"` and `"Space"` where the game displays Wonder Land, Halloween World and
 Space Zone. The displayed names are not in the shipped data at all.
 
-### `FLYINGMESH(dir, model, count, x, y, z, scale)`
+### `FLYINGMESH(dir, model, count, x, y, z, speed)`
 
-A swarm of animated models flying around the island. The parser passes the count, the model, the
-island's own position, the three floats as a volume to wander, the scale, and a hard-coded
-`500.0` to the spawner.
-
-Only two parks use it:
+A swarm of animated models flying around the island. Only two parks use it:
 
 | Park | Flyers |
 | --- | --- |
-| jungle | 10 `bfly_PINK` and 10 `bfly_YELL`, scale 1.5 |
-| hallow | 50 `bat`, scale 2.5 |
+| jungle | 10 `bfly_PINK` and 10 `bfly_YELL`, speed 1.5 |
+| hallow | 50 `bat`, speed 2.5 |
 
-The three volume floats are `200.0, 100.0, 200.0` in every use, so there is no per-park variation
-in them, and they are in the original's globe space - islands there sit on a sphere of radius 475.
+**The last float is speed, not scale**, which is the obvious reading and the wrong one. It is
+stored at `+0x28` on each flyer, and the per-flyer update multiplies it into the step:
+
+```c
+position += direction * flyer[0x28] * delta
+```
+
+Nothing in `FLYINGMESH` scales the model. Flying meshes are drawn at the size they were authored.
+
+The speed is in the same per-tick units as `SPINSPEED` and the camera lag - the delta the game
+multiplies by is counted in ticks of 25fps rather than in seconds - so 1.5 is 37.5 units a second
+and 2.5 is 62.5.
+
+**The three volume floats are the box's full size, not its half-extents.** Every random point the
+original picks is
+
+```c
+coord = centre + extent * (random01 - 0.5)
+```
+
+from the constants `1/2^30` at `0x00702adc` and `0.5` at `0x00702ae0`. The centre is the island's
+own position, unshifted (the offset constant at `0x00702d40` is zero). They are `200.0, 100.0,
+200.0` in every use - 200 wide, 100 tall, 200 deep in the original's Y-up axes - so there is no
+per-park variation.
+
+The count is scaled by a detail percentage and clamped, so there is always at least one flyer and
+never more than the script asked for. At full detail it is the script's number.
+
+#### Flight
+
+The swarm's tick builds flyers up over several frames rather than all at once: it makes one, then
+keeps going with a seven-in-eight chance, so fifty bats take about six frames.
+
+Each flyer's update (`FUN_005d9b50`) is the whole behaviour:
+
+```c
+wanted    = normalise( target - position )
+direction = normalise( direction + (wanted - direction) * delta * 0.1 )
+position += direction * speed * delta
+
+if ( distanceSquared( position, target ) < 500 )
+    target = randomPointInBox()
+```
+
+So: pick a random point in the box, lag toward it (never turning sharply), and on arrival - within
+about 22 units, from the hard-coded `500.0` compared squared - pick another. There is no wander,
+no boundary avoidance and no flocking. The box is respected because every destination is inside
+it, not because anything pushes back at the edges.
+
+Orientation is built with the flight direction as forward and a sideways axis of
+`normalise(dz, 0, -dx)` - note the zero in the up slot, at `0x00702a38` - so a flyer pitches with
+its climb and dive but never banks into a turn.
 
 ### `SKYCOLOUR(r, g, b)`
 
@@ -98,9 +144,10 @@ chance per frame is `1 / 2^(bits set in n)` - and **never**, if `n` is even. Onl
 to 63, which is six bits: one frame in sixty-four, or about one strike every two and a half
 seconds at the 25fps the rest of the game's data assumes.
 
-The bolt runs from ground level to 500 units up, its top offset from its base by a small random
-lean, somewhere near the island. A strike also raises a flag the renderer flashes on, and plays a
-thunder sound.
+The bolt runs from ground level to 500 units up. Its base lands within fifty units of the island
+(`random01 * 100 - 50`, from `0x00702c94`) and its top leans by up to ten more
+(`random01 * 20 - 10`, from `0x00702c8c`). A strike also raises a flag the renderer flashes on,
+and plays a thunder sound.
 
 ## Lobby-wide directives
 
@@ -133,6 +180,5 @@ park is what changes them.
   specks in a bowed horizon. It means something else, or reaches the projection another way.
 - `SPINSPEED(0.02)` read as radians per frame is half a radian a second at 25fps, which is much
   brisker than the lobby appears to turn.
-- The float globals the lightning bolt picks its ground position and lean from.
-- What the hard-coded `500.0` passed to the flying-mesh spawner is (the same constant is the
-  bolt's height).
+- Whether the flying-mesh `500.0` and the lightning bolt's 500-unit height being the same number
+  is meaningful or a coincidence.

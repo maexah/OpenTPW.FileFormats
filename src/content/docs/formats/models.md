@@ -238,8 +238,9 @@ one per mesh:
 | 0x94   | 4 bytes  | Vertex order table offset (see **Vertex order**, below)                   |
 | 0x98   | 8 bytes  | Unknown                                                                    |
 
-This mesh's bounding box (0x78/0x84) matters beyond just culling: it's also the box that
-animation files quantise vertex positions into - see **Animation** below.
+This mesh's bounding box (0x78/0x84) is the mesh's alone. It is **not** the box animation files
+quantise vertex positions into: each morph track carries a box of its own - see **Vertex morph**
+below.
 
 A node index below the model's mesh count selects one of these 160-byte records; a higher index
 selects an 88-byte record from the table at header 0x74 instead (engine-confirmed) - see
@@ -553,12 +554,15 @@ shut.
 
 ### Vertex morph (bit 0x1000)
 
-Reshapes a mesh vertex by vertex. The slot at descriptor 0x28 points at a 16-byte descriptor:
+Reshapes a mesh vertex by vertex. The slot at descriptor 0x28 points at a morph descriptor:
 
-| Offset  | Size    | Description          |
-| ------- | ------- | ---------------------- |
-| 0x02    | 2 bytes | Record count           |
-| 0x0C    | 4 bytes | Record table offset    |
+| Offset  | Size     | Description                                                          |
+| ------- | -------- | ---------------------------------------------------------------------- |
+| 0x00    | 1 byte   | Flags - `0x01` in 1,338 of the game's 1,736 readable descriptors, `0x03` in the other 398 |
+| 0x02    | 2 bytes  | Record count                                                           |
+| 0x0C    | 4 bytes  | Record table offset                                                    |
+| 0x14    | 12 bytes | Centre of this track's quantisation box (3 floats) - see **Value decoding** |
+| 0x20    | 12 bytes | Step of this track's quantisation box (3 floats) - see **Value decoding**   |
 
 Each track has its **own** descriptor and its own channel space, so one animation morphs as many
 meshes as it has morph tracks. 752 animation files carry readable morph tracks, 360 of them
@@ -595,24 +599,38 @@ exactly, and the 7 that don't are the mistargeted ones described under **Target 
 which makes `channelCount == targetMesh.vertexCount + 2` a good validity test as well as a
 description.
 
+The two trailing channels are the **corners of the box the vertices span** at each keyframe,
+minimum then maximum, in the same packed form as the vertices. The engine reads them as the
+animation's bounding box (engine-confirmed), and in all 464 tracks whose base model resolves they
+sit on the corners of the first keyframe's vertices to within three quantisation steps.
+
 Channels the animation doesn't actually move are still present, in a record holding a single
 keyframe of that channel's rest value, so a full mesh pose is always reconstructible by sampling
 every channel.
 
 **Value decoding.** Each 4-byte value is a vertex position quantised into three signed 10-bit
 fields - X in bits 0-9, Y in 10-19, Z in 20-29 (bits 30-31 unused). Each field is a signed value
-from -512 to 511 mapped linearly onto the *target mesh's* bounding box (from its mesh table
-record): -512 is that axis's box minimum, +511 its maximum.
+from -512 to 511, multiplied by that axis of the descriptor's **step** and added to that axis of
+its **centre** (engine-confirmed):
 
 ```
-component(raw, shift, min, max):
+component(raw, shift, centre, step):
     field = signed_10_bit((raw >> shift) & 0x3FF)
-    centre = (min + max) / 2
-    return centre + field * (max - min) / 1023
+    return centre + field * step
 ```
 
-Verified to R² >= 0.999997 per axis (max error ~0.028 units, exactly the quantisation step) by
-decoding every channel's rest keyframe and comparing against a known mesh's actual vertices.
+> **The box is the track's own, not the target mesh's.** It is usually close to the mesh's
+> bounding box, which makes decoding into the mesh's box look almost right - but in none of the
+> 464 tracks whose base model resolves is it the same box. Compared against the mesh's rest
+> vertices, a track's first keyframe lands on them to within one and a half quantisation steps
+> in 346 tracks when decoded with the track's own centre and step, and in 63 when decoded into
+> the mesh's bounding box: 57 both ways, 289 only with the track's box, and 6 only with the
+> mesh's. (Plenty of animations don't start at the rest pose, so neither count reaches 464.)
+>
+> It shows most in the advisor's `Advisorm14`, where he rises onto the screen: its antennae are
+> quantised into a box nearly twice as tall as in his other clips, so read into the mesh's
+> bounding box they come out at a little over half their height and jump back when his next
+> clip begins.
 
 ### UV animation (bit 0x10000)
 
@@ -734,7 +752,9 @@ elapsed milliseconds times 0.03, and works out a clip's length as `frames * 1000
 - What the engine does with a zero-length position segment, which 4 tracks have.
 - The three further pointer slots at +0x20, +0x24 and +0x34, and which flag bits own them.
 - The frame-ish value at descriptor +0x0C, and the unknown 4 bytes ending each morph record.
-- What the two extra channels beyond a morph track's vertex count represent.
+- What bit `0x02` of a morph descriptor's flag byte selects.
+- Why 6 morph tracks' first keyframes land on their mesh's rest vertices when decoded into the
+  mesh's bounding box, but not when decoded into their own box.
 - Why a few models' target indices don't land on the mesh the data clearly belongs to - i.e.
   what the node list actually contains for models that have more nodes than meshes.
 - The 90 animation files that fail the track table identity, and the 25 that pass it but carry

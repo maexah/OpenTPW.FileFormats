@@ -131,11 +131,53 @@ swapped: `FUN_005d8b50` hands the hard-coded path `Data\Levels\fantasy` to the s
 every island in the lobby sits under Wonder Land's sky - `sky\sky_cyl.tga` for the dome and
 `sky\sky.tga` for the cloud layers over it. Both are blue.
 
-What `SKYCOLOUR` reaches is that sky's **vertex colours**. The sky mesh is a 16x16 grid, and its
-colours come from a 256-entry ramp at `skyObject + 0xf60`, normally a 16x16 downsample of
-`sky\sky_rgb.tga` built by `FUN_00585ce0`. Each lobby frame `FUN_005d96c0` floods that ramp with
-a single colour, and the sky texture is modulated by it. So `SKYCOLOUR` is a tint over a blue
-sky, never a replacement for it.
+What `SKYCOLOUR` reaches is that sky's **vertex colours** - and only some of them.
+
+The sky is drawn as a horizon band plus up to four cloud layers on a 16x16 grid above it. The
+grid's vertex colours come from a 256-entry ramp, one copy per layer, at `skyObject + 0xf60`,
+`+0x1360`, `+0x1760` and `+0x1b60` - normally a 16x16 downsample of `sky\sky_rgb.tga` built by
+`FUN_00585ce0`, a gradient from pale cyan to deep blue. Each lobby frame `FUN_005d96c0` floods
+**the first copy only** with a single colour, and that colour is `SKYCOLOUR`.
+
+So it reaches exactly one of the four cloud layers. The other three keep the gradient, and the
+horizon band is drawn at plain white with no ramp at all - which is why the horizon stays blue
+whatever a park asks for.
+
+### The sky's geometry
+
+Everything below is read out of `FUN_00584ef0` (the sky object's init), `FUN_00585720` (which
+builds the mesh) and `FUN_005863c0` (the draw).
+
+| | Value | Where from |
+| --- | --- | --- |
+| Cloud grid | 16x16 vertices over 2400 units | `+0x21e0`/`+0x21e4` = `0x960` |
+| Grid centre | `(0, 180, 0)` in the lobby, height 300 elsewhere | `FUN_00585690( 0, 180, 0 )` |
+| Droop | height is `centre - 0.2 * radius` | `0x00701f54` |
+| Band radius | 0.6 of the grid's half width, so 720 | `0x00701f58` |
+| Band rings | radii 1, 0.98, 0.96, 0.84 of that | `0x00701f64`.. |
+| Band height | +/- 36, meeting the dome exactly at its radius | derived |
+| Band columns | 9 per half turn, texture wrapping once per half | draw loop |
+
+`sky_cyl.tga` is the same gradient stacked twice vertically, which is why each half of the band
+gets one copy of it. The lobby picks a different V band from a park - a whole copy, with the top
+row repeated at the bottom, mirroring the gradient below the horizon.
+
+The four cloud layers share the grid and differ only in these:
+
+| Layer | Tiling | Scroll U | Scroll V | Opacity |
+| --- | --- | --- | --- | --- |
+| 0 | 7pi/112 | 0.0008 | 0.00009 | 0xCF |
+| 1 | 6pi/112 | 0.0013 | 0.00006 | 0x97 |
+| 2 | 5pi/112 | 0.0018 | 0.00003 | 0x5F |
+| 3 | 4pi/112 | 0.0023 | 0 | 0x27 |
+
+Scroll is per tick at 25fps. `sky.tga` is flat white with its clouds entirely in the alpha
+channel, so what a layer paints is its ramp colour and the texture only says where.
+
+Finally, `DAT_008bcbc8 & 0x2000000` - set by the lobby's island view and by nothing else - draws
+every cloud layer a second time at `(-x, -y, -height)`. The dome on its own is a disc that stops
+where it would fall below the horizon band; its reflection is a bowl rising to meet that edge,
+and the two close the sky into a lens with the camera inside.
 
 It is also conditional. The flood only uses `SKYCOLOUR` when both
 

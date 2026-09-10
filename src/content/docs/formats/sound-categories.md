@@ -146,3 +146,27 @@ One thing that table hides. The `level4c` in the global music bank is the same r
 lobby that plays effect 2 as written puts one particular park's theme over whichever park is
 actually on screen. Worth knowing before reading a name that appears in two banks as a
 coincidence — across the game, a repeated name usually is the same audio.
+
+## Speech categories
+
+The `speech` categories are shaped differently from every other one, and are simple enough to be
+worth calling out. `data\global\Speech\cat_speechSFX.map` names **641 effects, each with exactly
+one sample and one variation**, and the effect table is completely uniform — every record carries
+the same 6000 ms delay and the same trailing `0x200`. Effect *n* is sample *n*, so a category that
+elsewhere means "pick one of these at these odds" here degenerates into a flat index into the
+bank. The BANK file names a single bank, `speech\speech`.
+
+That index is what the advisor's speech is addressed by. Each park also has its own
+`data\levels\<park>\Speech`, and those hold **exactly one sample each** — the park's introduction,
+between 16 and 27 seconds long — which is why a park's `lips` folder contains only `sp_001.LIP`.
+
+### Empty entries
+
+80 of the 641 samples in the global speech bank are not audio. They are all byte-for-byte the same
+315-byte blob, which begins with a valid MPEG sync word (`FF F5`) but holds less than two complete
+frames; ffmpeg rejects it, and so will any other decoder. They decode to a nominal 0.019 s against
+a median of 5.7 s for the real samples.
+
+These are response ids with nothing recorded against them rather than corruption — the bank is
+sized for the full set of ids and the gaps were never filled. A loader should treat a sample this
+short as an empty slot and stay quiet about it, not report 80 broken files.

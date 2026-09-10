@@ -99,7 +99,8 @@ Both record kinds begin with the same header, which is what makes that work:
 The three links are stored as file offsets into whichever of the two tables the target lives in,
 so a reader converts an offset back to a node index by testing which table's range it falls in.
 Bit `0x200` is how the engine tells the kinds apart - it skips material processing for any node
-that has it set.
+that has it set. It is exact: all 2,606 transform-only nodes in the game's 839 models have it
+set, and no mesh does.
 
 `Jun_isle.MD2` shows why this matters. Its three palm trees hang off two dummy nodes plus the
 island mesh:
@@ -127,6 +128,39 @@ subtree.
 > represent that, so the shear is silently dropped. `Jun_isle`'s tallest palm trunk is one of
 > them, and decomposing skewed it more than 5 units out of place, into the dinosaur that stands
 > next to it. Keep the 4x4 and multiply it.
+
+### Node lookup ids
+
+Some nodes can also be found by number. The ushort at 0x48 is a record count, the uint at 0x7C the
+offset of a table of that many 20-byte records, and the ushort at 0x46 the node the first record
+belongs to - record `r` names node `0x46 + r`.
+
+| Offset | Size     | Description                                                              |
+| ------ | -------- | -------------------------------------------------------------------------- |
+| 0x00   | 4 bytes  | Flags                                                                      |
+| 0x04   | 4 bytes  | Id                                                                         |
+| 0x08   | 12 bytes | Unknown - zero in most records, but not in 376 of the game's 2,452         |
+
+346 of the game's 839 models carry a table. In all but one, its records stay inside the model's
+node count, and ids run from 0 to 99.
+
+The engine's lookup (engine-confirmed) walks the table for a record whose id matches and whose
+flag word shares a bit with a mask the caller passes, and returns the record's index; the caller
+adds `0x46` to get the node. The flag words vary widely across the game - `0xB1`, `0x111` and
+`0x811` are the most common - so the table is a general way of naming nodes. The costume code is
+one user: it asks for bit `0x400`, and dresses a character by setting and clearing a node's hidden
+flag, bit `0x10` of the node's own flag word.
+
+The advisor (`Advisor.MD2` in `data\global\advisor.wad`) shows it best. Every one of his 14
+records has `0x400`, and the ids are costume pieces: his antennae are 19 and 20, which most
+costumes hide; his right hand is 21, which costume 14 - his spatula - hides; and his hats and bow tie
+are 5 to 13. None of those nodes is hidden in the file - the hidden bit is never
+set in any node the game ships - so which pieces show is entirely the code's decision.
+
+#### Open questions
+
+- The 12 bytes after the id, and what the flag bits other than `0x400` select.
+- The one model whose table runs past its node count.
 
 ### Textures
 
@@ -393,6 +427,10 @@ The remaining 90 contain no animation at all - 89 declare a track count of zero 
 animation block. **The track table identity never fails on any file in the game**, so nothing is
 rejected for being unreadable.
 
+Counting by flag bits instead - which channels a track declares, rather than which read cleanly -
+**1,183 of the 1,189 files with a valid track table** have at least one track carrying a rotation,
+morph, UV, position or visibility channel, and only 6 carry none of those five.
+
 ### Locating the tracks
 
 The uint at 0x98 points at a 72-byte **animation block**. That pointer is valid in 1278 of the
@@ -422,14 +460,14 @@ Each track is a 64-byte descriptor:
 | 0x0C                               | 4 bytes | A frame value, close to but not always the track's last keyframe |
 | 0x10                               | 2 bytes | Rotation keyframe count (channel `0x8` only)          |
 | 0x14                               | 2 bytes | **Target node** - see **Target resolution** below      |
-| 0x16                               | 2 bytes | Unknown, but **not** part of the target                |
-| 0x18                               | 4 bytes | Data pointer for channel `0x1` (undecoded)             |
+| 0x16                               | 2 bytes | Entry count for channel `0x20000`; otherwise unknown, and **not** part of the target |
+| 0x18                               | 4 bytes | Position record (channel `0x1`)                        |
 | 0x1C                               | 4 bytes | Rotation keyframes (channel `0x8`)                     |
 | 0x20                               | 4 bytes | Pointer, channel unidentified (engine-confirmed)       |
 | 0x24                               | 4 bytes | Pointer, channel unidentified (engine-confirmed)       |
 | 0x28                               | 4 bytes | Vertex morph descriptor (channel `0x1000`)             |
 | 0x2C                               | 4 bytes | UV animation descriptor (channel `0x10000`)            |
-| 0x30                               | 4 bytes | Data pointer for channel `0x20000` (undecoded)         |
+| 0x30                               | 4 bytes | Visibility entries (channel `0x20000`)                 |
 | 0x34                               | 4 bytes | Pointer, channel unidentified (engine-confirmed)       |
 
 The flag word at 0x04 says which channels the track carries, and every bit owns exactly one
@@ -440,8 +478,8 @@ slot. Counted across every track in every animation file in the game:
 | `0x00008`   | count at +0x10, data at +0x1C | Rotation     | 3039   | Yes      |
 | `0x01000`   | +0x28                         | Vertex morph | 1766   | Yes      |
 | `0x10000`   | +0x2C                         | UV animation | 690    | Yes      |
-| `0x20000`   | +0x30                         | Unidentified | 2536   | No       |
-| `0x00001`   | +0x18                         | Unidentified | 1216   | No       |
+| `0x20000`   | count at +0x16, data at +0x30 | Visibility   | 2536   | Yes      |
+| `0x00001`   | +0x18                         | Position     | 1216   | Yes      |
 | `0x80`+`0x100` | +0x20                      | Unidentified | 644    | No       |
 | `0x00200`   | +0x24                         | Unidentified | 71     | No       |
 
@@ -620,6 +658,65 @@ nothing else; work an animation's length out from its rotation and morph keyfram
 those files span zero frames, so their water never moves. 98 of the game's 1151 animation files
 are in that position.
 
+### Position (bit 0x1)
+
+The slot at +0x18 points at a 16-byte record:
+
+| Offset | Size    | Description                                           |
+| ------ | ------- | ------------------------------------------------------- |
+| 0x00   | 4 bytes | Type - which curve joins the points, see below          |
+| 0x04   | 2 bytes | Point count                                             |
+| 0x06   | 2 bytes | Key count                                               |
+| 0x08   | 4 bytes | Offset of the points: point count x 3 floats            |
+| 0x0C   | 4 bytes | Offset of the keys: key count x 4 bytes                 |
+
+A key is a ushort frame followed by a ushort that is zero in all 8,703 keys in the game. A point
+is a position **relative to the node's parent**, and replaces the node's authored position, the
+same way a rotation keyframe replaces its orientation.
+
+The type's bits choose the curve, and the engine picks its sampler on exactly these bits
+(engine-confirmed):
+
+| Type   | Bit     | Tracks | Points per track     | Curve                                               |
+| ------ | ------- | ------ | -------------------- | ----------------------------------------------------- |
+| `0x12` | `0x2`   | 785    | 3 x (keys - 1) + 1   | Cubic Bezier, four points per segment               |
+| `0x18` | `0x8`   | 431    | one per key          | Straight lines between keys                          |
+
+Every one of the game's 1,216 position records has exactly the point count its type calls for.
+The engine also has a sampler for a type with neither bit - a Catmull-Rom spline - but no file in
+the game uses it.
+
+For a Bezier track, segment `s` runs from key `s` to key `s + 1` using points `3s` to `3s + 3`, the
+last point of one segment being the first of the next. With `t` the fraction of the way between
+the two keys' frames:
+
+```
+p = (1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t) t^2 P2 + t^3 P3
+```
+
+The engine evaluates the same polynomial in power-basis form, with the constants 1, 3, -3 and -6.
+
+Key frames never go backwards, though 4 tracks repeat a frame - a zero-length segment.
+
+The advisor is the clearest example. In `Advisorm14` his body's track (type `0x12`, keys at frames
+0, 10, 20 and 30) raises it from (0, 0.21, -73.2) to its resting (0, 0.21, -21.2), and `Advisorm15` drops it back to -74.4. His head does the same. That is him
+popping up from below the bottom of the screen at the start of a line and ducking back out of
+view at the end.
+
+### Visibility (bit 0x20000)
+
+The ushort at +0x16 is this channel's entry count, and the slot at +0x30 points at that many
+**signed 16-bit** entries. Each is a frame number whose sign says what happens from that frame on:
+greater than zero shows the node, zero or less hides it. The engine takes the last entry whose
+absolute value is at or before the current frame, and sets or clears the node's hidden flag (bit
+`0x10`) from it; before the first entry the node is left as it was (engine-confirmed).
+
+All 2,536 visibility tracks in the game list their entries in order of frame.
+
+This is how the advisor blinks. In `Advisorm10` his eyes carry `-40, 44, -180, 184, ...` and his
+closed eyelids `0, 40, -44, 180, -184, ...` - the eyelids start hidden, and for four frames at 40,
+and again at 180, his eyes are swapped for them.
+
 ### Sequencing
 
 Nothing in the format says how a model's `M1`, `M2`, ... animations are ordered, when they
@@ -628,14 +725,13 @@ indistinguishable by anything in the `.md2` data. In the original game this is d
 by a `TRIGANIM` instruction in that ride's [compiled script](/formats/rsse) - see the gate
 example on the [RSS](/formats/rss) page.
 
+Keyframe numbers are frames at **30 per second**. The engine advances a playing animation by the
+elapsed milliseconds times 0.03, and works out a clip's length as `frames * 1000 / 30`
+(engine-confirmed).
+
 ### Open questions
 
-- The channel at flag `0x1` (pointer at descriptor +0x18). Partially characterised: it leads to
-  a repeating record of `u32 tag, u16 a, u16 b, ptr, ptr`, where the second pointer is clearly a
-  frame index array (`0, 10, 20, 30` in `Advisorm14`) and the first is an `a * 12`-byte payload.
-  The record shape only holds for about 58% of instances, so there are variants and this is not
-  decoded.
-- The channel at flag `0x20000` (pointer at descriptor +0x30) - location known, contents not.
+- What the engine does with a zero-length position segment, which 4 tracks have.
 - The three further pointer slots at +0x20, +0x24 and +0x34, and which flag bits own them.
 - The frame-ish value at descriptor +0x0C, and the unknown 4 bytes ending each morph record.
 - What the two extra channels beyond a morph track's vertex count represent.

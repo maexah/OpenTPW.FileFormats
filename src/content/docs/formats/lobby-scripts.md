@@ -126,6 +126,60 @@ its climb and dive but never banks into a turn.
 Three 0-255 components, stored as 16.16 fixed point. All four parks set one: jungle
 `243,203,191`, fantasy `5,170,255`, hallow `4,44,12`, space `125,8,8`.
 
+**It does not paint the sky.** The lobby's sky is a textured one, loaded once and never
+swapped: `FUN_005d8b50` hands the hard-coded path `Data\Levels\fantasy` to the sky loader, so
+every island in the lobby sits under Wonder Land's sky - `sky\sky_cyl.tga` for the dome and
+`sky\sky.tga` for the cloud layers over it. Both are blue.
+
+What `SKYCOLOUR` reaches is that sky's **vertex colours**. The sky mesh is a 16x16 grid, and its
+colours come from a 256-entry ramp at `skyObject + 0xf60`, normally a 16x16 downsample of
+`sky\sky_rgb.tga` built by `FUN_00585ce0`. Each lobby frame `FUN_005d96c0` floods that ramp with
+a single colour, and the sky texture is modulated by it. So `SKYCOLOUR` is a tint over a blue
+sky, never a replacement for it.
+
+It is also conditional. The flood only uses `SKYCOLOUR` when both
+
+- `SKYQUALITY > 1` - the number of cloud layers, from the detail preset. `low.sam` sets 1,
+  `med.sam` 2, `high.sam` 4. **On Low detail the tint is never applied.**
+- the hardware rendering path is active (`DAT_0078d8d8 == 1`, set by `FUN_0044de20`).
+
+Otherwise the ramp is flooded with the current fog colour instead, which the lobby sets to a
+fixed `0xFF44DDFF` - light blue.
+
+#### The red channel is bugged
+
+The flood eases the colour rather than snapping to it, one sixteenth of the remaining distance
+per frame, from separate "current" fields at `+0x44/+0x48/+0x4c`. Red is read from the wrong
+slot:
+
+```
+5d96e1: mov edx,[ecx+0x50]   ; the red target - only ever compared, never used
+...
+5d96fc: mov edx,[ecx+0x58]   ; the blue target
+5d9702: mov eax,edx
+5d9704: sub eax,esi          ; esi is the *current red*
+5d9706: sar eax,0x4
+5d9709: add eax,esi
+5d970b: mov [ecx+0x44],eax   ; stored back as red
+```
+
+So red converges on the blue the script asked for, and no park gets the colour it wrote:
+
+| Park | Asked for | Actually gets |
+| --- | --- | --- |
+| jungle | 243, 203, 191 | 191, 203, 191 |
+| fantasy | 5, 170, 255 | 255, 170, 255 |
+| hallow | 4, 44, 12 | 12, 44, 12 |
+| space | 125, 8, 8 | 8, 8, 8 |
+
+Multiplied onto a blue sky, jungle's near-neutral grey and fantasy's magenta both leave it
+looking blue; hallow and space take it to nearly black.
+
+The bug has a second effect. The ease only runs while current and target differ, and the
+comparison tests red against `+0x50` while the ease drives it toward `+0x58` - so for any park
+whose red and blue differ, which is all four, the two never agree and the ease restarts every
+frame forever. The "converged" branch, which would fall back to the fog colour, is unreachable.
+
 ### `RAINY(n)`
 
 A rain level. Only hallow sets it, to 1.
@@ -170,9 +224,13 @@ camera, then pulls in from `GLOBERADIUSOUT` to `GLOBERADIUSIN`.
 
 Rain, lightning and sky colour are **not** properties of a place. The lobby tick works out which
 island is nearest the camera and then, every frame, copies that island's `SKYCOLOUR` into the
-renderer's sky colour, its `RAINY` value into a single global rain level, and rolls its
+lobby camera's target colour, its `RAINY` value into a single global rain level, and rolls its
 `LIGHTNING` mask. There is one sky, one rain system and one bolt for the whole lobby; selecting a
 park is what changes them.
+
+Fog is separate and is not driven by any of this. `FUN_005d8b50` sets the lobby's fog colour to a
+constant `0xFF44DDFF` with a near of 50 and a far of 300, and the island view then turns fog
+**off** outright (`FUN_005d9690`, clearing bit `0x2000`). Only the globe views run with it on.
 
 ## Open questions
 
@@ -182,3 +240,5 @@ park is what changes them.
   brisker than the lobby appears to turn.
 - Whether the flying-mesh `500.0` and the lightning bolt's 500-unit height being the same number
   is meaningful or a coincidence.
+- What `DAT_0078d8d8` is set from. It gates the sky tint on the hardware path, but the value
+  itself is written through a pointer rather than by name, so which option writes it is unproven.

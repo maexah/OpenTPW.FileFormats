@@ -139,3 +139,10 @@ effects with delays of 1000, 6000, 5000 and 3000 ms. Applying the rules above:
 | 4 | 3000 ms | none — the table names it, the file has no list for it |
 
 Effect 1 is what the lobby plays on a lightning strike.
+
+One thing that table hides. The `level4c` in the global music bank is the same recording as the
+`level4c` in Space Zone's own lobby music bank: the two files differ by eleven bytes out of
+253,807, all of them inside the final MPEG frame, and the decoded audio correlates at 1.0000. So a
+lobby that plays effect 2 as written puts one particular park's theme over whichever park is
+actually on screen. Worth knowing before reading a name that appears in two banks as a
+coincidence — across the game, a repeated name usually is the same audio.

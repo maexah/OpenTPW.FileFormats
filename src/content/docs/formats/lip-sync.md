@@ -31,14 +31,18 @@ clock.
 Each timestamp **toggles** the mouth between talking and quiet.
 
 Which state comes first is easy to get backwards. The game marks the advisor as talking when his
-sample starts, and every file begins with a timestamp of `0`, which toggles that straight back to
-quiet. So the stretches that **begin at the odd-numbered timestamps** are the talking ones. After
-the last timestamp the game stops reading the file and treats the mouth as quiet.
+sample starts, so he **talks from the start of the sample until the first timestamp**, and after
+every even number of timestamps. After the last timestamp the game stops reading the file and
+treats the mouth as quiet.
 
-That was checked against the audio, not just read from the code. Across Lost Kingdom's
-introduction, the stretches starting at odd timestamps have an average loudness (RMS) of 0.12
-against 0.013 for the even ones, and they match where the speech actually is 84% of the time,
-against 16% for the opposite reading.
+Speech starts almost at once - a median of 20 milliseconds into the sample - so the first
+timestamp is usually the end of his first phrase, not its start. Only 18 of the game's 641 files
+begin with a timestamp of `0`, which ends a talking stretch before it has begun.
+
+That was checked against the audio, not just read from the code. Across the 557 global samples
+that decode and have a lip file, reading the files this way agrees with where the speech actually
+is in 87.6% of 20-millisecond slices of audio, against 15.4% for the opposite reading, and its
+talking stretches are the louder ones in 553 of the 557.
 
 ## How the game uses it
 

@@ -167,10 +167,14 @@ The 8-byte frame table entries also begin with a **flags byte**: the engine test
 and `0x80` of byte 0 and propagates them into the model-wide flags at header 0x30
 (engine-confirmed).
 
+That byte is the same one a material reads as its flags word - a material's `FrameOffset` points
+at this entry, so the two are the same bytes reached from either direction. See
+**Material flags** below for what is known of the individual bits.
+
 #### Open questions
 
-- The remaining 7 bytes of each frame table entry, and which bits of the two flags fields mean
-  what.
+- The remaining 7 bytes of each frame table entry, and the frame data table's own flags field at
+  0x00 beyond its bit 0 being tested.
 
 ### Mesh table
 
@@ -293,9 +297,76 @@ A material with a non-zero frame offset also has a 4-byte flags word, read direc
 frame offset in the file (i.e. the frame offset does double duty: it locates both the frame
 table entry for the texture name, and a flags value sitting at that same byte offset).
 
+### Material flags
+
+Because that word is read *at* the frame offset, it is the first four bytes of the 8-byte frame
+table entry described under **Textures** - and its low byte is the same "flags byte" whose `0x40`
+and `0x80` the engine propagates into the model-wide flags at header 0x30.
+
+That placement means **the word belongs to the texture as used by this model**, not to the
+material alone: two materials in the same model naming the same texture necessarily share it.
+Two *different* models naming the same texture need not, and 62 of the 2,990 textures referenced
+across the game are flagged one way by one model and another way by another.
+
+Measured across the 12,951 material uses in the game's 841 material-bearing mesh files:
+
+| Bit    | Uses  | What is known                                                                   |
+| ------ | ----- | --------------------------------------------------------------------------------- |
+| `0x01` | all   | Set on every material in the game; carries no information                        |
+| `0x02` | 2,621 | Marks a material meant to be drawn see-through - see below                        |
+| `0x10` | 3,849 | Unknown. Independent of `0x20`                                                    |
+| `0x20` | 3,886 | Unknown. Independent of `0x10`                                                    |
+| `0x40` | 159   | Propagated into the model-wide flags at header 0x30 (engine-confirmed)            |
+| `0x80` | 0     | Also propagated into header 0x30 (engine-confirmed), but no shipped material sets it |
+
+The word never exceeds `0x73` anywhere in the game - only the low byte is ever used, and just 15
+distinct values occur across all 12,951 uses. `0x10` and `0x20` are **not** a pair: they occur
+alone 1,209 and 1,246 times respectively, and together 2,640 times.
+
+#### Bit 0x02 - drawn see-through
+
+This is the only bit whose meaning is established, and it is established from the data rather
+than from the engine: nothing in the decompile reads it back where a render state is chosen.
+
+It correlates with the texture declaring an alpha channel, but **only in one direction**. Of the
+12,773 material uses whose texture could be resolved:
+
+|                          | texture has alpha | texture has none |
+| ------------------------ | ----------------- | ---------------- |
+| **bit set**              | 2,247             | 335              |
+| **bit clear**            | 1,780             | 8,411            |
+
+So when the bit is set the texture has an alpha channel 87.0% of the time, but when a texture has
+an alpha channel the bit is set only 55.8% of the time. It is not a restatement of the texture's
+format - it reads as an authoring decision, "draw this one see-through", and a great deal of the
+game's 32-bit art is deliberately drawn opaque. The largest groups carrying alpha without the bit
+are ground and path tiles: `m_grass1`, `m_grass2`, `jfl_cnr2`, `jpa_que1`.
+
+Compare against the texture header's **alpha-channel byte and not its bit depth**. The two are
+different fields and they disagree: `sen_ant1` is stored 32-bit but declares no alpha channel.
+
+> The percentages above carry a small caveat: 100 of the 3,385 distinct `.wct` names in the game
+> appear in more than one WAD with different alpha-channel bytes, so a name-keyed lookup cannot
+> be exact for those.
+
+In the lobby - the one scene OpenTPW currently renders - the correlation is far tighter. Of the
+232 material uses whose texture ships in `lobby.wad`, 224 agree. Six of the eight that disagree
+are textures carrying alpha and drawn opaque anyway; the other two set the bit over a texture
+with no alpha channel at all, one of them the lobby's own sea surface. Treating the bit as "draw
+see-through" is what makes the islands' shoreline ripple rings and the Space island's antenna
+cone render correctly.
+
+What the bit does **not** distinguish is cut-out art from genuinely blended art. Most of what
+carries it in the lobby is cut-out foliage - palm fronds, grass blades, bushes, the bats and
+butterflies - which wants its alpha *tested*; only the ripple rings, the sea and the antenna cone
+are true gradients. A renderer acting on this bit has to serve both.
+
 #### Open questions
 
-- The two unidentified 2-byte fields, and the meaning of the flags word.
+- The two unidentified 2-byte fields in the material record, and the 4-byte field at its end.
+- What `0x10` and `0x20` select, and what `0x40` means beyond being propagated to header 0x30.
+- Whether anything in the format distinguishes an alpha-tested cut-out material from a blended
+  one, or whether the original engine drew both the same way.
 
 ### Normals
 

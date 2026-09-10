@@ -24,12 +24,22 @@ fantasy and space — so a lookup has to try both rather than assume either.
 
 The header is a fixed size: the image body starts at `0x43DD` in all five files.
 
+> Rows marked **(engine-confirmed)** were checked against the original game's own reader and
+> sign compositor rather than inferred from the shipped files alone — the reader loads the header
+> field by field in file order, which is what fixes the sizes and the boundaries below.
+
 | Offset | Size | Description |
 | --- | --- | --- |
-| `0x0000` | 17 bytes | Unknown |
+| `0x0000` | 4 bytes | Version — the engine requires `> 99`; all five files are `101` (engine-confirmed) |
+| `0x0004` | 4 bytes | Unknown — `0` in all five |
+| `0x0008` | 1 byte | Unknown — `1` in all five |
+| `0x0009` | 4 bytes | **Line 0 mode** — see **Line modes** below (engine-confirmed) |
+| `0x000D` | 4 bytes | **Line 1 mode** (engine-confirmed) |
 | `0x0011` | 436 bytes | Font record 0 |
 | `0x01C5` | 436 bytes | Font record 1 |
-| `0x0379` | 76 bytes | Unknown |
+| `0x0379` | 20 bytes | **Line 0 ink** — see **Line ink** below (engine-confirmed) |
+| `0x038D` | 20 bytes | **Line 1 ink** (engine-confirmed) |
+| `0x03A1` | 36 bytes | Unknown — three ints (`16`, `128`, `4`) then six 4-byte entries |
 | `0x03C5` | 16384 bytes | 32-bit pixel data — see below |
 | `0x43C5` | 4 x float | Y, Cb, Cr and A quantisation scales (`6, 10, 2, 6` in all five files) |
 | `0x43D5` | 4 bytes | Colour chunk size |
@@ -41,17 +51,81 @@ The header is a fixed size: the image body starts at `0x43DD` in all five files.
 | Offset | Size | Description |
 | --- | --- | --- |
 | `+0x000` | 64 bytes | Display name, NUL-padded ASCII (e.g. `Young Itch AOE`) |
-| `+0x040` | 64 bytes | TrueType file name (e.g. `YOUNIA__.TTF`) — the file itself is in `fonts.wad` |
-| `+0x168` | 64 bytes | Display name again |
-| `+0x18C` | 8 x float | Parameters — see below |
+| `+0x040` | 260 bytes | TrueType file name (e.g. `YOUNIA__.TTF`) — the file itself is in `fonts.wad` |
+| `+0x144` | 4 bytes | Unknown |
+| `+0x148` | 4 bytes | Unknown |
+| `+0x14C` | 60 bytes | A Windows **`LOGFONTA`** (engine-confirmed) |
+| `+0x188` | 44 bytes | Read by a separate helper; contents not established |
 
 There is one record per line of the sign. Jungle letters its two lines in different fonts
 (`Young Itch AOE` then `Clunker AOE`); Space names the same font twice.
 
-Of the eight floats, indices 2, 3 and 4 are always in the range 0..1 and are the **text colour**
-— jungle's first line is `0.40, 0.87, 0.31`, a green, and the four parks' values are distinct and
-park-appropriate. The remaining five are not established. Index 0 ranges 1.75..13.5 and index 7
-sits between 248 and 360, which would suit a size and an angle, but neither has been confirmed.
+The original letters its signs with GDI, so it stores a `LOGFONT` rather than a size and weight of
+its own. That structure is why the display name appears to occur a second time part-way through
+the record: `LOGFONTA.lfFaceName` sits at `+28` within it, which is `+0x168` from the record
+start. Its `lfHeight` is the usual negative character height (`-144` for jungle's first line).
+
+> **The floats in the tail are not a colour.** Reading the record as two 64-byte name fields
+> instead gives eight tidy floats at `+0x18C`, three of which always land in `0..1` and look
+> convincingly like a text colour — jungle's are `0.40, 0.87, 0.31`, a green. They are not. That
+> offset falls past the end of the `LOGFONT`, inside the 44-byte tail above, and the values belong
+> to whatever the helper reads there.
+>
+> The trap is worth spelling out because the wrong reading survives a casual check: three of the
+> four parks have dark boards, so lettering them in some wrong colour still shows up. Only Fantasy
+> gives it away — its board is painted pale mint and those floats are very nearly the same mint,
+> so its name comes out invisible. The real ink is below.
+
+### Line ink
+
+Each line's colour is a four-byte block sitting after both font records, followed by four more
+4-byte fields that are not yet identified — 20 bytes per line. A line whose mode is `0` is absent
+and contributes no block at all, though no shipped sign does that.
+
+| Offset | Size | Description |
+| --- | --- | --- |
+| `+0x00` | 1 byte | Red |
+| `+0x01` | 1 byte | Green |
+| `+0x02` | 1 byte | Blue |
+| `+0x03` | 1 byte | Opacity |
+| `+0x04` | 4 x 4 bytes | Unknown — an int, a float, then two more ints |
+
+Three steps in the engine fix that ordering, and none of it has to be guessed. The loader reads
+the four bytes **singly** into consecutive bytes of its sign object. The renderer hands them to
+the compositor with the fourth byte first and the other three after it. The compositor walks the
+glyph's coverage mask and moves each board pixel that fraction of the way toward the three
+channels, writing them into bytes 1, 2 and 3 of a pixel whose byte 0 is the coverage — and that
+same function later packs the buffer as **ARGB4444**, which is what makes byte 1 red rather than
+blue.
+
+The opacity is a genuine blend and not a threshold, so a line set below full strength tints the
+board and lets the artwork show through the lettering.
+
+What the four lobby signs ask for:
+
+| File | Mode | Line 0 | Line 1 |
+| --- | --- | --- | --- |
+| `Fan_gate.sgn` (Fantasy) | 1 | `#808000` olive, 67% | `#808000` olive, 66% |
+| `Hal_isle.sgn` (Hallow) | 1 | `#00FF00` green, 79% | `#00FF00` green, 84% |
+| `Jun_isle.sgn` (Jungle) | 2 | `#000000` black, 60% | *(never read)* |
+| `Spa_gate.sgn` (Space) | 2 | `#FF80FF` pink, 100% | *(never read)* |
+
+### Line modes
+
+The two 4-byte fields at `0x0009` and `0x000D` say how each line is laid down. `1` inks the line
+on its own; `2` means the two lines are drawn as one.
+
+That distinction matters for colour. At mode `2` the engine maxes both glyph masks into a single
+surface and then runs **one** colour over the result, so the second line's own four bytes are
+never reached and both words come out in the first line's ink. `Jun_isle.sgn` and `Spa_gate.sgn`
+are both mode `2`; `Fan_gate.sgn` and `Hal_isle.sgn` are mode `1` and ink each line separately. A
+file whose two modes disagree takes a third path that nothing in the shipped data exercises.
+
+Mode `2` is also the likelier home of the six 4-byte entries at `0x03A1`. They are a constant
+`FF DB FF 30` repeated in three of the four signs, but in `Jun_isle.sgn` they are six distinct
+values that climb steadily (`00 2F 5C 80`, `00 31 58 78`, … `00 3F 58 75`) — which reads like a
+small gradient or palette, and would explain why Lost Kingdom's flat black is not the whole story
+of how its board looks. This is **not** established.
 
 ### The pixel data at `0x03C5`
 

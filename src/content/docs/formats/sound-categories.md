@@ -156,9 +156,25 @@ the same 6000 ms delay and the same trailing `0x200`. Effect *n* is sample *n*, 
 elsewhere means "pick one of these at these odds" here degenerates into a flat index into the
 bank. The BANK file names a single bank, `speech\speech`.
 
-That index is what the advisor's speech is addressed by. Each park also has its own
+Each park also has its own
 `data\levels\<park>\Speech`, and those hold **exactly one sample each** — the park's introduction,
 between 16 and 27 seconds long — which is why a park's `lips` folder contains only `sp_001.LIP`.
+
+### Which sample is which line
+
+Nothing in the game data says what a speech sample contains. The advisor does not ask for lines by
+sample number: it asks by **response id**, and the mapping from response id to sample lives in a
+table compiled into the executable, not in any file under `data`. In the US English build it is
+610 records of 32 bytes each, terminated by a response id of 9999, whose fields are the response
+id, the sample number, the lip-sync file number, an animation, a word whose high half selects a
+park's own speech category over the global one, two more values, and a message group.
+
+The ids are close to the sample numbers but not equal to them, so they cannot be guessed. The
+front end's greeting, for example — played on the player-slot screen when no slot holds a player —
+is response 390 followed by 391, which are samples 465 (*"Welcome to Sim Theme Park! I'm the
+advisor around here..."*) and 466 (*"...I don't even know your name!... click on the New Player
+button"*). With a player already saved it is response 398, sample 471 (*"...Don't I know you?"*).
+A reimplementation needs a copy of the table, or at least of the entries it uses.
 
 ### Empty entries
 

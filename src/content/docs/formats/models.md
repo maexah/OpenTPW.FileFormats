@@ -148,11 +148,19 @@ Animation targets index this same node list, which is why a target can legitimat
 the mesh count: it is naming a transform-only node. Rotating such a node should carry its whole
 subtree.
 
-> **Don't decompose these transforms into translation/rotation/scale.** About 1.7% of nodes in
-> the game (130 of 7533) are *sheared* - their axes are not perpendicular - and a TRS cannot
-> represent that, so the shear is silently dropped. `Jun_isle`'s tallest palm trunk is one of
-> them, and decomposing skewed it more than 5 units out of place, into the dinosaur that stands
-> next to it. Keep the 4x4 and multiply it.
+> **Don't decompose these transforms into translation/rotation/scale.** Some nodes are *sheared* -
+> their axes are not perpendicular - and a TRS cannot represent that, so the shear is silently
+> dropped. How many there are depends entirely on how square you insist they be, so each count
+> below comes with its test; "out of square" is the largest `|cos|` between any two of a node's
+> three basis axes. Of the game's 7,530 node transforms, **172 are more than 1e-4 out of square**
+> and 120 are more than 0.01; **45 are skewed far enough that .NET's `Matrix4x4.Decompose` gives
+> up on them outright**, the mildest of those being 0.11 out of square. `Jun_isle`'s tallest palm
+> trunk is one of the 45 - its axes are 0.43 out of square - and decomposing skewed it more than 5
+> units out of place, into the dinosaur that stands next to it. Keep the 4x4 and multiply it.
+>
+> Ten further records have a *collapsed* axis rather than a sheared one - a basis vector of zero
+> length - and all ten are `wr_tunnel.md2`'s nodes 0-9, the malformed model noted above. They are
+> degenerate rather than skewed, and worth excluding from any shear count.
 
 ### Node lookup ids
 

@@ -94,13 +94,38 @@ Both record kinds begin with the same header, which is what makes that work:
 | 0x08   | 4 bytes  | **Next sibling** node                                                  |
 | 0x0C   | 4 bytes  | **First child** node                                                   |
 | 0x10   | 64 bytes | This node's transform, relative to its parent                          |
-| 0x54   | 4 bytes  | Offset of the node's null-terminated ASCII name                        |
+| 0x50   | 2 bytes  | This record's **own index** in the combined node list (0-based)        |
+| 0x52   | 2 bytes  | Unknown - zero in all but 3 of the game's 7,530 records                |
+| 0x54   | 4 bytes  | Offset of the node's null-terminated ASCII name (engine-confirmed)     |
 
 The three links are stored as file offsets into whichever of the two tables the target lives in,
 so a reader converts an offset back to a node index by testing which table's range it falls in.
 Bit `0x200` is how the engine tells the kinds apart - it skips material processing for any node
 that has it set. It is exact: all 2,606 transform-only nodes in the game's 839 models have it
 set, and no mesh does.
+
+**Every node carries a name**, mesh or transform-only, through the same 0x54 field. The names live in
+one blob of null-terminated ASCII strings packed end to end in node order, and **no header field
+points at that blob** - the per-record offset is the only way into it. The engine relocates exactly
+four words per 88-byte node record - 0x04, 0x08, 0x0C and 0x54 (engine-confirmed) - and 0x54 is the
+same field it relocates as the mesh name when it walks the 160-byte records.
+
+The name is the only place the file says what a node is *for*; the lookup table below gives a node a
+number and a capability flag, but never a meaning. A park's gate marks where its sound belongs with a
+node called `sound node`, and the Space lobby island's antenna carries `ant_emitter`.
+
+Across the game's 839 static models, 7,520 of the 7,530 node records resolve 0x54 to a terminated
+ASCII string, and the index word at 0x50 equals the record's own position in 7,521 of them. Every
+exception is in the one malformed model below. Six names are legitimately **empty** - a zero-length
+name is not a parse failure - the longest is 25 characters (`StackedTrackOutgoingDummy`), none
+contains a non-ASCII byte, and five end in a trailing space, so compare names trimmed and without
+regard to case.
+
+> **One model is malformed and will defeat a trusting reader.** `wr_tunnel.md2`, in
+> `levels\jungle\rides\wateride.wad`, has `0x42 == 0x44 == 10` with its mesh and node tables at the
+> *same* offset, and its 0x50/0x54 words read as float bit patterns rather than an index and a
+> pointer - one name offset is 0 and another is `0x3F800000`. Bounds-check the record and the name
+> offset instead of trusting them. It is the only file in the game that needs it.
 
 `Jun_isle.MD2` shows why this matters. Its three palm trees hang off two dummy nodes plus the
 island mesh:
@@ -220,8 +245,9 @@ one per mesh:
 | 0x00   | 4 bytes  | **Flags** - the engine tests `0x200` and sets `0x20`/`0x80000010` (engine-confirmed) |
 | 0x04   | 12 bytes | Three pointers, purposes unknown (engine-confirmed pointers)              |
 | 0x10   | 64 bytes | 4x4 transform matrix (16 floats, row-major) - this mesh's placement       |
-| 0x50   | 4 bytes  | Unknown                                                                    |
-| 0x54   | 4 bytes  | Offset of this mesh's null-terminated ASCII name                          |
+| 0x50   | 2 bytes  | This record's **own index** in the combined node list (0-based)            |
+| 0x52   | 2 bytes  | Unknown - zero in all but 3 of the game's 7,530 records                    |
+| 0x54   | 4 bytes  | Offset of this mesh's null-terminated ASCII name - see **Node hierarchy**  |
 | 0x58   | 2 bytes  | Vertex count                                                               |
 | 0x5A   | 2 bytes  | Material count                                                             |
 | 0x5C   | 2 bytes  | Face count                                                                 |
@@ -248,7 +274,7 @@ selects an 88-byte record from the table at header 0x74 instead (engine-confirme
 
 #### Open questions
 
-- The remaining unknown fields (0x50, 0x74, 0x90, 0x98) and the three pointers at 0x04-0x0C -
+- The remaining unknown fields (0x52, 0x74, 0x90, 0x98) and the three pointers at 0x04-0x0C -
   none have been narrowed down beyond "not used by anything this project's renderer needs".
 - Which bits of the flags word at 0x00 mean what; only `0x200`, `0x20` and `0x80000010` are
   observed being tested or set.

@@ -95,6 +95,46 @@ An item may also override its own footprint and where that footprint sits:
 
 The cell count those give agrees with the item's [footprint file](/formats/hmp/).
 
+## Info.Shape is a block, not a value
+
+Most keys are `key <whitespace> value`, but a few are followed by a fenced block: a line of three
+dashes, the content, and another line of three dashes. `Info.Shape` is one, and `Info.Hoarding` another.
+
+```text
+Info.Shape
+---
+*S*
+***
+***
+*2*
+---
+```
+
+A parser that reads a value as the single word after the key returns `---` for these and leaves the
+picture behind as unparsed junk, which is easy not to notice.
+
+The picture is the item's footprint, drawn top-down. `*` marks a cell, `2` the cell people enter by, and
+`S` a cell with its own special meaning to the item. **The footprint is the box the picture is drawn in
+— its widest row by its number of rows — not the number of marks inside it**; see the
+[footprint file](/formats/hmp/), which agrees with that reading on every item and with the other on very
+few.
+
+## An item ships only its own art
+
+An item's WAD carries `textures/` and `stexture/` folders, but they hold only the art unique to that
+item. Everything else comes from the theme's shared archives, which sit beside the items in
+`data/levels/<theme>/`:
+
+| Archive | Pairs with | Contents |
+| ------- | ---------- | -------- |
+| `sharetex.wad` | `textures/` | full-size shared textures |
+| `ssharete.wad` | `stexture/` | the same set at lower detail |
+
+All four themes ship both, with 116 members each. The effect is easy to underestimate: the eleven
+objects the Jungle's shipped park places name **40 textures that are in none of their own WADs**, so a
+loader that looks only beside the model finds no art for most of every item's surfaces. Resolve a
+material by looking in the item's own folder first and the theme's shared archive second.
+
 ## Where the approach is placed
 
 A theme's `Standard.sam` also states the shape of the playable map and the cells the fixed approach

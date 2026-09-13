@@ -54,3 +54,21 @@ carries no footprint bytes at all — separately declares `Info.EngineFootprintW
   aspect comes from the item's [SAM file](/formats/sam/) instead: the `Info.Shape` ASCII grid, or the
   `Info.EngineFootprintWidthOverride` / `Info.EngineFootprintHeightOverride` keys where an item
   overrides its own footprint.
+
+## The cell count is the shape's bounding box, not its marked cells
+
+Reading the `Info.Shape` grid invites the wrong arithmetic, and the `.hmp` is what settles it. The cell
+count is **width × height of the box the picture is drawn in**, counting every square inside it —
+including the ones the picture leaves blank.
+
+| Item | Grid | Marked cells | `.hmp` cells |
+| ---- | ---- | ------------ | ------------ |
+| `4x4rock` | 4×4 | 14 | **16** |
+| `5x5rck` | 5×5 | 23 | **25** |
+| `mammtunn` | 3×4 | 10 | **12** |
+| `ground`, `groundc`, `mystery` | 2×2 | 0 | **4** |
+
+Counting the marked cells disagrees with the file on all of these and agrees on every other item, which
+is exactly the shape of evidence that makes the mistake easy to keep. The park gate is the one item that
+does not take its footprint from the picture at all: its grid is a single cell and its overrides declare
+6×3, which is the eighteen its `.hmp` gives.

@@ -156,6 +156,70 @@ So a cell is `1 + the bits it sets`. In the Jungle park only two combinations oc
 (84 bytes) and `7` on the other 250 (94 bytes), summing to 1,378,756 — the region exactly. An
 implementation that only needs what is *in* the park can measure each cell and skip it.
 
+> **Check the stride cell by cell, not just in total.** Measured this way, all 16,384 cells land on the
+> next cell's status byte every single time. That is a sharper check than the block's own `DLRW` trailer,
+> which a pair of compensating errors would still reach.
+
+**The map cell**, 52 bytes. The first 29 are a tile base that the track cell repeats field for field; the
+23 after them are litter and pylon bookkeeping:
+
+```text
++0   u8   mDirection
++1   u16  mFlags
++3   u32  mMeshInstance
++7   u8   mNeighbours
++8   u16  mOverlapCounter
++10  u16  mParentID
++12  u8[12] mTileData
++24  u32  mType
++28  u8   mHoardingNeighbours        -- end of the 29-byte tile base
++29  u32  mLitter          | +33 u16 mLitterCollector | +35 u32 mLitterScript
++39  u32  mLitterScript    | +43 u16 mPylonIndex      | +45 u8  mStatusFlags
++46  u32  mTimeMarkedForLitterCollection                | +50 u16 mWho
+```
+
+The **track cell** is that same 29-byte base followed by `u16 mSegmentNumber`, giving 31.
+
+> **Cells are indexed `y * 128 + x`** — the opposite way round from the attribute map in `base.map`,
+> which is `x * 128 + y`. Getting it backwards still produces something that looks like a map, so it is
+> worth pinning: only the y-major reading reproduces `base.map`'s own bus road, ticket booths and
+> entrance column.
+
+`mNeighbours` and `mDirection` are **stored, not computed**, so a renderer does not have to derive a
+neighbour mask from the cells around it. They share one compass: over the Jungle park's path cells
+`mDirection` only ever reads 0, 1, 4, 16 or 64 — the four cardinals of an
+`N NE E SE S SW W NW` layout, and nothing between them.
+
+`mTileData` is **three dwords**, not one opaque run:
+
+| Dword | Meaning | Values in the Jungle park |
+| ----- | ------- | ------------------------- |
+| 0 | Tile set | `1` on all 78 path cells, `2` on all 4 queue cells, `0` on the other 16,302 |
+| 1 | Tile index within that set | 2–20 on path cells, all inside the theme's `PathTex` table |
+| 2 | Rotation, degrees | `0`, `90`, `180` or `270` — on every one of the 16,384 cells |
+
+> Two independent things support that split, and a wrong one would have to produce both by accident: the
+> first dword divides the map exactly along the boundary the theme's `.tct` draws between its `PathTex`
+> and `QueueTex` sections, and the third is a quarter turn everywhere and never an arbitrary angle. **So a
+> park's paths carry the tile they draw and the turn it takes** — neither has to be inferred from
+> neighbours.
+
+`mType` says what a cell is. Counts across the Jungle park:
+
+| `mType` | Cells | What |
+| ------- | ----- | ---- |
+| 7 | 9,077 | |
+| 0 | 6,875 | |
+| 2 | 240 | |
+| 1 | **78** | **path** — drawing them gives a connected loop with an avenue down to the park entrance |
+| 30 | 66 | exactly the count of `base.map` cells carrying `0x80`, so the fixed approach every park inherits |
+| 4 | **35** | **covered by something built** — these land on the placed objects' own footprints |
+| 9 | 8 | |
+| 3 | 4 | queue — they lie in the row beyond a ride's near end |
+| 10 | 1 | |
+
+Only 1 and 4 are firmly identified; the rest are recorded as observed rather than named.
+
 ### The thing list
 
 A singly linked list of everything in the park — people, objects and the park's singleton managers.

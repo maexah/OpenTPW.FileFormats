@@ -27,3 +27,88 @@ SAM files follow the format of `key <whitespace> value`.
 Comments are preceded with a pound symbol (`#`) and continue until the end of the line.
 
 Strings are surrounded with double quotes (`"`) and are used for various properties, i.e. the ride's name.
+
+## Where they are found
+
+- **Loose**, under `data/` — `high.sam`, `med.sam`, `low.sam`, `sound.sam`, `Challenges.sam`.
+- **Per theme**, under `data/levels/<theme>/` — `Standard.sam` (the balance file), `global.sam` (what
+  the lobby needs before the theme is loaded) and `Easy_Standard.sam`.
+- **Per item**, inside the item's own WAD and named after it — `gates.wad` holds `Gates.sam`, alongside
+  an `Easy_Gates.sam` which is frequently just `# Empty`.
+- **Per category**, in each content folder — `features/Features.sam`, `rides/Rides.sam`, `shops/Shops.sam`,
+  `sideshow/SideShow.sam`, `upgrades/Upgrades.sam`. These hold defaults for a whole category rather than
+  a list of its items.
+
+## The theme balance file is layered, not replaced
+
+`data/levels/Standard.sam` is read first and the theme's own `data/levels/<theme>/Standard.sam` is read
+**over the top of it, key by key**.
+
+> This matters: the global file names 362 keys and Jungle's names 94, so a loader that reads only the
+> theme's file silently loses the 286 keys it never mentions — every peep constant, and all the staff
+> and ride economics. Nothing appears missing, because they are merely absent.
+
+`Easy_Standard.sam` is a third pass. In the Jungle it overrides four `LoanInfo[n].Lendername` values and
+introduces nothing, so reading it is an assertion that the game is in easy mode.
+
+## Identifying an item
+
+Every item's SAM carries an `Info.Id`, and the number is banded by category:
+
+| Band   | Category    |
+| ------ | ----------- |
+| `11xx` | Rides       |
+| `12xx` | Shops       |
+| `13xx` | Sideshows   |
+| `14xx` | Features    |
+| `15xx` | Upgrades    |
+| `16xx` | Fixed items |
+
+The Jungle's fixed items are `1600` Bus, `1601` Gates, `1602` Seaplane, `1603` Lights, `1604` Ferry and
+`1605` End. A theme's `global.sam` names its gate by that number, as `ParkName.GateObjectId`.
+
+> WAD members are RefPack-compressed, so searching a `.wad` for `Info.Id` with a plain text search
+> returns fragments of the surrounding compression tokens rather than the value. Decompress the member
+> first — see [Archives](/formats/wad/).
+
+## Fixed items
+
+A handful of items are placed by the game rather than by the player, and are marked by two keys:
+
+| Key                    | Meaning                                                                 |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `Info.WhichUIType 4`   | Not shown in the build interface                                        |
+| `Info.DontApplyOffset` | `1` — the item's animation plays relative to world `(0,0)`, not its own position |
+
+Those models are authored with **world coordinates already in their node transforms**, so they are
+loaded at the origin rather than placed. A model's bounding boxes will not show this: they are
+node-local and describe only how large each mesh is.
+
+An item may also override its own footprint and where that footprint sits:
+
+| Key                                  | Jungle gate |
+| ------------------------------------ | ----------- |
+| `Info.EngineMapOffsetOverrideX`      | `45`        |
+| `Info.EngineMapOffsetOverrideY`      | `16`        |
+| `Info.EngineFootprintWidthOverride`  | `6`         |
+| `Info.EngineFootprintHeightOverride` | `3`         |
+
+The cell count those give agrees with the item's [footprint file](/formats/hmp/).
+
+## Where the approach is placed
+
+A theme's `Standard.sam` also states the shape of the playable map and the cells the fixed approach
+occupies. Jungle's values:
+
+| Key                                  | Value   |
+| ------------------------------------ | ------- |
+| `MapInfo.HeightfieldXStart` / `YStart` | `0`, `0` |
+| `MapInfo.HeightfieldWidth` / `Height` | `95`, `84` — so 96×85 cells |
+| `MapInfo.FixedItemOriginX` / `OriginY` | `48`, `17` — "the origin from which fixed items (buses, gates) are placed" |
+| `FixedItemInfo.EntranceAPos` / `BPos` | `(47,17)`, `(48,17)` |
+| `FixedItemInfo.TicketBoothAPos` / `BPos` | `(47,13)`, `(48,13)` |
+| `FixedItemInfo.CrossingParkSideAPos` / `BPos` | `(47,9)`, `(48,9)` |
+| `FixedItemInfo.CrossingBSSideAPos` / `BPos` | `(47,5)`, `(48,5)` |
+| `FixedItemInfo.BusStopAPos` / `BPos` | `(42,5)`, `(53,5)` |
+
+A cell is 10 world units, so a cell boundary lies at ten times the cell number.

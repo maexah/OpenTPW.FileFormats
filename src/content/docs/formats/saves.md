@@ -195,8 +195,15 @@ neighbour mask from the cells around it. They share one compass: over the Jungle
 | Dword | Meaning | Values in the Jungle park |
 | ----- | ------- | ------------------------- |
 | 0 | Tile set | `1` on all 78 path cells, `2` on all 4 queue cells, `0` on the other 16,302 |
-| 1 | Tile index within that set | 2–20 on path cells, all inside the theme's `PathTex` table |
+| 1 | Tile index within that set | 2–20 on path cells, addressing the theme's [`PathTex` table](/formats/tct/) |
 | 2 | Rotation, degrees | `0`, `90`, `180` or `270` — on every one of the 16,384 cells |
+
+The index really does address the theme's `.tct`, confirmed by cross-referencing every index the shipped
+park uses against the shape that cell's neighbours make: straights come out degree 2 and collinear,
+corners degree 2 and bent, T-junctions degree 3, and the park's one crossroads degree 4 with a mask of
+exactly N+E+S+W. The [Texture Correspondence Table](/formats/tct/) page carries that table in full,
+including the two edge tiles whose masks show this to be an **area** tile set rather than one-cell-wide
+lines — a walkway can be more than one cell across, and Jungle's entrance avenue is two.
 
 > Two independent things support that split, and a wrong one would have to produce both by accident: the
 > first dword divides the map exactly along the boundary the theme's `.tct` draws between its `PathTex`

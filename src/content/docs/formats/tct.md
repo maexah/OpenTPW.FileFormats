@@ -82,13 +82,44 @@ This also fixes the compass for the neighbour mask: `0x01` N, `0x02` NE, `0x04` 
 `0x20` SW, `0x40` W, `0x80` NW, with north at **decreasing y**. A cell with `0x44` (E+W) is a horizontal
 straight and one with `0x11` (N+S) a vertical one.
 
-## Open: how a queue tile is indexed
+## A queue tile index does not address this file at all
 
-`QueueTex` has rows 0 to 3, but the Jungle park's four queue cells carry indices **5, 2, 2 and 3**. Five
-cannot address a four-row table.
+`QueueTex` has rows 0 to 3, but the Jungle park's four queue cells carry indices **5, 2, 2 and 3**, and
+five cannot address a four-row table. The resolution is that a queue index is not a texture row: **it
+names a model.**
 
-The suggestive fit is that the index numbers *topology* on `PathTex`'s scale rather than art on
-`QueueTex`'s — there 2 is a straight (and both those cells are straight), 3 a corner (and that cell's
-mask really is a corner), and 5 a crossroads (and that cell really is where the queue joins the path).
-That is a good fit on four cells and nothing more, and no other theme ships a saved park to check it
-against, so it is recorded here as a lead rather than as the answer.
+A queue is built from seven small models that ship in the theme's own `queue.wad` — one cell each, each
+with a flat `base` plate and a `.hmp` of 75 bytes, which is `48 + 27 × (1 × 1)`. The executable holds
+them in a fixed table of twelve-byte records at **0x76338c**, and a cell's tile index is the position in
+that table:
+
+| Index | Model | | Index | Model |
+| ----- | ----- | - | ----- | ----- |
+| 0 | `quedead` | | 4 | `quebnd1` |
+| 1 | `quedead` | | 5 | `queend` |
+| 2 | `questra` straight | | 6 | `quebin1` |
+| 3 | `quebnd2` bend | | 7 | `quebin2` |
+
+Lost Kingdom's four cells read 5, 2, 2, 3 — **end, straight, straight, bend** — and that is exactly the
+shape their stored neighbour masks make: the cell indexed 5 is the one that meets the path, the two
+indexed 2 have mask `0x44` (east–west, collinear), and the one indexed 3 has mask `0x50` (south and
+west, a corner). Four cells out of four, against a table read from the program rather than guessed.
+
+`QueueTex` is still real and still used — it names the art those models are skinned with. Note the
+theme's `queue.wad` ships six such textures, `jpa_que1` to `jpa_que6`, where this table names only four.
+
+> **This is why a queue looks like fencing rather than paving.** Paths are an area tile set drawn onto
+> the ground; queues are placed models with their own floor. A reader that treats tile set 2 the way it
+> treats tile set 1 will look up art that was never meant to be laid as a tile.
+
+## How the engine reads these fields
+
+`FUN_005365d0` is where a map cell's tile fields turn into something drawn, and it settles two things
+that the shipped data could only suggest. It reads them as **three consecutive dwords** — set, index,
+then angle — confirming the split described in [Saves](/formats/saves/); and it derives the cell from
+the record's own id as `x = (id − 1) & 0x7f` and `y = (id − 1) >> 7`, confirming the `y * 128 + x`
+order. When the set is 2 it passes the index straight into the queue table above.
+
+It also states the rotation convention outright: a piece is placed at **360 minus** the stored angle
+(`0x168 - angle`, with 360 folded back to 0), so a saved angle turns the opposite way from a positive
+rotation about the engine's up axis.

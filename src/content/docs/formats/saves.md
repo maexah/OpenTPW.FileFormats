@@ -220,12 +220,56 @@ lines — a walkway can be more than one cell across, and Jungle's entrance aven
 | 2 | 240 | |
 | 1 | **78** | **path** — drawing them gives a connected loop with an avenue down to the park entrance |
 | 30 | 66 | exactly the count of `base.map` cells carrying `0x80`, so the fixed approach every park inherits |
-| 4 | **35** | **covered by something built** — these land on the placed objects' own footprints |
-| 9 | 8 | |
-| 3 | 4 | queue — they lie in the row beyond a ride's near end |
-| 10 | 1 | |
+| 4 | **35** | **the body of a built thing's footprint** |
+| 9 | **8** | **a footprint cell the thing is used from** |
+| 3 | **4** | **queue** |
+| 10 | **1** | **the far end of a footprint** |
 
-Only 1 and 4 are firmly identified; the rest are recorded as observed rather than named.
+Types 7, 0 and 2 are still recorded as observed rather than named.
+
+### 4, 9 and 10 are one thing: a built thing's footprint
+
+Together those three are **44 cells, and that is exactly the footprints of the park's eleven placed
+objects** — nothing left over and nothing missing. Grouping the 44 into connected components gives seven
+groups whose bounding boxes are the items' own sizes:
+
+| Group | Cells | What stands there |
+| ----- | ----- | ----------------- |
+| (57,15) 3×5 | 13 | the 2×2 staff room at (58,15) and the 3×3 fountain at (57,17) |
+| (51,23) 3×4 | 12 | the Belly Bounce |
+| (51,30) 3×3 | 9 | the Jungle Spray |
+| (43,29) 2×3 | 5 | the 1×1 litter bin and the 2×2 drinks shop |
+| (55,15) 1×3 | 3 | the three 1×1 toilets, stacked |
+| (40,29), (55,29) | 1 each | the two security cameras |
+
+`9` sits where a thing is used — the single cell of each toilet, the drinks shop's counter, the litter
+bin, the staff room's door, and the end of the Belly Bounce its queue arrives at. `10` appears once, on
+that ride's far end. Those two readings are inferred from where they sit; what is *measured* is that all
+three types belong to a footprint rather than to the ground.
+
+> **This matters to anyone drawing a park.** Every one of the 44 carries a real ground texture index in
+> `base.MD2` — not one is the "something covers this" index 0 — and yet each is already covered, because
+> every item this park is built with opens its model with a flat floor plate exactly as wide as its
+> footprint: `J_WC` under a toilet, `wf_floor` under the fountain, `js_base` under the staff room,
+> `cn_floor01` under the drinks shop, `jb_floor` under the Belly Bounce, `jc_base` under a camera. Draw
+> the ground there as well and the two fight for the same depth. The same goes for the four queue cells,
+> where every piece of queue brings its own base.
+
+### Where a built thing stands on its cells
+
+An object's record gives an anchor cell and an angle (see the thing list below). Its footprint is placed
+by turning it about the **middle of that anchor cell** — not about the middle of the footprint — and the
+stored angle turns the *opposite* way to a positive rotation about the up axis.
+
+Both halves are forced by the shipped park, because the map cells state the answer independently of the
+object records. The staff room is anchored at (58,16) at 90° and its footprint is marked (58,15)–(59,16);
+the fountain is anchored at (57,19) at 90° and marked (57,17)–(59,19). Turning about the footprint's
+middle, or turning the other way, puts each somewhere the save does not mark — a positive turn lands the
+fountain on (55,19)–(57,21). The executable agrees where it states the convention outright: placing a
+queue piece it passes `0x168 - angle`, 360 minus the stored angle (`FUN_005229e0`).
+
+Those two are the only rotated items in the park whose footprint is bigger than one cell, so 180° and
+270° follow the rule the two 90s establish rather than being measured in their own right.
 
 ### The thing list
 

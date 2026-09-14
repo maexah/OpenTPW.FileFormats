@@ -265,8 +265,13 @@ Both halves are forced by the shipped park, because the map cells state the answ
 object records. The staff room is anchored at (58,16) at 90° and its footprint is marked (58,15)–(59,16);
 the fountain is anchored at (57,19) at 90° and marked (57,17)–(59,19). Turning about the footprint's
 middle, or turning the other way, puts each somewhere the save does not mark — a positive turn lands the
-fountain on (55,19)–(57,21). The executable agrees where it states the convention outright: placing a
-queue piece it passes `0x168 - angle`, 360 minus the stored angle (`FUN_005229e0`).
+fountain on (55,19)–(57,21).
+
+> **Do not read the executable's `0x168 - angle` as confirming this.** That constant is at the *queue's*
+> call site (`FUN_005229e0`), and what it says is that a piece of queue turns the **opposite** way to a
+> built object — it is the difference between the two, not a convention they share. The marked footprint
+> cells are the evidence for an object's turn; the queue's is the art on `queend`, described in the
+> [Texture Correspondence Table](/formats/tct/) page.
 
 Those two are the only rotated items in the park whose footprint is bigger than one cell, so 180° and
 270° follow the rule the two 90s establish rather than being measured in their own right.

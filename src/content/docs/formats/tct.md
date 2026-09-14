@@ -120,6 +120,12 @@ then angle — confirming the split described in [Saves](/formats/saves/); and i
 the record's own id as `x = (id − 1) & 0x7f` and `y = (id − 1) >> 7`, confirming the `y * 128 + x`
 order. When the set is 2 it passes the index straight into the queue table above.
 
-It also states the rotation convention outright: a piece is placed at **360 minus** the stored angle
-(`0x168 - angle`, with 360 folded back to 0), so a saved angle turns the opposite way from a positive
-rotation about the engine's up axis.
+And the queue's own call site states its rotation outright: a piece is placed at **360 minus** the stored
+angle (`0x168 - angle`, with 360 folded back to 0).
+
+> **That is the queue's rule, not a rule the whole game shares.** A built object takes its saved angle as
+> it stands (see [Saves](/formats/saves/)), so a queue piece turns the *opposite* way to a shop on the
+> same map. Only one thing proves it, because every queue piece is one cell square and a square covers the
+> same square whichever way it faces: `queend` carries two torches along a single edge of its plate, and
+> that edge must be the one the queue is entered from. Jungle's end piece is at (49,22) with its path due
+> west at (48,22) and a saved angle of 270 — and only this reading puts the torches on the western edge.

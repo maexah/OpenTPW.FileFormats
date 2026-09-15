@@ -182,13 +182,15 @@ None
 
 ### Operands
 
-`<animation>` - The animation to start.
+`<animation>` - Which of the model's animations to start. **It names a role, and not one of the animation files an item happens to ship.** A model carries exactly twelve animation slots, and the id picks one of them: ids 0 to 11 are the letters `C`, `D`, `I`, `L`, `S`, `M`, `E`, `U`, `W`, `B`, `R` and `O`, taken from a twelve-entry table the model loader walks in step with the slots. Each letter names files sitting beside the model - `<name><letter>.md2`, or `<name><letter><n>.md2` for a role holding more than one. **12 is the sentinel for "no animation"**, and is what the engine writes into a slot it clears, so the usable range is 0 to 11.
 
-`<parameter>` - Passed to the model along with the animation.
+`<parameter>` - Which entry within that role to play. The engine tests it against the number of entries the slot holds and does nothing whatever when it is not less, so it indexes rather than flags.
 
 `<dest>` - Where the length is written, in milliseconds. 64 of the 74 shipped uses write a literal here, which cannot be written to: the length still lands in the result register, and the branch that follows reads it.
 
 The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script whose model reports nothing gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does.
+
+**That the id names a role rather than a file is measured rather than inferred.** Of the 72 ride archives whose script names a literal animation id, every single one uses an id at or above the number of numbered `<name>M<n>.md2` files it ships - and two of them ship none at all while still triggering ids 0 and 5 - so an id cannot be selecting one of those files. Reading the same data the other way round confirms the table: among those 72, an archive shipping `<name>c.md2` uses id 0 in every case and one without it never does, `<name>l.md2` tracks id 3, `<name>s.md2` id 4, `<name>e.md2` id 6, and `<name>b.md2` and `<name>r.md2` track ids 9 and 10. Six of the twelve letters land exactly where the table puts them, from the shipped data alone.
 
 ## WAITANIM
 
@@ -196,9 +198,9 @@ The length is whatever the model reports, less 300, floored at 300 by a **signed
 
 ### Operands
 
-`<type>` - The type of animation to play
+`<type>` - Which animation to play, from the same twelve roles `TRIGANIM` names.
 
-`<parameter>` - Passed to the model along with the animation, as `TRIGANIM`'s second operand is.
+`<parameter>` - Which entry within that role, as `TRIGANIM`'s second operand is.
 
 It waits on the same deadline as `WAIT`, not on the separate one `WAIT4ANIM` uses, and it gives up the rest of the turn on the visit that sets that deadline whether or not the deadline has already passed.
 
@@ -210,9 +212,9 @@ Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer.
 
 ### Operands
 
-`<type>` - The type of animation to play
+`<type>` - Which animation to play, from the same twelve roles `TRIGANIM` names.
 
-`<parameter>` - Passed to the model along with the animation.
+`<parameter>` - Which entry within that role.
 
 The two operands together make the key `(<parameter> << 16) + <type>`, which the script remembers. Asking again for the animation already looping does nothing at all - it is not restarted. Naming any other animation clears the deadline `TRIGANIM` and `TRIGWAITANIM` arm, because a loop never finishes and there would be nothing left for `WAIT4ANIM` to wait for.
 
@@ -222,13 +224,17 @@ The two operands together make the key `(<parameter> << 16) + <type>`, which the
 
 ### Operands
 
-`<animation>` - The animation to start.
+`<animation>` - Which animation to start, from the same twelve roles `TRIGANIM` names.
 
-`<parameter>` - Passed to the model along with the animation.
+`<parameter>` - Which entry within that role.
 
 `<dest>` - Where the length is written, in milliseconds, on the same terms as `TRIGANIM`'s third operand. 132 of the 133 shipped uses write a literal here.
 
-It arms the same deadline `TRIGANIM` arms, and then rewinds onto itself - so unlike `TRIGANIM` it does the waiting itself rather than leaving it to a later `WAIT4ANIM`. While it waits it also keeps a cursor of its own, stepping across turns through more than one animation channel. That part has not been read the whole way through, and what the cursor counts is not yet established.
+It arms the same deadline `TRIGANIM` arms, and then rewinds onto itself - so unlike `TRIGANIM` it does the waiting itself rather than leaving it to a later `WAIT4ANIM`.
+
+**It does not keep a cursor of its own, which this page used to say.** What it keeps is a mark: the animation id **plus one**, so that nought can mean "nothing armed". On each re-entry it asks the model which animation channel 0 is playing, and goes on only when that answer plus one equals the mark. What it calls to ask is a plain accessor into the model's own channel array - not a cursor stepping through anything.
+
+**With no model it never finishes at all.** The query is skipped, and the comparison is made instead against the instruction's own third operand, which nothing can ever change - so the script parks for good unless that operand happens to equal the first. Across the 133 shipped uses it never does: 132 differ outright, and the last is a variable.
 
 ## GETANIM
 

@@ -170,11 +170,13 @@ Takes 4 operands, those not named above being unknown. No script the game ships 
 
 ## FLUSHANIM
 
-`FLUSHANIM` - Stop all active animations
+`FLUSHANIM` - Clear the animation queued to play next, leaving whatever is playing alone.
 
 ### Operands
 
 None
+
+**It stops nothing, which this page used to say it did.** The handler fetches the model and leaves if there is none; otherwise it writes the "no animation" sentinel into a single field of the channel - the role *queued* to start when the current clip ends. The clip actually running is not touched and plays out to its end, and nothing is answered back to the script. `FLUSHANIM_CH` is the same instruction with the channel named rather than assumed to be nought, and no script the game ships uses it.
 
 ## TRIGANIM
 
@@ -188,9 +190,15 @@ None
 
 `<dest>` - Where the length is written, in milliseconds. 64 of the 74 shipped uses write a literal here, which cannot be written to: the length still lands in the result register, and the branch that follows reads it.
 
-The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script whose model reports nothing gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does.
+The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script whose model reports nothing gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does. It plays on **channel 0** with no flags; the `_CH` variants exist to name a different channel.
+
+**What the model reports is the clip's own declared length.** Each entry of a role points at an animation, and the engine takes the frame span that animation declares in its own header - not the span its keyframes happen to cover - and multiplies by 1000/30 to get milliseconds. Every clip in the game declares a start of nought and an end of at least one, so there is no zero-length clip to guard against. Where a channel is already playing something, the time still to run on it is added, because a trigger queues behind rather than cutting in; for an idle channel the answer is the new clip alone.
+
+**Where the model has no such role, or no such entry within it, the engine substitutes a flat 1000 instead of a clip length.** That is not a hypothetical branch: eight of the role references the shipped scripts make name a role their own archive ships no file for - `royaloo`, `fries`, `icecream` and `purse` in fantasy, and `crys_b`, `scentro` and `spawheel` in space.
 
 **That the id names a role rather than a file is measured rather than inferred.** Of the 72 ride archives whose script names a literal animation id, every single one uses an id at or above the number of numbered `<name>M<n>.md2` files it ships - and two of them ship none at all while still triggering ids 0 and 5 - so an id cannot be selecting one of those files. Reading the same data the other way round confirms the table: among those 72, an archive shipping `<name>c.md2` uses id 0 in every case and one without it never does, `<name>l.md2` tracks id 3, `<name>s.md2` id 4, `<name>e.md2` id 6, and `<name>b.md2` and `<name>r.md2` track ids 9 and 10. Six of the twelve letters land exactly where the table puts them, from the shipped data alone.
+
+**Checked across the whole game, the roles resolve.** Taking every animation instruction in the 308 shipped scripts and reading its first operand as a role gives 627 distinct item-and-role pairs, and 806 distinct item, role and entry references. All 806 name a file that is really there, bar the eight roles above - and the highest entry index any script asks for is 9. An archive is searched by probing `<name><letter><n>.md2` upwards from 1 and falling back to the bare `<name><letter>.md2` only when that run found nothing, which is the engine's own order: `mamfount` ships both forms for role 5, and the engine loads its two numbered clips and never reaches the bare one.
 
 ## WAITANIM
 
@@ -205,6 +213,8 @@ The length is whatever the model reports, less 300, floored at 300 by a **signed
 It waits on the same deadline as `WAIT`, not on the separate one `WAIT4ANIM` uses, and it gives up the rest of the turn on the visit that sets that deadline whether or not the deadline has already passed.
 
 Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer. The length-less-300 is stored as the low half of a qword whose high half is nought and read back with `FILD qword`, so a negative arrives as a number just under 2^32; and the 300 floor is then compared **unsigned**, which a negative passes. So where `TRIGANIM` floors at 300, `WAITANIM` does not: a model that reports nothing gives a deadline 300ms in the *past*, and the instruction costs one turn rather than any particular length of time.
+
+**With a model it does wait, and that is the largest difference a model makes anywhere in the family.** The unsigned floor only lets a negative slip through; a real clip length is positive and survives it, so the deadline lands the clip's own length less 300 in the future and the script sits on the instruction until it passes. `WAITANIM` is the most used animation instruction the game ships - 547 uses across 246 scripts - so where every one of those cost a single turn without a model, with one they cost anything up to the twenty seconds a ferry's clip runs for.
 
 ## LOOPANIM
 
@@ -262,11 +272,21 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 
 ## TRIGANIM_CH
 
-`TRIGANIM_CH <unknown1> <unknown2> <unknown3> <unknown4>` - Unknown
+`TRIGANIM_CH <animation> <parameter> <rate> <channel>` - Start a one-shot animation on a named channel.
 
 ### Operands
 
-Takes 4 operands, those not named above being unknown. Across the 308 shipped scripts the 63 uses of this instruction write them as: 1 — literal; 2 — literal; 3 — literal or variable; 4 — literal.
+`<animation>` - Which role to start, from the same twelve `TRIGANIM` names.
+
+`<parameter>` - Which entry within that role.
+
+`<rate>` - Goes where the plain instruction puts the speed the interpreter scales by. Nothing further about it is established.
+
+`<channel>` - Which of the model's animation players to start it on. **This is the whole difference between the `_CH` instructions and their plain siblings**, which pass a literal nought here. A model is built with as many players as whatever created it asked for - one for scenery, five for a coaster's trains - and none of the three functions that index them checks the number against the count the model actually has.
+
+Across the 308 shipped scripts the 63 uses of this instruction name channels 0, 1, 2 and 3.
+
+Reading the first operand as the role is what makes a census of animation use come out right: it is the same operand, in the same position, that the plain instruction passes. `GETANIM_CH` is the exception and is **not** of this shape - see its own entry.
 
 ## WAITANIM_CH
 
@@ -294,11 +314,17 @@ Takes 4 operands, those not named above being unknown. No script the game ships 
 
 ## GETANIM_CH
 
-`GETANIM_CH <unknown1> <unknown2>` - Unknown
+`GETANIM_CH <dest> <channel>` - Ask which animation a channel is playing.
 
 ### Operands
 
-Takes 2 operands, those not named above being unknown. Across the 308 shipped scripts the 15 uses of this instruction write them as: 1 — literal; 2 — literal.
+`<dest>` - Where the answer goes: the role that channel is currently playing, or the "no animation" sentinel where it is playing nothing.
+
+`<channel>` - Which of the model's animation players to ask.
+
+**Its first operand is a destination and not a role, which is the opposite shape to every other `_CH` instruction on this page.** `TRIGANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH` all take the role first and the channel last; this one takes the destination first and the channel second. Reading it like its neighbours is a live trap rather than a tidiness point: it inflates any census of which roles the shipped scripts name, because a destination gets counted as a role.
+
+All 15 uses the game ships write a **literal** where the destination goes, which cannot be written to - so the store is skipped and the answer is left in the result register for the branch that follows, the same idiom as `COAST 2 0`. `GETANIM` is the same instruction with the channel assumed to be nought, and no shipped script uses it.
 
 ## RAND
 

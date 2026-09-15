@@ -26,12 +26,14 @@ The following variables are part of a "common variable set" that must be contain
 | `VAR_PAD`        | 10  | Unused                                                                    |
 | `VAR_PARAM`      | 11  | Sideshows: Determine whether the current visitor will win (1) or lose (0) |
 
-## Flags
+## The result register
 
-**Sign flag**:
-- `1` for negative value
-- `0` for positive value
-  
-**Zero flag**:
-- `1` for zero
-- `0` for not zero
+There are no condition flags. The VM keeps a single **result register**: every instruction that computes a value writes it there, and the conditional branches test that register against zero.
+
+- `TEST <variable>` loads a variable into it.
+- `CMP <variable> <value>` subtracts the second from the first and leaves the difference in it.
+- Arithmetic (`ADD`, `SUB`, `MULT`, `DIV`, `MOD`) leaves its result in it as well as storing it.
+
+`BRANCH_Z` and `BRANCH_NZ` then branch on the register being zero or non-zero, and `BRANCH_NV` and `BRANCH_PV` on it being negative or greater than zero. The comparison is signed, and `BRANCH_PV` does not branch on zero.
+
+An instruction whose destination operand is not a variable is ignored rather than refused - the engine steps over it and carries on.

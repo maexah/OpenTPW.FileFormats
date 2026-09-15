@@ -50,24 +50,15 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 
 ## SUB
 
-`SUB <value> <value> <dest>` - Subtract one value from another.
+`SUB <dest> <value> <value>` - Subtract the third operand from the second.
 
-`SUB <source> <value> <dest>` - Subtract a value from a variable.
-
-`SUB <value> <source> <dest>` - Subtract variable's value from a value.
-
-`SUB <source> <source> <dest>` - Subtract one variable from another.
-
-Upon performing this calculation, the relevant flags will be set based on the calculation's result.
+**The destination comes first.** The engine resolves operands 2 and 3, subtracts, and stores the result in operand 1 - this page previously showed the destination last.
 
 ### Operands
 
-`<dest>` - The destination for the instruction's result.
+`<dest>` - The variable the result is stored in. It must be a variable; the engine ignores the instruction otherwise.
 
-`<value>` - The value to subtract.
-
-`<source>` - The source containing the value to subtract.
-
+`<value>` - A literal or a variable.
 ## ENDSLICE
 
 `ENDSLICE` - Unknown
@@ -274,20 +265,20 @@ Takes 2 operands, those not named above being unknown. Across the 308 shipped sc
 
 ## JSR
 
-`JSR <subroutine>` - Jump to a subroutine.
+`JSR <subroutine>` - Jump to a subroutine, remembering where to come back to.
+
+The return address is pushed onto the script's own call stack, whose size is set by `#setstack` and recorded in the file header. The stack grows **downwards** and is last-in-first-out, so nested calls return in the order you would expect. Overrunning it, or using `JSR` in a script with no stack at all, is refused.
 
 ### Operands
 
 `<subroutine>` - The destination subroutine to jump to.
-
 ## RETURN
 
-`RETURN` - Return to the previous subroutine (after the last `JSR`).
+`RETURN` - Return to the instruction after the most recent `JSR`.
 
 ### Operands
 
 None
-
 ## BRANCH
 
 `BRANCH <location>` - Branch to another location.
@@ -298,36 +289,42 @@ None
 
 ## BRANCH_Z
 
-`BRANCH_Z <location>` - Branch to another location if the "zero" flag has been set.
+`BRANCH_Z <location>` - Branch to another location if the result register is zero.
+
+The result register holds whatever the last instruction computed - see [Information](/vm/info/). A branch whose condition is false simply falls through; one whose operand is not a location stops the script.
 
 ### Operands
 
 `<location>` - The branch to execute.
-
 ## BRANCH_NZ
 
-`BRANCH_NZ <location>` - Branch to another location if the "not zero" flag has been set.
+`BRANCH_NZ <location>` - Branch to another location if the result register is not zero.
+
+The result register holds whatever the last instruction computed - see [Information](/vm/info/). A branch whose condition is false simply falls through; one whose operand is not a location stops the script.
 
 ### Operands
 
 `<location>` - The branch to execute.
-
 ## BRANCH_NV
 
-`BRANCH_NV <location>` - Branch to another location if the "negative value" flag has been set.
+`BRANCH_NV <location>` - Branch to another location if the result register is negative.
+
+The result register holds whatever the last instruction computed - see [Information](/vm/info/). A branch whose condition is false simply falls through; one whose operand is not a location stops the script.
 
 ### Operands
 
 `<location>` - The branch to execute.
-
 ## BRANCH_PV
 
-`BRANCH_PV <location>` - Branch to another location if the "positive value" flag has been set.
+`BRANCH_PV <location>` - Branch to another location if the result register is greater than zero.
+
+**Zero does not branch here.** The engine's test is strictly greater than zero, not "not negative".
+
+The result register holds whatever the last instruction computed - see [Information](/vm/info/). A branch whose condition is false simply falls through; one whose operand is not a location stops the script.
 
 ### Operands
 
 `<location>` - The branch to execute.
-
 ## DBGMSG
 
 `DBGMSG <unknown>` - Unknown
@@ -346,24 +343,22 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 
 ## TEST
 
-`TEST <value>` - Set flags depending on the value given.
-
-This instruction will modify all flags, which can then be used to execute different branches depending on `<value>`.
+`TEST <variable>` - Load a variable into the result register, so a branch can test it.
 
 ### Operands
 
-`<value>` - The value to test.
-
+`<variable>` - The variable to test. It must be a variable; the engine ignores the instruction otherwise, and every one of the 1,318 uses in the shipped scripts is one.
 ## CMP
 
-`CMP <value / variable> <value / variable>` - Compare two values (using a bitwise AND), and set any flags according to the result.
+`CMP <variable> <value>` - Compare a variable against a value by **subtracting** the second operand from the first.
 
-Upon performing this calculation, the relevant flags will be set based on the calculation's result.
+The result is left in the result register and nothing is stored, so `CMP` followed by `BRANCH_Z` reads as "branch if equal". This page previously described the comparison as a bitwise AND; the engine subtracts.
 
 ### Operands
 
-`<value / variable>` - A value or variable to compare.
+`<variable>` - The variable compared. It must be a variable; all 61 uses in the shipped scripts are.
 
+`<value>` - A literal or a variable to compare against.
 ## PUSH
 
 `PUSH <value>` - Push a value to the stack.
@@ -422,66 +417,46 @@ None
 
 ## ADD
 
-`ADD <source> <value>` - Add a value to the value of a variable.
-
-Upon performing this calculation, the relevant flags will be set based on the calculation's result.
+`ADD <dest> <value>` - Add a value to a variable.
 
 ### Operands
 
-`<source>` - The source containing the value to add, and the destination for the result.
+`<dest>` - The variable added to, and where the result is stored. It must be a variable; the engine ignores the instruction otherwise.
 
-`<value>` - The value to add.
-
+`<value>` - The value to add, either a literal or a variable.
 ## MULT
 
-`MULT <unknown1> <unknown2> <unknown3>` - Multiply values (not used in any existing rides)
+`MULT <dest> <value> <value>` - Multiply the second and third operands.
 
-Upon performing this calculation, the relevant flags will be set based on the calculation's result.
+No script the game ships uses this instruction, so its behaviour here is read from the engine rather than from the data. Like the rest of the arithmetic, the destination comes first.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<dest>` - The variable the result is stored in.
 
+`<value>` - A literal or a variable.
 ## DIV
 
-`DIV <value> <value> <dest>` - Divide one value by another.
+`DIV <dest> <value> <value>` - Divide the second operand by the third.
 
-`DIV <source> <value> <dest>` - Divide a variable by a value.
-
-`DIV <value> <source> <dest>` - Divide a value by a variable's value.
-
-`DIV <source> <source> <dest>` - Divide one variable by another.
-
-Upon performing this calculation, the relevant flags will be set based on the calculation's result.
+**The destination comes first.** Division is signed, and **a divisor of zero does not fault** - the engine tests for it and yields 0.
 
 ### Operands
 
-`<dest>` - The destination for the instruction's result.
+`<dest>` - The variable the quotient is stored in.
 
-`<value>` - The value to divide.
-
-`<source>` - The source containing the value to divide.
-
+`<value>` - A literal or a variable.
 ## MOD
 
-`MOD <value> <value> <dest>` - Get the remainder of a division of one value from another.
+`MOD <dest> <value> <value>` - The remainder of dividing the second operand by the third.
 
-`MOD <source> <value> <dest>` - Get the remainder of a division of a variable by a value.
-
-`MOD <value> <source> <dest>` - Get the remainder of a division of a value by a variable's value.
-
-`MOD <source> <source> <dest>` - Get the remainder of a division of one variable by another.
-
-Upon performing this calculation, the relevant flags will be set based on the calculation's result.
+**The destination comes first.** `DIV` and `MOD` are the same code path - one signed division, with `DIV` keeping the quotient and `MOD` the remainder - so **a divisor of zero yields 0 here too** rather than faulting.
 
 ### Operands
 
-`<dest>` - The destination for the instruction's result.
+`<dest>` - The variable the remainder is stored in.
 
-`<value>` - The value to perform modulo on.
-
-`<source>` - The source containing the value to perform modulo on.
-
+`<value>` - A literal or a variable.
 ## TURBO
 
 `TURBO <value>` - Unknown

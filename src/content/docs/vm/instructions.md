@@ -12,20 +12,22 @@ None
 
 ## CRIT_LOCK
 
-`CRIT_LOCK` - Locks a ride, preventing visitors from accessing the ride until unlocked.
+`CRIT_LOCK` - Begin a critical section.
+
+Instructions stop counting against the script's time slice, so everything up to the matching `CRIT_UNLOCK` runs in one go rather than being cut short when the slice runs out. It does not lock a ride: this is the interpreter's own scheduling, not anything to do with visitors.
 
 ### Operands
 
 None
-
 ## CRIT_UNLOCK
 
-`CRIT_UNLOCK` - Unlocks a ride, allowing visitors to access it again.
+`CRIT_UNLOCK` - End a critical section, and give up the rest of this slice.
+
+Instructions count against the slice again, and the script stops running until its next turn - the engine ends the slice as it leaves, so a script cannot hold the interpreter after unlocking.
 
 ### Operands
 
 None
-
 ## COPY
 
 `COPY <dest> <source>` - Copy a value from one variable to another.
@@ -61,12 +63,13 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 `<value>` - A literal or a variable.
 ## ENDSLICE
 
-`ENDSLICE` - Unknown
+`ENDSLICE` - Stop running for this tick.
+
+The script gives up the rest of its slice and resumes at the next instruction on its next turn. This is how a script yields voluntarily rather than running until its instruction budget is spent.
 
 ### Operands
 
 None
-
 ## GETTIME
 
 `GETTIME <dest>` - Gets the time that the ride has been alive for.
@@ -377,28 +380,33 @@ The result is left in the result register and nothing is stored, so `CMP` follow
 
 ## HUSH
 
-`HUSH <unknown>` - Unknown
+`HUSH <value>` - Push a value onto the script's stack.
+
+`HUSH` and `HOP` share the storage set aside by `#setstack`, but keep their own position in it, filling from the bottom while `JSR` fills from the top. The engine checks the two do not meet.
 
 ### Operands
 
-`<unknown>` - Unknown
-
+`<value>` - The value to push. All 39 uses in the shipped scripts name a variable.
 ## HOP
 
-`HOP <unknown>` - Unknown
+`HOP <dest>` - Pop a value from the script's stack into a variable.
+
+The counterpart to `HUSH`, and unrelated to `RETURN`, which pops from the other end of the same storage.
 
 ### Operands
 
-`<unknown>` - Unknown
-
+`<dest>` - The variable the popped value is written to. It must be a variable; the engine ignores the instruction otherwise.
 ## WAIT
 
-`WAIT <time>` - Wait for a specified period of time.
+`WAIT <time>` - Wait for a period of time before continuing.
+
+The engine does not block. The first time a `WAIT` runs it works out a deadline, **rewinds the program counter so the same `WAIT` runs again**, and ends the slice; on later turns it compares the clock against that deadline and simply falls through once it has passed. A script therefore sits on its `WAIT` instruction, costing one instruction per turn, until the time is up.
+
+The operand is scaled by the script's own speed before being added to the clock, so it is not a count of ticks or of slices. The unit of the clock itself has not been established - do not assume milliseconds.
 
 ### Operands
 
-`<time>` - The length of time to wait for (cycles / slices / milliseconds?)
-
+`<time>` - How long to wait. Usually a literal; 13 of the 458 uses in the shipped scripts name a variable.
 ## WAITABS
 
 `WAITABS <unknown>` - Unknown
@@ -459,20 +467,22 @@ No script the game ships uses this instruction, so its behaviour here is read fr
 `<value>` - A literal or a variable.
 ## TURBO
 
-`TURBO <value>` - Unknown
+`TURBO <0 or 1>` - Run this script on every tick instead of every eighth.
+
+Scripts normally get a turn once every eight ticks, staggered by script so the work is spread out. `TURBO 1` opts this script out of that; `TURBO 0` puts it back. All twenty uses in the shipped scripts are literals - ten of each.
 
 ### Operands
 
-`<value>` - Unknown [0..1]
-
+`<value>` - 1 to run every tick, 0 to return to the usual schedule. The engine stores the low byte of the operand word as written, without resolving a variable.
 ## END
 
-`END` - Unknown
+`END` - Stop the script.
+
+The program counter is parked, and the execution loop tears the script down when it next comes round. **No script the game ships uses this** - they end by branching back on themselves instead.
 
 ### Operands
 
 None
-
 ## TOUR
 
 `TOUR <command> <params>` - Call a tour ride command (with parameter if applicable)

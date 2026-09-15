@@ -216,6 +216,8 @@ Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer.
 
 **With a model it does wait, and that is the largest difference a model makes anywhere in the family.** The unsigned floor only lets a negative slip through; a real clip length is positive and survives it, so the deadline lands the clip's own length less 300 in the future and the script sits on the instruction until it passes. `WAITANIM` is the most used animation instruction the game ships - 547 uses across 246 scripts - so where every one of those cost a single turn without a model, with one they cost anything up to the 19999 milliseconds a ferry's clip runs for - a millisecond under twenty seconds, for the reason `TRIGANIM` gives above.
 
+**Both instructions scale by the script's speed, and they apply the 300 floor on opposite sides of it.** `TRIGANIM` subtracts its 300 and floors the result *before* converting, so the floor is applied to a frame-derived length; `WAITANIM` converts first - `FILD` the qword, divide by the same `0.5 + 0.01 x speed` divisor the dispatcher works out for every instruction, then truncate - and only then compares against 300, unsigned. So the two differ in the order of the divide and the floor as well as in the signedness - and at the 50 a script is loaded with, the divisor is exactly 1, so only the signedness shows.
+
 ## LOOPANIM
 
 `LOOPANIM <type> <parameter>` - Start playing an animation on loop
@@ -478,7 +480,9 @@ The engine does not block. The first time a `WAIT` runs it works out a deadline,
 
 **The clock counts milliseconds**, which this page previously said was unestablished. The engine adds the wait to the clock object the whole game shares, and that object's reading comes from a source which falls back to `timeGetTime` and scales its high-resolution path to agree with it. So `WAIT 3000` is three seconds.
 
-The operand *is* scaled by the script's own speed first - the engine divides it by `0.5 + 0.01 x speed`, worked out afresh for every instruction - **but that scaling can never do anything.** The speed word is written in exactly two places in the whole script system: the loader setting it to 50, and the scheduler copying it into a linked script. No instruction writes it. At 50 the divisor is exactly 1, so every wait in every shipped script is its operand unchanged.
+The operand *is* scaled by the script's own speed first - the engine divides it by `0.5 + 0.01 x speed`, worked out afresh for every instruction. **No instruction writes that speed word**, and for a script running on its own it is the 50 the loader seeds, where the divisor is exactly 1 and a wait is its operand unchanged.
+
+**This page previously said the scaling "can never do anything", and that was too strong.** The claim rested on a sweep of the script subsystem which found exactly two writers - the loader's hardcoded 50, and the scheduler copying it into a linked script - but the sweep stopped a little short of the end of the subsystem, and there is a third just past where it stopped. It is a plain setter whose only caller is the object constructor, which pushes a **placed item's own operating speed** into the script it has just bound. So a script belonging to something standing in a park can be scaled, and only a script with no thing behind it is guaranteed the neutral 50. Which key of the item's description supplies that speed is not yet established, so how far from 50 it goes in practice is unknown.
 
 ### Operands
 

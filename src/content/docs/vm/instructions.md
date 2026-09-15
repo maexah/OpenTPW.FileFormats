@@ -735,23 +735,48 @@ All 24 shipped uses write a literal `0` where the destination goes, so the answe
 
 ## SPAWNCHILD
 
-`SPAWNCHILD <file name>` - Add a child script to the current script (max. 1 child)
+`SPAWNCHILD <file name>` - Load another script and keep it as this one's child.
+
+The engine builds the path from the directory this script was itself loaded from and the operand, and hands it to the script loader. What comes back is **an id, not a pointer** - the loader allocates it from a counter that only ever increments, so an id is never reused while the game runs. That id goes into the script's child slot, and the new script is then found again in the registry so that this script's own id can be written into its parent slot: the link is made in both directions.
+
+Four things about it are easy to get wrong:
+
+- **The name already carries its extension, and its case will not match the file.** Every shipped use asks for something ending `.rse`, and not one of the eleven distinct names matches an on-disk name exactly - scripts ask for `Effects.rse`, `clock.rse`, `worn.rse` and `anims.rse` where the archives hold `effects.RSE`, `Clock.RSE`, `Worn.RSE` and `Anims.RSE`. The original gets away with it by opening the concatenated path on a case-insensitive filesystem. Resolution must be case-insensitive or every spawn fails.
+- **There is one child slot and spawning does not empty it.** A second `SPAWNCHILD` overwrites the slot and the first child runs on with nothing holding it. The four shipped scripts that spawn inside a loop all run `REMOVECHILD` first, so it is the content that keeps the slot tidy rather than the engine.
+- **It writes no result.** Unlike nearly every other instruction here it never touches the result register, so whatever was there survives.
+- An operand that is not tagged as a string makes the whole instruction a silent no-op, and a load that fails leaves the child slot untouched.
 
 ### Operands
 
-`<file name>` - The path to the desired script.
+`<file name>` - The script to load, relative to the directory this script came from, extension included.
 
 ## SPAWNSOUND
 
-`SPAWNSOUND <file name>` - Add a child script to the current script (max. 1 child) - likely somewhat different from `SPAWNCHILD`, but unknown.
+`SPAWNSOUND <file name>` - Load another script into a second, separate slot.
+
+**This is not a sound instruction.** It calls the same script loader `SPAWNCHILD` does; the only difference in the handler is which field the resulting id is stored in. All 28 shipped uses ask for the same file, `EventMap.rse`.
+
+The slot it fills is not the child slot, and the differences matter:
+
+- **It links nothing.** The spawned script is not told who spawned it, so it can never use `GETVARINPARENT` or `SETVARINPARENT`, and no instruction can reach it the way `SETVARINCHILD` reaches a child.
+- **It stores unconditionally**, where `SPAWNCHILD` tests the loader's answer first - so a load that fails writes a nought into the slot and empties it.
+- **Nothing ever clears it.** There is no counterpart to `REMOVECHILD` for this slot; a script can detach its child but never its sound script, which is released only when the script itself dies. Calling `SPAWNSOUND` twice orphans the first one entirely.
+
+No instruction ever reads the slot back, and it is still not dead storage: the engine resolves it from outside the interpreter, taking a script id and a variable index, following that script's sound slot and answering one of the spawned script's variables. So the purpose of `SPAWNSOUND` is to publish a block of variables the ride and sound code reads by id - which is why every use loads the same file.
 
 ### Operands
 
-`<file name>` - The path to the desired script.
+`<file name>` - The script to load, on the same terms as `SPAWNCHILD`.
 
 ## REMOVECHILD
 
-`REMOVECHILD` - Remove an existing child script.
+`REMOVECHILD` - Kill this script's child, and clear the slot.
+
+**It kills the child rather than forgetting it.** The id is handed to the same teardown the engine runs on a script that has stopped, and only then is the slot cleared. With no child it does nothing at all, which is every script's state until a `SPAWNCHILD` has run.
+
+The teardown is **exactly one level deep**: it destroys the dying script's child and sound script directly rather than putting each of them through the same process, so a grandchild is never reached - it survives with a parent id naming a script that no longer exists. No shipped script has a grandchild, so the defect is real but dormant.
+
+A script that stops runs this same teardown on itself, which is what tells a parent its child has gone.
 
 ### Operands
 
@@ -761,9 +786,15 @@ None
 
 `SETVARINCHILD <variable ID> <value>` - Set the value of a variable in the current script's child.
 
+With no child the instruction does nothing at all - the engine tests the slot before it looks anything up, and that is the state of every script until a `SPAWNCHILD` has run. One shipped script has a child that can never resolve a parent at all, so the quiet no-op is the behaviour the content relies on rather than an error case.
+
+**The index is bounded from above only.** It is compared against the *target's* own declared variable count, so a script cannot reach past the end of a smaller one - but nothing asks whether the index is negative, and a negative one writes behind the array. Every shipped use names a literal 0 or 1.
+
+The result register is set to the value written, and only when the write actually happened.
+
 ### Operands
 
-`<variable ID>` - The ID of the desired variable.
+`<variable ID>` - The ID of the desired variable, in the child.
 
 `<value>` - The desired value to set.
 
@@ -771,19 +802,25 @@ None
 
 `GETVARINCHILD <dest> <variable ID>` - Get the value of a variable in the current script's child.
 
+**The destination is tested first, before the child slot is even looked at**, and a destination that is not a variable makes the instruction a silent no-op that does not even reach the result register. That is unlike most instructions here, which set the register whether or not they can write, and it means the `COAST 2 0` idiom of naming a literal to read the answer out of the register does *not* work with this one. All 19 shipped uses of this and `GETVARINPARENT` name a variable.
+
+The source index is bounded from above only, exactly as the writing pair is, so a negative index is an out-of-bounds read whose value is then stored. The destination index is not bounded at all.
+
 ### Operands
 
-`<variable ID>` - The ID of the desired variable.
+`<dest>` - The destination for the value. Must be a variable.
 
-`<dest>` - The destination for the value of the desired variable.
+`<variable ID>` - The ID of the desired variable, in the child.
 
 ## SETVARINPARENT
 
 `SETVARINPARENT <variable ID> <value>` - Set the value of a variable in the current script's parent.
 
+This is literally the same block of engine code as `SETVARINCHILD`, reached with the parent's id instead of the child's, so everything said there applies here unchanged. **No shipped script uses it.**
+
 ### Operands
 
-`<variable ID>` - The ID of the desired variable.
+`<variable ID>` - The ID of the desired variable, in the parent.
 
 `<value>` - The desired value to set.
 
@@ -791,11 +828,13 @@ None
 
 `GETVARINPARENT <dest> <variable ID>` - Get the value of a variable in the current script's parent.
 
+The counterpart to `GETVARINCHILD`, sharing its code and all of its behaviour, and the way a spawned script reads the state of whatever spawned it. A script only has a parent if something ran `SPAWNCHILD` on it - a script spawned by `SPAWNSOUND` never does, and neither does one the engine loaded directly - and with no parent this is a silent no-op.
+
 ### Operands
 
-`<variable ID>` - The ID of the desired variable.
+`<dest>` - The destination for the value. Must be a variable.
 
-`<dest>` - The destination for the value of the desired variable.
+`<variable ID>` - The ID of the desired variable, in the parent.
 
 ## BOUNCESETNODE
 
@@ -961,29 +1000,51 @@ None
 
 ## FINDSCRIPTRAND
 
-`FINDSCRIPTRAND <ride / object name> <dest>`
+`FINDSCRIPTRAND <name> <dest>` - Pick one of the scripts calling themselves this name, at random, and answer its id.
+
+**It matches on the name a script gave itself with `NAME`**, and nothing else. A script that has never run `NAME` can never be found: the loader leaves that field at -1 rather than at nought, and the walk skips a negative - which is a real distinction, because 31 of the 308 shipped scripts never name themselves. Since `NAME` is the first instruction in all 277 that use it, a script is unfindable only between being loaded and taking its first turn.
+
+The engine walks its script registry twice, once to count the matches and once to reach the chosen one, drawing `1 + (random mod count)` in between. **The caller is not excluded**, so a script searching for its own name can find itself. A name is not unique: the engine loads a script for every placed thing, so a park with five traffic lights has five live scripts all answering to the same name, and the draw is genuinely over five.
+
+**Finding nothing leaves the destination alone.** The result register is zeroed before the search, but the destination is only ever written on a match - so on failure the variable keeps whatever it held and the nought exists only in the register, for the branch that follows to read. This is the opposite of what `GETREMOTEVAR` does when it fails.
+
+Both names the shipped scripts look for are real: `bus.RSE` asks four times for `Traffic Lights` and `zob.RSE` once for `Zob Upgrade`, and some shipped script takes each of them.
 
 ### Operands
 
-`<ride / object name>` - A string naming what to look for.
+`<name>` - A string naming what to look for. Must be tagged as a string, or the instruction does nothing.
 
-`<dest>` - The variable the result is written to.
+`<dest>` - The variable the id is written into.
 
 ## GETREMOTEVAR
 
-`GETREMOTEVAR <unknown1> <unknown2> <unknown3>`
+`GETREMOTEVAR <dest> <script ID> <variable ID>` - Get the value of a variable in any script, by that script's id.
+
+The operand order is the one thing about this instruction that is easy to get wrong, and any other reading still runs and still writes something. The handler takes the first operand without resolving it, keeping it for the write; resolves the second and uses it to find the script; and resolves the third as an index into that script's variables.
+
+**Failing is not silence: it answers nought.** The result register is zeroed before anything is looked up, and every way of failing - no script with that id, an index below nought or past the target's count - still writes that nought into the destination. A failed lookup is therefore indistinguishable from a remote variable that holds nought.
+
+Both shipped uses pass a literal where the destination goes, so the answer lands in the result register alone and is consumed immediately by a branch: the instruction is used as a test, not as an assignment.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 2 uses of this instruction write them as: 1 — literal; 2 — variable; 3 — literal.
+`<dest>` - The destination for the value, or a literal to leave it in the result register.
+
+`<script ID>` - The id of the script holding the variable, as `FINDSCRIPTRAND` answers it.
+
+`<variable ID>` - The ID of the desired variable, in that script.
 
 ## SETREMOTEVAR
 
 `SETREMOTEVAR <script ID> <variable ID> <value>` - Set the value of another script's variable.
 
+**This one checks both ends of the index**, where the child and parent instructions check only the top, and it simply returns without writing when it fails - leaving the result register alone. The asymmetry is the engine's own.
+
+Ids reach this instruction through variables rather than literals, having usually come from `FINDSCRIPTRAND`, and they are never reused while the game runs - so an id naming a script that has since died can only ever fail to match, never reach the wrong script.
+
 ### Operands
 
-`<script ID>` - The ID of the script containing the desired variable.
+`<script ID>` - The id of the script containing the desired variable.
 
 `<variable ID>` - The ID of the desired variable.
 

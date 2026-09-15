@@ -8,7 +8,9 @@ The dispatcher accepts an instruction only while its opcode is below `0x6A`, whi
 
 ## Common Variable Set
 
-The following variables are part of a "common variable set" that must be contained within every ride (these do not apply to features).
+Ride scripts share a "common variable set": the twelve variables below, in this order, at the start of the script's own variable table. **Of the 308 scripts the game ships, 129 carry it** - 98 declare no variables at all, and the rest begin with a different family entirely, such as `VAR_EVT0`-`VAR_EVT9` or `VAR_TRIGGER`/`VAR_STATUS`. So it is a convention among rides rather than something every script has.
+
+The order matters more than the names do. The VM addresses a variable by its **index**, not by its name, so what makes the set usable is that it is a prefix: `VAR_ONRIDE` is operand `5` in any script that follows the convention. Scripts that use it carry exactly these twelve first and then their own; there is no thirteenth common variable, and index 12 is whatever that script wanted (most often `VAR_TEMP`, `VAR_COUNT` or `VAR_PEEPID`).
 
 
 | Name             | ID  | Description                                                               |
@@ -37,3 +39,19 @@ There are no condition flags. The VM keeps a single **result register**: every i
 `BRANCH_Z` and `BRANCH_NZ` then branch on the register being zero or non-zero, and `BRANCH_NV` and `BRANCH_PV` on it being negative or greater than zero. The comparison is signed, and `BRANCH_PV` does not branch on zero.
 
 An instruction whose destination operand is not a variable is ignored rather than refused - the engine steps over it and carries on.
+
+## When a script runs
+
+A script does not get a turn every tick. The engine keeps one counter for the whole system and steps it at the top of each tick, **before** any script runs, so the first tick is 1 and the counter decides who is due on it. A script is due when:
+
+```
+turbo || ((id ^ tick) & 7) == 0
+```
+
+Each script therefore gets one turn in eight ticks, and the eight are spread apart by the scripts' own ids rather than all falling on the same tick. `TURBO` opts a script out of the spread and into every tick.
+
+On its turn a script runs instructions until its time slice is spent or it gives the rest up. The slice is a count of **instructions**, not of time, and it comes from the script's own header - 50 in every shipped script. `ENDSLICE` and `CRIT_UNLOCK` both end the turn immediately, and `WAIT` ends it by putting the program counter back onto itself so the same instruction runs again next turn.
+
+`CRIT_LOCK` stops instructions counting against the slice until the matching `CRIT_UNLOCK`. The flag behind that is cleared at the top of every tick, so **a critical section cannot outlive the turn that took it** - a script that locks and then yields comes back with instructions counting normally again.
+
+A script whose program counter has been parked by `END` is taken off the list at the end of the same tick.

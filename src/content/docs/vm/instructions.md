@@ -535,7 +535,15 @@ None
 
 ## BUMP
 
-`BUMP <command> <params>` - Set bumper ride properties, and set flags where appropriate.
+`BUMP <command> <params>` - Read or change one property of the bumper-style ride this script drives.
+
+The `<command>` is fetched **without being resolved**, so it has to be a literal: the engine decrements it, refuses anything above 17, and jumps through a seventeen-entry table. All 199 uses in the shipped scripts are literals, spread across twelve scripts, and they use every command except `15`.
+
+Command `15` is not merely unused by the shipped scripts - **its table entry is the error path itself**, so the engine treats it exactly as it treats 0 or 18.
+
+One structural note that the numbering alone does not show: commands `13` and `14` call the **same** engine function, `13` multiplying its operand by 30 first and `14` negating it. Whatever they are named, they are two directions of one quantity.
+
+The ride this reaches is not the one [`COAST`](#coast) reaches, although the two dispatchers begin identically: both look an object up from the script before reading the command. What differs is what the commands then act on. `BUMP`'s act on the object that lookup found; `COAST`'s act on the handle `COAST_INITIALISE` stored on the script, which is a separate table entirely, and the two sets of engine functions do not overlap.
 
 ### Operands
 
@@ -581,7 +589,13 @@ None
 
 ## COAST
 
-`COAST <id> <value>` - Set coaster ride properties, and set flags where appropriate.
+`COAST <id> <value>` - Read or change one property of the coaster this script drives.
+
+The `<id>` is fetched **without being resolved**, so it has to be a literal: a variable operand keeps its tag and falls outside the 1-8 the engine accepts, which the engine reports as `RSSE: Unknown bumper ride command`. All 144 uses in the shipped scripts are literals.
+
+That message is not a mistake in this page: `COAST` and [`BUMP`](#bump) share a single error handler, which carries one string between them, and it names only the bumper ride.
+
+The two reading commands, `COAST_GETQUEUE` and `COAST_GETPEEP`, put their answer in the [result register](/vm/info/) first and only then store it, so a script may pass a literal as the destination purely to test the answer and throw it away. That is not a mistake in those scripts - all twelve uses of `COAST_GETQUEUE` are written `COAST 2 0`, and the `BRANCH_Z` that follows reads the register.
 
 ### Operands
 
@@ -591,21 +605,21 @@ None
 
 #### IDs
 
-- `COAST_ADDPEEP` - Let on visitor
+- `1` (`COAST_ADDPEEP`) - Put a visitor in the queue. The value is the visitor, and the ride declines silently if there is no room.
 
-- `COAST_GETQUEUE` - Gets the number of people in the ride's queue
+- `2` (`COAST_GETQUEUE`) - **The room remaining, not the number of people queueing.** The engine computes capacity minus those on the ride minus those queueing, and clamps the result at zero. A script branching on zero after this is branching on "full", not on "empty".
 
-- `COAST_GETPEEP` - Gets the number of people on the ride
+- `3` (`COAST_GETPEEP`) - **Take the next visitor who has finished the ride, or 0 if there is none.** This is one visitor's id, not a count, and the queue it drains is not the one `COAST_ADDPEEP` fills - those are two separate rings, and nothing in `COAST` moves anyone between them.
 
-- `COAST_SETBROKE` - Set's the coaster's broken state
+- `4` (`COAST_SETBROKE`) - Ask for a change of repair state. **Not a boolean:** the handler dispatches on 0, 1 and 2, and passes each to the same state-request function `COAST_SETCLOSED` uses, because the two write different fields of one word. The shipped scripts only ever pass 0 and 1.
 
-- `COAST_SETCLOSED` - Sets the coaster's open/closed state
+- `5` (`COAST_SETCLOSED`) - Ask to open (0) or shut (anything else). **A guarded transition rather than a flag:** the engine checks the ride's current state first and drops the request when it does not fit, so shutting a ride that is already shut does nothing at all.
 
-- `COAST_SETCAPACITY` - Sets the coaster's capacity
+- `6` (`COAST_SETCAPACITY`) - Set how many the ride will hold. Negative values clamp to zero, and the value is clamped again by the ride's own record and by the track's before it is applied. It is the same number `COAST_GETQUEUE` measures against.
 
-- `COAST_SETWORN` - Sets the coaster's wear rating
+- `7` (`COAST_SETWORN`) - **Does nothing.** The handler fetches its operand, resolves it, tidies the stack and returns without calling anything, so the value is discarded. Twelve shipped scripts use it, which is worth knowing before implementing wear on its account.
 
-- `COAST_INITIALISE` - Initialises the coaster
+- `8` (`COAST_INITIALISE`) - Bind the script to its ride. The engine looks the ride up by the script's **own** id rather than by this instruction's operand - every shipped use passes a literal 0 - and keeps the handle it finds. If it finds none, every other `COAST` command quietly does nothing.
 
 ## ADDHEAD
 

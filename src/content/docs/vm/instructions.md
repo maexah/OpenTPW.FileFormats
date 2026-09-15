@@ -162,39 +162,57 @@ None
 
 ## TRIGANIM
 
-`TRIGANIM <unknown1> <unknown2> <unknown3>` - Unknown
+`TRIGANIM <animation> <parameter> <dest>` - Start a one-shot animation, and put how long it runs into `<dest>`.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 74 uses of this instruction write them as: 1 — literal; 2 — literal or variable; 3 — literal or variable.
+`<animation>` - The animation to start.
+
+`<parameter>` - Passed to the model along with the animation.
+
+`<dest>` - Where the length is written, in milliseconds. 64 of the 74 shipped uses write a literal here, which cannot be written to: the length still lands in the result register, and the branch that follows reads it.
+
+The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script whose model reports nothing gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does.
 
 ## WAITANIM
 
-`WAITANIM <type> <unknown>` - Start playing an animation, and wait for it to end before continuing.
+`WAITANIM <type> <parameter>` - Start playing an animation, and wait for it to end before continuing.
 
 ### Operands
 
 `<type>` - The type of animation to play
 
-`<unknown>` - Unknown
+`<parameter>` - Passed to the model along with the animation, as `TRIGANIM`'s second operand is.
+
+It waits on the same deadline as `WAIT`, not on the separate one `WAIT4ANIM` uses, and it gives up the rest of the turn on the visit that sets that deadline whether or not the deadline has already passed.
+
+Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer. The length-less-300 is stored as the low half of a qword whose high half is nought and read back with `FILD qword`, so a negative arrives as a number just under 2^32; and the 300 floor is then compared **unsigned**, which a negative passes. So where `TRIGANIM` floors at 300, `WAITANIM` does not: a model that reports nothing gives a deadline 300ms in the *past*, and the instruction costs one turn rather than any particular length of time.
 
 ## LOOPANIM
 
-`LOOPANIM <type> <unknown>` - Start playing an animation on loop
+`LOOPANIM <type> <parameter>` - Start playing an animation on loop
 
 ### Operands
 
 `<type>` - The type of animation to play
 
-`<unknown>` - Unknown
+`<parameter>` - Passed to the model along with the animation.
+
+The two operands together make the key `(<parameter> << 16) + <type>`, which the script remembers. Asking again for the animation already looping does nothing at all - it is not restarted. Naming any other animation clears the deadline `TRIGANIM` and `TRIGWAITANIM` arm, because a loop never finishes and there would be nothing left for `WAIT4ANIM` to wait for.
 
 ## TRIGWAITANIM
 
-`TRIGWAITANIM <unknown1> <unknown2> <unknown3>` - Unknown
+`TRIGWAITANIM <animation> <parameter> <dest>` - Start a one-shot animation, put how long it runs into `<dest>`, and wait for it.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 133 uses of this instruction write them as: 1 — literal; 2 — literal or variable; 3 — literal or variable.
+`<animation>` - The animation to start.
+
+`<parameter>` - Passed to the model along with the animation.
+
+`<dest>` - Where the length is written, in milliseconds, on the same terms as `TRIGANIM`'s third operand. 132 of the 133 shipped uses write a literal here.
+
+It arms the same deadline `TRIGANIM` arms, and then rewinds onto itself - so unlike `TRIGANIM` it does the waiting itself rather than leaving it to a later `WAIT4ANIM`. While it waits it also keeps a cursor of its own, stepping across turns through more than one animation channel. That part has not been read the whole way through, and what the cursor counts is not yet established.
 
 ## GETANIM
 
@@ -429,11 +447,13 @@ No script the game ships uses this, so nothing about how it was *meant* to be us
 
 ## WAIT4ANIM
 
-`WAIT4ANIM` - Wait for all of the currently playing animations to finish.
+`WAIT4ANIM` - Wait for the animation last triggered to finish.
 
 ### Operands
 
 None
+
+It waits on a single deadline - set by `TRIGANIM` or `TRIGWAITANIM`, cleared by `LOOPANIM` - and not on "everything currently playing". **With nothing triggered it does not wait at all:** its first test is whether that deadline is set, and it goes straight on when it is not.
 
 ## ADD
 

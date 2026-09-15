@@ -18,6 +18,14 @@ None
 
 None
 
+## CRIT_UNLOCK
+
+`CRIT_UNLOCK` - Unlocks a ride, allowing visitors to access it again.
+
+### Operands
+
+None
+
 ## COPY
 
 `COPY <dest> <source>` - Copy a value from one variable to another.
@@ -38,7 +46,7 @@ None
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## SUB
 
@@ -66,7 +74,7 @@ Upon performing this calculation, the relevant flags will be set based on the ca
 
 ### Operands
 
-Unknown
+None
 
 ## GETTIME
 
@@ -96,7 +104,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 5 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## KILLOBJ
 
@@ -144,7 +152,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 4 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## FLUSHANIM
 
@@ -160,7 +168,7 @@ None
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 74 uses of this instruction write them as: 1 — literal; 2 — literal or variable; 3 — literal or variable.
 
 ## WAITANIM
 
@@ -188,7 +196,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 133 uses of this instruction write them as: 1 — literal; 2 — literal or variable; 3 — literal or variable.
 
 ## GETANIM
 
@@ -196,15 +204,15 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## TRIGANIMSPEED
 
-`TRIGANIMSPEED <unknown1> <unknown2> <unknonw3> <unknown4>` - Unknown
+`TRIGANIMSPEED <unknown1> <unknown2> <unknown3> <unknown4>` - Unknown
 
 ### Operands
 
-Unknown
+Takes 4 operands, those not named above being unknown. Across the 308 shipped scripts the 4 uses of this instruction write them as: 1 — literal; 2 — literal; 3 — variable; 4 — literal.
 
 ## FLUSHANIM_CH
 
@@ -212,7 +220,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## TRIGANIM_CH
 
@@ -220,7 +228,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 4 operands, those not named above being unknown. Across the 308 shipped scripts the 63 uses of this instruction write them as: 1 — literal; 2 — literal; 3 — literal or variable; 4 — literal.
 
 ## WAITANIM_CH
 
@@ -228,7 +236,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## LOOPANIM_CH
 
@@ -236,7 +244,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 1 uses of this instruction write them as: 1 — literal; 2 — literal; 3 — literal.
 
 ## TRIGWAITANIM_CH
 
@@ -244,7 +252,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 4 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## GETANIM_CH
 
@@ -252,7 +260,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 2 operands, those not named above being unknown. Across the 308 shipped scripts the 15 uses of this instruction write them as: 1 — literal; 2 — literal.
 
 ## RAND
 
@@ -326,7 +334,7 @@ None
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## NAME
 
@@ -366,11 +374,11 @@ Upon performing this calculation, the relevant flags will be set based on the ca
 
 ## POP
 
-`POP` - Pop a value from the stack.
+`POP <dest>` - Pop a value from the stack into a variable.
 
 ### Operands
 
-None
+`<dest>` - The destination the popped value is written to.
 
 ## HUSH
 
@@ -402,7 +410,7 @@ None
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## WAIT4ANIM
 
@@ -432,7 +440,7 @@ Upon performing this calculation, the relevant flags will be set based on the ca
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## DIV
 
@@ -742,7 +750,7 @@ None
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 1 uses of this instruction write it as a literal.
 
 ## BOUNCESETBASE
 
@@ -750,7 +758,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 4 uses of this instruction write it as a literal.
 
 ## BOUNCE
 
@@ -758,7 +766,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 2 operands, those not named above being unknown. Across the 308 shipped scripts the 4 uses of this instruction write them as: 1 — variable; 2 — variable.
 
 ## UNBOUNCE
 
@@ -766,7 +774,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 4 uses of this instruction write it as a variable.
 
 ## FORCEUNBOUNCE
 
@@ -774,7 +782,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 8 uses of this instruction write it as a variable.
 
 ## BOUNCING
 
@@ -782,7 +790,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 25 uses of this instruction write it as a variable.
 
 ## WALKON
 
@@ -790,7 +798,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 7 operands, those not named above being unknown. Across the 308 shipped scripts the 47 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal or variable; 4 — literal or variable; 5 — literal; 6 — literal; 7 — literal.
 
 ## WALKOFF
 
@@ -798,7 +806,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 53 uses of this instruction write it as a variable.
 
 ## WALKGET
 
@@ -806,7 +814,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 43 uses of this instruction write it as a variable.
 
 ## WALKST_FLOAT
 
@@ -814,7 +822,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 1 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal.
 
 ## WALKFLOATSTAT
 
@@ -822,7 +830,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. Across the 308 shipped scripts the 1 uses of this instruction write it as a literal.
 
 ## WALKFLOATSTOP
 
@@ -830,7 +838,7 @@ Unknown
 
 ### Operands
 
-Unknown
+None
 
 ## ENABLELIGHT
 
@@ -838,7 +846,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## DISABLELIGHT
 
@@ -846,15 +854,15 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
 
 ## SETLIGHT
 
-`SETLIGHT <unknown>`
+`SETLIGHT <unknown1> <unknown2>`
 
 ### Operands
 
-Unknown
+Takes 2 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## COLOURLIGHT
 
@@ -862,7 +870,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 4 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## STARTSCREAM
 
@@ -870,7 +878,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 2 operands, those not named above being unknown. Across the 308 shipped scripts the 40 uses of this instruction write them as: 1 — variable; 2 — literal.
 
 ## STOPSCREAM
 
@@ -880,11 +888,15 @@ Unknown
 
 None
 
-## SINGLESREAM
+## SINGLESCREAM
 
 `SINGLESCREAM <visitor ID> <unknown>`
 
 ### Operands
+
+`<visitor ID>` - The visitor who screams; always a variable in shipped scripts.
+
+`<unknown>` - Always a literal in shipped scripts. Its meaning is not yet known.
 
 ## SCREAMLEVEL
 
@@ -900,13 +912,17 @@ None
 
 ### Operands
 
+`<ride / object name>` - A string naming what to look for.
+
+`<dest>` - The variable the result is written to.
+
 ## GETREMOTEVAR
 
 `GETREMOTEVAR <unknown1> <unknown2> <unknown3>`
 
 ### Operands
 
-Unknown
+Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 2 uses of this instruction write them as: 1 — literal; 2 — variable; 3 — literal.
 
 ## SETREMOTEVAR
 
@@ -934,7 +950,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 2 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
 
 ## SETTIMER
 
@@ -942,7 +958,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand. Across the 308 shipped scripts the 40 uses of this instruction write it as a literal.
 
 ## GETTIMER
 
@@ -950,7 +966,7 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 1 operand, which is not named above and is not yet understood. Across the 308 shipped scripts the 21 uses of this instruction write it as a literal.
 
 ## YEAR
 
@@ -1022,4 +1038,4 @@ Unknown
 
 ### Operands
 
-Unknown
+Takes 4 operands, those not named above being unknown. Across the 308 shipped scripts the 1 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal; 4 — literal.

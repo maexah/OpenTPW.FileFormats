@@ -130,11 +130,17 @@ No script the game ships uses this instruction, so the operand meanings here com
 
 ## SETOBJPARAM
 
-`SETOBJPARAM <slot> <parameter> <value>` - Set a sub-object's parameters.
+`SETOBJPARAM <tag> <parameter> <value>` - Set a parameter on every sound started under a tag.
+
+**The first operand is a tag, not a slot.** It is the same field `KILLOBJ` matches on - the fourth operand of the `ADDOBJ` that created the record - and the handler walks the script's whole record list setting the parameter on every match, exactly as `KILLOBJ` stops every match.
+
+**A particle carrying that tag is walked past.** The type dispatch has only two cases: the two particle types do nothing at all, and the eight sound types hand the record's handle to the sound system along with the parameter and value, storing back whatever comes of it. So it is the record's *type* that decides whether anything happens, not its tag - which matters, because a tag is a group label that a particle and a sound can share.
+
+With the sound system down the call answers nought and that nought is stored into the record's handle.
 
 ### Operands
 
-`<slot>` - The slot of the desired object.
+`<tag>` - The tag the effects were started under.
 
 `<parameter>` - The parameter to change.
 
@@ -1150,9 +1156,15 @@ All 21 shipped uses name a literal where the destination goes, which means the w
 
 `DIPMUSIC <value>` - Mute or unmute music.
 
+**It really is a mute rather than a partial duck**, despite the name. The value goes into a single game-wide setting; when the mixer next re-applies its group volumes it tests that setting against nought and, if it is set, drives the music group's volume to **0** outright, where the unset branch uses the configured volume. Ducking for speech is a separate mechanism through a different setting that scales by a percentage - this one does not scale anything.
+
+**Any non-nought value mutes**, since the test is against zero rather than against one. Every shipped use passes a literal `1`.
+
+**Nothing but the script's death ever un-mutes it.** The handler also sets a marker in the script itself recording that it was the one holding the music down, and the script's teardown is what clears the setting again. No shipped script ever passes `0`, so in practice the music comes back only when the script that muted it dies. The setting is game-wide rather than per-script, so the last script to set it wins.
+
 ### Operands
 
-`<value>` - 0 or 1: 0 for unmute, 1 for mute
+`<value>` - Nought to unmute; anything else to mute.
 
 ## SPARK
 

@@ -681,45 +681,57 @@ The two reading commands, `COAST_GETQUEUE` and `COAST_GETPEEP`, put their answer
 
 ## LIMBO
 
-`LIMBO <visitor ID> <unknown>` - Send a visitor into limbo.
+`LIMBO <visitor ID> <seconds>` - Hold a visitor inside the item for a while. Answers 1 if there was room for them and 0 if there was not.
+
+How many can be held at once comes from the script's own file header, which declares a number of limbo slots: 24 of the shipped scripts declare ten each, and they are shops, toilets and arcades rather than rides. A script that declares none can never hold anybody, and `LIMBO` on one always answers 0.
+
+**Neither operand is written to.** Every other instruction in this family answers into its operand; this one sets only the result register, which is what the branch after it reads.
+
+A slot is free when it holds no visitor, and the search starts from the first slot every time - so a slot that has been emptied is filled again before any later one.
 
 ### Operands
 
-`<visitor ID>` - The ID of the visitor to send into limbo.
+`<visitor ID>` - The visitor to hold. Read, never written.
 
-`<unknown>` - Unknown (possibly related to `LIMBOSPACE`, but may also be duration)
+`<seconds>` - How long to hold them, **in seconds**: the engine multiplies it by 1000 before adding it to the game clock. Twenty of the shipped uses ask for 5 and three for 15.
 
 ## UNLIMBO
 
-`UNLIMBO <visitor ID>` - Remove a visitor from limbo.
+`UNLIMBO <destination>` - Take back the first visitor whose time is up, or 0 when nobody's is.
+
+The slots are walked from the first, and a visitor is due once their release time has gone strictly past the clock - so this is "the first one due", not "the one who has waited longest". The answer reaches the result register as well as the operand, and every shipped use branches on it being 0.
 
 ### Operands
 
-`<visitor ID>` - The ID of the visitor to remove from limbo.
+`<destination>` - The variable the visitor is written into.
 
 ## FORCEUNLIMBO
 
-`FORCEUNLIMBO <visitor ID>` - Forcefully remove a visitor from limbo.
+`FORCEUNLIMBO <destination>` - Take back the first visitor being held, whatever the clock says, or 0 when none is. This is how an item empties itself when it shuts.
+
+**The destination must be a variable.** The handler tests that before anything else and returns without doing a thing if it is not one - it does not even set the result register, which is where it differs from `UNLIMBO`.
 
 ### Operands
 
-`<visitor ID>` - The ID of the visitor to remove from limbo.
+`<destination>` - The variable the visitor is written into.
 
 ## INLIMBO
 
-`INLIMBO <unknown>` - Unknown
+`INLIMBO <destination>` - How many visitors the script is holding at the moment.
 
 ### Operands
 
-`<unknown>` - Unknown.
+`<destination>` - The variable the count is written into.
 
 ## LIMBOSPACE
 
-`LIMBOSPACE <unknown>` - Unknown
+`LIMBOSPACE <destination>` - How much room is left: the slots the header declared, less however many are held.
+
+All 24 shipped uses write a literal `0` where the destination goes, so the answer lands in the result register alone and the write is stepped over - the same idiom as `COAST 2 0` and `GETTIMER`. The branch that follows is what reads it.
 
 ### Operands
 
-`<unknown>` - Unknown.
+`<destination>` - The variable the count is written into, or a literal to leave it in the result register.
 
 ## SPAWNCHILD
 

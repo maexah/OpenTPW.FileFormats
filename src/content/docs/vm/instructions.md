@@ -72,11 +72,15 @@ The script gives up the rest of its slice and resumes at the next instruction on
 None
 ## GETTIME
 
-`GETTIME <dest>` - Gets the time that the ride has been alive for.
+`GETTIME <dest>` - Read the game's clock.
+
+**This page used to call it "the time that the ride has been alive for", and that is wrong.** The handler reads the game's own clock object - the same one the whole engine shares - and stores what it hands back with no arithmetic at all. Nothing per-ride is involved and nothing is subtracted, so a script timing something has to take one reading and compare against a later one, which is what the 172 uses across 57 scripts do.
+
+The clock counts **milliseconds**.
 
 ### Operands
 
-`<dest>` - The destination for the instruction's result.
+`<dest>` - The destination for the instruction's result. Every shipped use names a variable.
 
 ## ADDOBJ
 
@@ -260,11 +264,15 @@ Takes 2 operands, those not named above being unknown. Across the 308 shipped sc
 
 `RAND <dest> <max value>` - Generate a random number.
 
+The range is **nought to the bound inclusive**: the engine halves a draw from its generator and takes it modulo the bound *plus one*, so the highest value really is reachable. The generator is a multiply-add followed by a thirteen-bit rotate, and the result is made positive twice over - once as it leaves the generator and again after the modulo.
+
+**The bound is not resolved the way other value operands are.** Every instruction that reads a value tests the operand's tag first and looks a variable up; this one does not - it takes the low sixteen bits of the operand word as a signed number whatever the tag says. A bound written as a variable would therefore be read as that variable's *index*. No shipped script does it: all 56 uses name a literal, with bounds of 1 to 10 apart from one 300 and one 5000.
+
 ### Operands
 
-`<dest>` - The destination for the instruction's result.
+`<dest>` - The destination for the instruction's result. 52 of the 56 shipped uses name a variable; the other four name a literal, so the answer stays in the result register for the following branch to test.
 
-`<max value>` - The highest value to generate.
+`<max value>` - The highest value to generate, and it can be generated.
 
 ## JSR
 
@@ -402,18 +410,22 @@ The counterpart to `HUSH`, and unrelated to `RETURN`, which pops from the other 
 
 The engine does not block. The first time a `WAIT` runs it works out a deadline, **rewinds the program counter so the same `WAIT` runs again**, and ends the slice; on later turns it compares the clock against that deadline and simply falls through once it has passed. A script therefore sits on its `WAIT` instruction, costing one instruction per turn, until the time is up.
 
-The operand is scaled by the script's own speed before being added to the clock, so it is not a count of ticks or of slices. The unit of the clock itself has not been established - do not assume milliseconds.
+**The clock counts milliseconds**, which this page previously said was unestablished. The engine adds the wait to the clock object the whole game shares, and that object's reading comes from a source which falls back to `timeGetTime` and scales its high-resolution path to agree with it. So `WAIT 3000` is three seconds.
+
+The operand *is* scaled by the script's own speed first - the engine divides it by `0.5 + 0.01 x speed`, worked out afresh for every instruction - **but that scaling can never do anything.** The speed word is written in exactly two places in the whole script system: the loader setting it to 50, and the scheduler copying it into a linked script. No instruction writes it. At 50 the divisor is exactly 1, so every wait in every shipped script is its operand unchanged.
 
 ### Operands
 
 `<time>` - How long to wait. Usually a literal; 13 of the 458 uses in the shipped scripts name a variable.
 ## WAITABS
 
-`WAITABS <unknown>` - Unknown
+`WAITABS <time>` - Wait until the clock reaches a given reading.
+
+No script the game ships uses this, so nothing about how it was *meant* to be used can be recovered - but what it does is plain from the handler, which shares most of its code with `WAIT`. The difference is the one the name suggests: `WAIT` adds its operand to the clock to make a deadline, while this one takes the operand **as** the deadline, already on the clock's own scale. It is not speed-scaled, and it rewinds onto itself and ends the slice exactly as `WAIT` does.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<time>` - The clock reading to wait for, in milliseconds.
 
 ## WAIT4ANIM
 
@@ -953,19 +965,27 @@ Takes 2 operands, those not named above being unknown. No script the game ships 
 
 ## SETTIMER
 
-`SETTIMER <time>` - Unknown
+`SETTIMER <time>` - Start the script's timer, to run for this long.
+
+A script has **one** timer. This sets it by adding the operand to the clock and keeping the result as a deadline. **Unlike `WAIT`, it is not scaled by the script's speed** - the engine resolves the operand and adds it to the clock reading directly.
+
+It does not wait for anything. Setting a timer and then carrying on is the point: the script gets on with something else and asks `GETTIMER` how much is left whenever it wants to know.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 40 uses of this instruction write it as a literal.
+`<time>` - How long the timer should run, in milliseconds. All 40 shipped uses name a literal.
 
 ## GETTIMER
 
-`GETTIMER <unknown>` - Unknown
+`GETTIMER <dest>` - How much of the script's timer is left.
+
+The deadline `SETTIMER` stored, less the clock as it now stands, and **never less than nought** - the engine replaces a negative answer with zero, so a timer that has run out reads as nought rather than counting downwards for ever.
+
+All 21 shipped uses name a literal where the destination goes, which means the write is skipped and the answer is left in the result register for the branch that follows - the same idiom as `COAST 2 0`. The 18 scripts using it are the same 18 that use `SETTIMER`.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. Across the 308 shipped scripts the 21 uses of this instruction write it as a literal.
+`<dest>` - The destination for the instruction's result.
 
 ## YEAR
 

@@ -84,41 +84,49 @@ The clock counts **milliseconds**.
 
 ## ADDOBJ
 
-`ADDOBJ <type> <parameter> <id> <slot>` - Add an object of a specific type to the ride.
+`ADDOBJ <type> <node> <effect> <tag>` - Start a particle effect or a sound on the ride, and keep a record of it so that a later `KILLOBJ` can stop it again.
+
+With no model to place it on, the effect is still started - at the origin, because the position lookup answers success and a degenerate point rather than failing.
 
 ### Operands
 
-`<type>` - The type of object to add.
+`<type>` - Which subsystem, and for a sound which category. 1 and 2 start a particle effect; 3 to 9 play a sample through a named sound category - 3 and 4 through a second `cat_rides` / `cat_ambient` pair, then `cat_rides`, `cat_kids`, `cat_staff`, `cat_ambient` and `cat_ui`; 10 plays the thing's own custom effect, and does nothing at all if no custom sound bank has been registered for it. Anything else is rejected with "RSSE: Unknown object type", starting nothing and leaving no record. The range check is unsigned, so zero and negative values are rejected on the same path.
 
-`<parameter>` - Unknown
+`<node>` - Which node of the model the effect sits on, or -1 for the model's own origin. -1 is the commonest value in the shipped scripts, at 277 of 644 uses. A node the model does not have is rejected with "RSSE: Invalid Node ID", and nothing is started.
 
-`<id>` - The ID of the object to add.
+`<effect>` - A particle effect id when `<type>` is 1 or 2, and a sample index within the chosen category otherwise. These are two unrelated numberings, and **neither is range-checked**: bit 15 marks a custom particle code, which the engine remaps before use. No shipped script names a particle above 95, but that is a property of the shipped scripts rather than a rule of the instruction.
 
-`<slot>` - The 'slot' within the current ride to add the new ride.
+`<tag>` - What a later `KILLOBJ` or `FADEOBJ` matches on to stop this again. **It is a tag, not a duration or a lifetime**: the values the shipped scripts kill are exactly the values their own `ADDOBJ`s create. Several objects may carry the same tag, and stopping it stops all of them.
 
 ## ADDOBJ_EXT
 
-`ADDOBJ_EXT <unknown1> <unknown2> <unknown3> <unknown4> <unknown5>` - Unknown
+`ADDOBJ_EXT <type> <node> <effect> <lifetime> <tag>` - As `ADDOBJ`, but naming the lifetime that `ADDOBJ` leaves at its default.
 
 ### Operands
 
-Takes 5 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+The first three and the last are `ADDOBJ`'s. The extra one sits where `ADDOBJ` passes a fixed 1000, and 1000 is the value the engine tests against to decide whether to apply a lifetime at all - so a different value gives the started effect that lifetime. It is applied only to the two particle types.
+
+No script the game ships uses this instruction, so the operand meanings here come from the handler rather than from the data: it allocates the same record `ADDOBJ` does and calls the same worker.
 
 ## KILLOBJ
 
-`KILLOBJ <slot>` - Remove an object of a specific slot type.
+`KILLOBJ <tag>` - Stop every effect this script started carrying that tag.
 
 ### Operands
 
-`<slot>` - The slot of the desired object.
+`<tag>` - The tag given as `ADDOBJ`'s fourth operand.
+
+**Every** record carrying the tag is stopped, not merely the first. The handler walks the whole list, and on a match it steps to the next record *before* unlinking and freeing the one it matched, then returns to the same test - there is no break anywhere in it. A tag nothing carries stops nothing, which the shipped scripts do for real: two of the tags they kill are created by no `ADDOBJ` anywhere.
 
 ## FADEOBJ
 
-`FADEOBJ <slot>` - Fade out an object, and then remove it.
+`FADEOBJ <tag>` - Stop every effect carrying that tag, letting a sound fade out rather than cutting it.
 
 ### Operands
 
-`<slot>` - The slot of the desired object.
+`<tag>` - As `KILLOBJ`'s, and the walk over the records is the same one.
+
+**For a particle the two instructions are identical** - both reach the same kill with the same argument - so they differ only for a sound, where this one stops it fading and `KILLOBJ` stops it outright.
 
 ## SETOBJPARAM
 
@@ -134,15 +142,17 @@ Takes 5 operands, those not named above being unknown. No script the game ships 
 
 ## EVENT
 
-`EVENT <type> <unknown> <event>` - Trigger an in-game event.
+`EVENT <type> <node> <effect>` - Start a particle effect or a sound, keeping no record of it.
 
 ### Operands
 
-`<type>` - The type of the event.
+`<type>` - As `ADDOBJ`'s: the subsystem, and for a sound the category.
 
-`<unknown>` - Unknown
+`<node>` - As `ADDOBJ`'s: a node of the model, or -1 for its origin. -1 is again the commonest value, at 341 of 527 uses.
 
-`<event>` - The event?
+`<effect>` - As `ADDOBJ`'s: a particle id or a sample index.
+
+The handler does the same work `ADDOBJ` does and then **throws away the handle it gets back**, so nothing an `EVENT` starts can ever be stopped by `KILLOBJ` or `FADEOBJ` - those consult only the list of records, and `EVENT` adds none to it. That is the whole difference between the two instructions, and it is why `EVENT` takes no tag.
 
 ## EVENT_EXT
 

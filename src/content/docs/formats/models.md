@@ -430,7 +430,7 @@ Each track is a 64-byte descriptor:
 | 0x28                               | 4 bytes | Vertex morph descriptor (channel `0x1000`)             |
 | 0x2C                               | 4 bytes | UV animation descriptor (channel `0x10000`)            |
 | 0x30                               | 4 bytes | Data pointer for channel `0x20000` (undecoded)         |
-| 0x34                               | 4 bytes | Pointer, channel unidentified (engine-confirmed)       |
+| 0x34                               | 4 bytes | Easing curve table (rotation only, engine-confirmed)   |
 
 The flag word at 0x04 says which channels the track carries, and every bit owns exactly one
 slot. Counted across every track in every animation file in the game:
@@ -451,10 +451,16 @@ appear together and share the single slot at +0x20.
 
 There is an eighth pointer, at **+0x34, that no flag bit owns**. It is set on 1768 tracks and
 every one of them is a rotation track (out of 3039), so it is an optional extra *for rotation*
-rather than a channel in its own right. What it points at looks like a byte ramp -
-`32, 66, 105, 141, 176, 208, 233, 249` in `Advisorm1` - which would be an easing curve, but the
-records are not a fixed length and about a third are not monotonic, so that is an observation
-rather than a decode.
+rather than a channel in its own right. **It is the easing curve table** - see
+[The easing curve](#the-easing-curve) under Rotation below.
+
+> **This page used to call that an observation rather than a decode**, on the grounds that "the
+> records are not a fixed length and about a third are not monotonic". The first half was the
+> mistake, and it was what kept the field undecoded: a record is exactly **eight bytes**, indexed
+> by an id carried on each rotation keyframe. The ramp quoted here -
+> `32, 66, 105, 141, 176, 208, 233, 249` in `Advisorm1` - is that file's **curve 0**, which the
+> old reading happened to land on at the right stride. The second half is true and is not a
+> problem: about 22% of curve records really do fall as well as rise, deliberately.
 
 > **Bit `0x4000` is a modifier, not a channel.** It makes the `+0x28` slot point at a different
 > structure, and the engine branches on it *before* reading any morph table. Thirty tracks in
@@ -499,7 +505,7 @@ Turns a whole node about its own origin. The keyframe count is the **ushort** at
 | Size    | Description                                              |
 | ------- | ----------------------------------------------------------|
 | 2 bytes | Frame index                                                |
-| 2 bytes | Flags - only `0x0000` and `0xFFFF` are observed; meaning unconfirmed |
+| 2 bytes | **Easing curve id** - `0xFFFF` means none; see [The easing curve](#the-easing-curve) |
 | 4 bytes | Quaternion X                                               |
 | 4 bytes | Quaternion Y                                               |
 | 4 bytes | Quaternion Z                                               |
@@ -512,6 +518,73 @@ what a reader should validate before trusting a track.
 Model space is Y-up, so a quarter turn about Y is a door swinging. `Jun_gateM1` takes the gate's
 two doors from identity to a quarter turn, and `Jun_gateM2` is exactly the inverse - open, then
 shut.
+
+#### The easing curve
+
+The second ushort of a keyframe is **not a flag word**. It is an index into a table of curves at
+track descriptor **+0x34**, and `0xFFFF` is the only sentinel. `0` is *curve number nought* - the
+commonest id in the game, which is exactly why the field looks like a flag that is only ever set
+or clear.
+
+Where a key names a curve, the engine does not blend evenly between that key and the next. It
+bends the fraction first, at `0x00471c83`-`0x00471d32`, immediately before the rotation sampler
+at `0x00474490`.
+
+**A curve is eight bytes**, and those bytes are the *inner* points of a ramp whose ends are
+implied - nought before the first byte, one after the last. So the ramp is ten points and **nine
+straight segments**:
+
+```
+0 -> curve[0] -> curve[1] -> ... -> curve[7] -> 1
+```
+
+To evaluate it, given the even fraction `t` between the two keys:
+
+1. Multiply `t` by the segment count and **truncate toward zero** to pick a segment `s`.
+2. Take that segment's endpoints - `(0, curve[0])` when `s` is 0, `(curve[s-1], curve[s])` for
+   `s` of 1 to 7, and `(curve[7], 1)` for `s` of 8 or more.
+3. Scale each byte by `1/255` and interpolate across the segment with what is left of the
+   truncation.
+
+Both constants are worth quoting exactly:
+
+| Address      | Value                   | Purpose                                      |
+| ------------ | ----------------------- | -------------------------------------------- |
+| `0x006febe4` | **8.999995231628418**   | Segment count - deliberately just under nine |
+| `0x006febec` | **0.003921568859368563** | Byte scale, exactly `1/255`                 |
+
+> **The segment count is not nine, and the shortfall is deliberate.** Because the engine
+> truncates, an exact 9 would send `t == 1` into a tenth segment that has no upper point to
+> reach, and the blend would answer `curve[7]/255` instead of 1 - a jump *backwards* on the very
+> last frame. Just under nine keeps `t == 1` inside segment 8, where it lands on 1.
+
+**The id governing a segment is the one on the key being blended out of** - the lower of the two.
+
+Measured over the 1166 clips under `levels/` whose track table validates:
+
+| Measurement                                        | Count             |
+| -------------------------------------------------- | ----------------- |
+| Clips with at least one eased rotation key          | **457 of 1166**   |
+| Rotation tracks carrying a +0x34 table              | 1759 of 3022      |
+| Rotation tracks with no table (every key `0xFFFF`)  | 1263              |
+| Eased keys whose id equals their own index          | 9358 of 12,428    |
+| Eased keys whose id does **not**                    | **3070**          |
+| Curve records that are non-monotonic                | 2797 of 12,428    |
+| Curve records whose last byte is 255                | 112 of 12,428     |
+
+Three things follow from those numbers, each of which a reader can get wrong while still
+producing plausible-looking output:
+
+- **The table is indexed by the id, never walked alongside the keys.** Deriving a curve from the
+  key's own position is right about four times in five and quietly wrong the rest; ids reach
+  **100**, far past any key count.
+- **The last key of a track never names a curve.** All 1759 eased tracks end on `0xFFFF`, with no
+  exceptions - there is no segment beginning at the final key.
+- **A curve need not climb.** 2797 records dip, so the pose genuinely travels back the way it came
+  partway through a blend before going on. That is an author's overshoot written down, and it
+  should be reproduced rather than sorted. The implied 1 at the end matters for the same reason:
+  only 112 records ever reach 255, so almost every curve is still climbing when it enters the
+  ninth segment.
 
 ### Vertex morph (bit 0x1000)
 

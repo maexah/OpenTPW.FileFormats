@@ -190,6 +190,29 @@ neighbour mask from the cells around it. They share one compass: over the Jungle
 `mDirection` only ever reads 0, 1, 4, 16 or 64 — the four cardinals of an
 `N NE E SE S SW W NW` layout, and nothing between them.
 
+The two are nevertheless **read in completely different ways**, and a reader that treats them alike will
+be wrong about one of them. `mNeighbours` is **bit-tested**; `mDirection` is compared for **equality**
+against a single value and is never masked. The park bears that out: across all 16,384 cells
+`mNeighbours` takes **38 distinct values with 82 cells carrying more than one bit**, while `mDirection`
+takes **five and never carries two**. Because those five are `0`, `1`, `4`, `16` and `64`, a single value
+and a one-bit mask are indistinguishable over exactly the data you have — so the difference has to come
+from the code, not from the corpus.
+
+Which bit is which side can be settled from the file alone, without trusting either reading. For every
+path cell, whether the neighbour on a given side is *also* a path cell is knowable by walking the map, so
+a candidate pairing can be scored against reality. Pairing `0x01` with `-y`, `0x04` with `+x`, `0x10`
+with `+y` and `0x40` with `-x` reproduces real adjacency **94.8%** of the time; the opposite pairing
+manages 75.3%, and loses on all four sides taken separately.
+
+:::note[The engine reads the far side, not the near one]
+The executable's step check numbers its directions by axis, fixed absolutely by its own boundary guards —
+it refuses `x == 0` going 3, `y == 0` going 0, `x == 0x7f` going 1 and `y == 0x7f` going 2, so **0 is
+`-y`, 1 is `+x`, 2 is `+y`, 3 is `-x`**. Asked about direction 0, which is `-y`, it consults bit `0x10` —
+the `+y` bit. It reads the side **opposite** the way it is going, which fits if `mNeighbours` records the
+sides a cell may be entered *from*. It also reports "blocked" when the bit is **clear**, so the byte says
+where a cell *connects*, not where it is walled.
+:::
+
 `mTileData` is **three dwords**, not one opaque run:
 
 | Dword | Meaning | Values in the Jungle park |
@@ -397,3 +420,53 @@ the park to open, and coming through it — which matches where the same guests 
 > reader that ends exactly on `DLRW` had all of them right, and one that is a single byte out cannot. It
 > is the same end-to-end check the container already allows: the block length reaching the end of the
 > file, and the payload inflating to its declared size.
+
+### The navigation block, exactly — 177 bytes at +43
+
+Every person carries one, staff included, because the person base reads it for all six models. Its fields
+are written **alphabetically by name**, like the rest of the save, so each offset is the sum of the sizes
+before it — and they close on exactly 177:
+
+```text
++43  i32×2 force              +51  i32×2 formation_pos    +59  i32×2 local_xaxis
++67  i32×2 local_yaxis        +75  i32   mass             +79  i32   max_force
++83  i32   max_speed          +87  i32   mCantReachDest   +91  i32   nav_mode
++95  i32   path_buffer_count  +99  i32   path_count       +103 u8    path_finished
++104 i32   path_last_progress +108 i32   path_stuck_buffer
++112 i32   path_subpath_dist  +116 i32   path_tail_dist   +120 i32×2 path_target_pos
++128 i32   path_timestamp     +132 i32   path_total_count +136 i32   path_total_dist
++140 i32×2 position           +148 i32   radius
++152 5 × (i32×2 subpath_buffer[i] + i32 subpath_dist[i]) = 60 bytes
++212 i32×2 velocity                                              = 177
+```
+
+Three of those carry **no name in the binary** — `mass`, `position` and `velocity` above. Each is named
+by four things agreeing: the alphabetical slot it has to occupy, how the steering loop uses it, the
+Reynolds-steering vocabulary the block's other names come from, and the constructor, which writes `1.0`,
+`0.2`, `0.4` and `0.2` to mass, radius, max force and max speed at exactly those places.
+
+**Everything here is 16.16 fixed point**, where `65536` is one map cell. A position is therefore in
+65536ths of a cell — 256 times finer than the `mX`/`mY` every thing carries — and the engine reaches
+`mX`/`mY` from it by shifting right by eight.
+
+> **How to check a reader of this block**, and it is a strong check: `position >> 8` must equal the `mX`
+> and `mY` stored separately at `+8` and `+10`. Those were not used to place this block, so agreement is
+> real evidence. Across the shipped park all eighteen people match at seventeen distinct positions, and
+> none matches at a base shifted by −8, −4, +4 or +8.
+
+Some of it is measurable rather than merely readable. `max_force` is **exactly twice `max_speed`** on all
+eighteen people, and `max_speed` is seeded from `mBaseSpeed × 65536 / 500` — but four of the eighteen have
+drifted off that seed, so it is live state and must be read rather than recomputed. `mass` is `1.0` and
+`radius` `0.2` of a cell on every one of them.
+
+:::caution[`subpath_dist` is only partly meaningful]
+When a route is set, only **`path_buffer_count − 1`** of the five distances are written — a one-waypoint
+route writes none at all — so an unused slot keeps whatever the previous route left in it. In the shipped
+park that shows up as `0xCDCDCDCD`, uninitialised fill saved verbatim, on one person and a stale real
+distance on another with the same buffer count. Only `i < path_buffer_count − 1` means anything.
+:::
+
+Two details make the rest of the block legible. Waypoints are whole cells walked to at their **centre**,
+stored as `cell × 65536 + 32768`. And every distance in it — the legs, the totals, the arrival tests — is
+an **octagonal approximation**, `ax + ay − min(ax, ay) / 2` with the halving truncated, never a real
+square root; the three legs the shipped park holds come back at exactly the distances it saved.

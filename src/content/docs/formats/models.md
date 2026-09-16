@@ -13,6 +13,11 @@ holds for 1274 of the 1279 animation files in the game; the five exceptions are 
 `ROTATE.MD2`, `FLY.MD2`, `anim.MD2` and `scatM1.md2`, which don't sit next to an identifiable
 base model.
 
+**The number is optional**, and its absence is not a variant spelling of `M1` - it selects which
+file the engine loads. `fountainM.MD2` is the Round Fountain's entire animation, and 197 of the
+game's base models ship theirs only this way. See
+[Which animation file a model takes](#which-animation-file-a-model-takes).
+
 > This page reflects an ongoing reverse-engineering effort - see **Open questions** at the end
 > of each section for what isn't nailed down yet. Every offset and rule stated as fact here has
 > been checked against the game's full model data (over 2,300 files), not inferred from one or
@@ -693,6 +698,38 @@ nothing else; work an animation's length out from its rotation and morph keyfram
 those files span zero frames, so their water never moves. 98 of the game's 1151 animation files
 are in that position.
 
+### Which animation file a model takes
+
+The letter before the number is an **animation role**, not part of the model's name. The engine
+keeps twelve of them, in the order `C D I L S M E U W B R O` (table at `0x006fe6bc`), and a model
+ships a file only for the roles it uses - the jungle's security camera ships `camerac`, `cameras`,
+`cameram` and `camerae`.
+
+For each role, the loader at `FUN_00461f10` probes two filename forms, in this order:
+
+1. `<stem><letter><n>.md2`, from `n = 1` upwards, stopping at the first gap. Format string
+   `'%s%s%c%d.md2'` at `0x004623b3`. No shipped archive has a gap.
+2. `<stem><letter>.md2`, with no number at all. Format string `'%s%s%c.md2'` at `0x004623df`,
+   reached **only where the numbered run found nothing**.
+
+So the unnumbered form is not a fallback for a missing file - it is the other way the same role is
+shipped, and it is the commoner one. **197 of the 445 base models that carry any role at all ship
+their `M` role like this and no other**, counted across all 312 archives by that rule. The terrain
+is one: `terrain.wad` holds `base.md2` and `basem.md2` and nothing numbered, and the engine does
+reach it - `FUN_004504c0` builds `'%s\Terrain'` and asks for the stem `"Base"`, falling back to
+`"TestBase"`.
+
+> **The "only where the numbered run found nothing" condition is load-bearing, and exactly one
+> archive in the game demonstrates it.** `jungle/mamfount` ships `mamfountm.md2` *and*
+> `mamfountm1.md2` *and* `mamfountm2.md2`. The engine loads the two numbered ones and never opens
+> the bare file. A loader that listed the archive instead, or that took the bare file in addition,
+> would find three entries where the engine finds two - and every index into that role would be off
+> by one from there on.
+
+Not every such file animates anything. Of those 197, **160 carry a rotation, morph or UV track and
+37 are empty** - structurally valid, declaring a frame span, but carrying no track of any kind.
+None of the 197 carries the position and visibility channels alone.
+
 ### Sequencing
 
 Nothing in the format says how a model's `M1`, `M2`, ... animations are ordered, when they
@@ -709,7 +746,9 @@ example on the [RSS](/formats/rss) page.
   The record shape only holds for about 58% of instances, so there are variants and this is not
   decoded.
 - The channel at flag `0x20000` (pointer at descriptor +0x30) - location known, contents not.
-- The three further pointer slots at +0x20, +0x24 and +0x34, and which flag bits own them.
+- The two further pointer slots at +0x20 and +0x24, and which flag bits own them. (+0x34 no longer
+  belongs on this list: it is the easing curve table, owned by no flag bit at all - see
+  [The easing curve](#the-easing-curve).)
 - The frame-ish value at descriptor +0x0C, and the unknown 4 bytes ending each morph record.
 - What the two extra channels beyond a morph track's vertex count represent.
 - Why a few models' target indices don't land on the mesh the data clearly belongs to - i.e.

@@ -78,12 +78,28 @@ be named from the code that fills them are:
 | `0x18` | 4 bytes | State |
 | `0x7C` | 4 bytes | When this sprite is next due to step |
 | `0x80` | 4 bytes | How long between steps |
+| `0x88` | 4 bytes | Where it stands across the map, a float, in world units - ten to a map cell |
+| `0x8C` | 4 bytes | How far above the ground, a float. `0` on every person in the shipped park; the game looks up the land underneath and adds it as it draws |
+| `0x90` | 4 bytes | Where it stands down the map, a float, in the same units |
 | `0xA0` | 4 bytes | Alpha - `255` throughout the shipped park |
 | `0xA4` | 4 bytes | Scale across, a float - `1.0` throughout |
 | `0xA8` | 4 bytes | Scale down, a float - `1.0` throughout |
 | `0xAC` | 4 bytes | Which kind of sprite this is - an index into the table of fourteen in [Sprites](/formats/sprites/) |
 | `0xB0` | 4 bytes | Which bank of that kind |
-| `0xB4` | 4 bytes | Which variant within the bank |
+| `0xB4` | 4 bytes | Two numbers in one: the low four bits are the **set**, and everything above them is how far past its kind's first bank this sprite's bank sits. The game takes it apart exactly that way before it looks a picture up |
+| `0xB8` | 4 bytes | Which frame of that set |
+| `0xC0` | 4 bytes | Which of eight ways round it was last drawn facing |
 
-The record carries **no position**. Where a sprite is comes from the thing it belongs to, whose `mX`
-and `mY` are in 256ths of a cell.
+The three floats at `0x88`, `0x8C` and `0x90` are where the sprite stands, in world units at ten to a
+map cell.
+
+An earlier version of this page said the record carried **no position at all**. That was wrong, and
+wrong for a reason worth keeping: the scan that went looking for one swept for values shaped like map
+cells, which run to the tens, while these are world units and run to the hundreds. It reported nothing
+because nothing it could see was there. A negative result is only ever as wide as the encoding it
+assumed.
+
+The thing that owns the sprite knows where it is too, as `mX` and `mY` in 256ths of a cell, and the two
+agree: across all eighteen of the shipped park's people the two readings differ by less than a third of
+a world unit. The thing is the better source of the two, because it is what the park saved rather than
+where the runtime last drew.

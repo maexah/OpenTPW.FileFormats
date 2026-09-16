@@ -36,7 +36,7 @@ Each set:
 | --- | --- | --- |
 | `0x0` | 2 bytes | First picture |
 | `0x2` | 1 byte | Frames per direction |
-| `0x3` | 1 byte | Directional: when set, the sprite's direction picks a run of pictures, frames-per-direction apart |
+| `0x3` | 1 byte | How many directions this set stores, `0` if it faces nowhere - see [Directions](#directions) |
 
 ### The four groups at `0x14E`
 
@@ -48,21 +48,41 @@ names, and two further bytes** whose meaning is not identified. A group's set nu
 
 ## Directions
 
-A directional set stores its whole run once per direction, one after another, so the pictures for
-direction *d* begin at `first + d * framesPerDirection`. **There are five directions.**
+A set stores its whole run once per direction, one after another, so the pictures for direction *d*
+begin at `first + d * framesPerDirection`. **How many directions is written down: it is the set's own
+fourth byte.**
 
-That number is not written down anywhere in the file, but the sets of a bank are laid end to end in
-its pictures, which makes it measurable: the gap from one set's `first` to the next set's is exactly
-`framesPerDirection x directions`, so every consecutive pair of sets is an independent vote. Across
-all 46 banks, **169 gaps give five**; the only other answer is one, and it comes from the banks that
-are not directional at all (`Balloons`, `Litter`, `Particles`, `Thoughts`, `SpecialFX`). The check
-that settles it is the picture count: taking the last set's `first` plus its own span, **29 banks land
-exactly on the number of pictures in their `.TPC`** at five directions, and the seven non-directional
-ones land exactly at one.
+An earlier version of this page called that byte a flag and said there were five directions
+everywhere. Five is what a *body* stores, and it is what the arithmetic below independently gives, but
+it is not universal. Reading the byte across every set in use in all 46 banks:
 
-A bank whose sets are all a single run offers no gap to measure, so this method says nothing about it.
-The `*heads` banks are all of that shape, and **their direction count is not established here** - do
-not assume it is five.
+| Directions | Sets | Which |
+| --- | --- | --- |
+| `5` | 201 | Every full-body person - guests, staff, costumes |
+| `7` | 10 | The eight `Kidsheads` banks and two `Costumeheads` |
+| `4` | 1 | `Jungle\Entertainers\SPR_EX` set 3 |
+| `0` | 71 | Faces nowhere at all: `Balloons`, `Litter`, `Particles`, `Thoughts`, `SpecialFX` |
+
+The byte agrees with the pictures. A bank's sets are laid end to end, so the span of a set is
+`framesPerDirection x directions` and the last set's `first` plus its own span should land on the
+bank's picture count: `Generic\Kids\SPR_BE` set 1 is first 135, eight frames a direction, five
+directions, and `135 + 8 x 5 = 175` is exactly its pack. **282 of the 283 sets in use fit their pack
+this way.** The one that does not is `Generic\Kidsheads\SPR_BE`, which asks for 56 pictures from a pack
+holding 55 - a defect in that one file rather than a rule, so a reader must not index blindly.
+
+That also settles what the older gap-counting method could not. It worked by making each consecutive
+pair of sets vote, so a bank whose sets are a single run offered nothing to measure, and the `*heads`
+banks are all of that shape. They store **seven**.
+
+## Eight headings from five pictures
+
+Five stored directions cover eight compass headings because the game **reflects** them. When the
+heading it wants runs past the last one stored, it draws `8 - heading` mirrored instead, which is why a
+guest walking away to the left and one walking away to the right are the same pictures.
+
+One shipped set does not survive its own rule: `Jungle\Entertainers\SPR_EX` set 3 stores four
+directions, and heading 4 folds to `8 - 4 = 4`, which is still past the end. The game walks on into the
+neighbouring set's pictures and draws those.
 
 A guest's bank - `Generic\Kids\SPR_BE`, and the seven beside it - is 175 pictures in eight sets:
 

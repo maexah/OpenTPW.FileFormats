@@ -28,6 +28,30 @@ Comments are preceded with a pound symbol (`#`) and continue until the end of th
 
 Strings are surrounded with double quotes (`"`) and are used for various properties, i.e. the ride's name.
 
+### A key may name several fields at once
+
+A key is a **group**, an optional `[n]` subscript, and then **one or more field names separated by
+dots** — and the line supplies one value for each name, in order:
+
+```text
+PeepTypes[0].PreferredExcitement.StartingCash.BoredomThreshold	80	 300	40
+```
+
+That line defines three settings, so `PeepTypes[0].StartingCash` is `300`. The game's parser collects
+the dotted names into a table of its own, stops at **sixteen** — the executable carries the string
+`Too many fields have been specified` for the seventeenth — and then runs its value loop exactly as many
+times as there are names, naming the offending field if one of them will not resolve.
+
+> A reader that takes the line as one key and one value keeps the `80`, drops the rest, and reports
+> nothing at all. Every name after the first then simply appears not to exist, and every caller quietly
+> receives its fallback instead. Sixteen lines in the whole game are written this way, all of them
+> `PeepTypes`, and between them they hold the starting money and the boredom threshold for all eight
+> kinds of guest.
+
+It is also why the **unmarked prose** these files trail their values with does no harm: the loop takes
+as many values as the key named fields and never looks at the rest of the line, so
+`PeepInfo.ExitLevel  120  starting value for the ExitLevel counter` reads `120` and stops there.
+
 ## Where they are found
 
 - **Loose**, under `data/` — `high.sam`, `med.sam`, `low.sam`, `sound.sam`, `Challenges.sam`.
@@ -76,6 +100,33 @@ enjoys.
 A theme barely touches any of this: across all four themes the only peep key overridden anywhere is
 `PeepInfo.ExcitementToCostDivisor`, which Fantasy and Space raise from `4` to `5`. Jungle and Halloween
 override none of it.
+
+### RegionFX: what a thing does to the cells around it
+
+Eight numbered effects say how a placed object, or a member of staff, changes the ground near it. They
+are the route by which scenery reaches a guest at all:
+
+| Key | Meaning |
+| --- | ------- |
+| `RegionFX[n].Radius` | How many cells out the effect reaches |
+| `RegionFX[n].Happiness` | Added to the happiness of a guest standing there |
+| `RegionFX[n].Illness` | Added to their illness |
+| `RegionFX[n].Hunger` | Added to their hunger — a negative value *reduces* it, and the file says so in a comment |
+| `RegionFX[n].Security` | The cell's security level, which decides whether a guard is sent after a vandal |
+| `RegionFX[n].Attraction` | How strongly the cell draws people |
+
+The engine keeps a **ten-byte record for every map cell** — five shorts, in exactly the order above once
+the radius is set aside — and stamps an effect into each cell within `Radius`, every value divided by
+the **Manhattan distance plus one**. Placing a thing adds those amounts and removing it subtracts the
+same ones, so a thing that *moves* does both in turn: staff carry their effect around the park with them.
+
+> **Two instruments agree on the order, which is why it can be trusted.** The keys appear in the order
+> the code reads the five shorts; and the fourth short is independently identified as the security level
+> by the routine that sweeps all 16,384 cells to report what percentage of the park is covered, and by
+> the one that prints `There's no security level on this cell` before setting a guard on a vandal.
+
+Which of the eight a given thing stamps is chosen in code rather than named in the item's own file. No
+theme overrides any of this, and `Online_Standard.sam` keeps a copy of its own with one value changed.
 
 ## Identifying an item
 

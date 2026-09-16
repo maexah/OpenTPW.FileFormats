@@ -204,13 +204,20 @@ a candidate pairing can be scored against reality. Pairing `0x01` with `-y`, `0x
 with `+y` and `0x40` with `-x` reproduces real adjacency **94.8%** of the time; the opposite pairing
 manages 75.3%, and loses on all four sides taken separately.
 
-:::note[The engine reads the far side, not the near one]
+:::note[The bit is read from the cell being entered]
 The executable's step check numbers its directions by axis, fixed absolutely by its own boundary guards —
 it refuses `x == 0` going 3, `y == 0` going 0, `x == 0x7f` going 1 and `y == 0x7f` going 2, so **0 is
 `-y`, 1 is `+x`, 2 is `+y`, 3 is `-x`**. Asked about direction 0, which is `-y`, it consults bit `0x10` —
-the `+y` bit. It reads the side **opposite** the way it is going, which fits if `mNeighbours` records the
-sides a cell may be entered *from*. It also reports "blocked" when the bit is **clear**, so the byte says
-where a cell *connects*, not where it is walled.
+the `+y` bit. Read as a question about the cell being *left* that is its far side, and this note used to
+say exactly that. It is not: the disassembly loads the **destination** cell into `ECX` before the call,
+and the destination's `+y` side is precisely the side facing the cell being left. The predicate reads the
+**near side of the cell being stepped into**.
+
+No measurement on this park can tell those two readings apart. `mNeighbours` is **symmetric across all
+65,024 of its adjacent pairs**, so scoring "the destination's facing bit" against "the source's facing
+bit" returns 100% either way — the disassembly is what settles it, which is why the `this` pointer the
+decompiler drops matters so much here. It also reports "blocked" when the bit is **clear**, so the byte
+says where a cell *connects*, not where it is walled.
 :::
 
 `mTileData` is **three dwords**, not one opaque run:

@@ -51,6 +51,32 @@ Strings are surrounded with double quotes (`"`) and are used for various propert
 `Easy_Standard.sam` is a third pass. In the Jungle it overrides four `LoanInfo[n].Lendername` values and
 introduces nothing, so reading it is an assertion that the game is in easy mode.
 
+### The balance file is where the simulation's constants live
+
+The global file is not merely bigger than a theme's; it is the only place most of the simulation is
+tuned. Its groups are `PeepInfo` (33 keys) and `PeepTypes[0..7]`, `StaffPoolInfo`, `Arrival`,
+`AllStaffConstants`, `PerGradeStaffConsts[0..4]`, `PerTypeStaffConsts[0..4]`, the four
+`*ConstsPerGrade`, `BankAccountInfo`, `LoanInfo[0..7]`, `Research`, `ResearchTech`,
+`ResearchCategories`, `Costs`, `Challenges` and `GoldenTicketGlobal`, alongside the
+`MapInfo`/`FixedItemInfo`/`ThemeEngine`/`Seasons`/`Weather` groups a theme does override.
+
+Many of the keys carry a trailing comment explaining themselves, for example
+`PeepInfo.ToiletDesparate 100` — *"toilet level above which peep is 'desperate'"*.
+
+> **These constants are not in the executable, and looking for them there is misleading.** The engine
+> reads them from a block of memory that is **entirely zero in the image on disk**, filled at load by
+> the balance parser — the binary names `BalanceLoader.cpp` in its error strings. Anyone reverse
+> engineering the simulation will find the peep code reading constants that all appear to be `0`; they
+> arrive from this file.
+
+`PeepTypes` is eight rows of `PreferredExcitement . StartingCash . BoredomThreshold`, and a peep is
+given a type at random when it is made, which then selects its starting money and the kind of ride it
+enjoys.
+
+A theme barely touches any of this: across all four themes the only peep key overridden anywhere is
+`PeepInfo.ExcitementToCostDivisor`, which Fantasy and Space raise from `4` to `5`. Jungle and Halloween
+override none of it.
+
 ## Identifying an item
 
 Every item's SAM carries an `Info.Id`, and the number is banded by category:

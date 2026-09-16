@@ -316,6 +316,83 @@ stores `128` in both, which is *half a cell* rather than an obvious sentinel —
 position puts those objects at the origin. The Jungle park's gate, traffic lights and bus are all stored
 that way, because their positions live in their models rather than in the save.
 
+### A person: models 1 and 4–8
+
+A guest and the five kinds of staff share one **390-byte person base** and then add a block of their
+own. That is where the sizes listed above come from, and they close exactly:
+
+| Model | After the base | Total |
+| ----- | -------------- | ----- |
+| 1 guest | 135 | `8 + 390 + 135` = **533** |
+| 4 mechanic | 105 + 8 | **511** |
+| 5 handyman | 105 + 10 | **513** |
+| 6 entertainer | 105 + 6 | **509** |
+| 7 guard | 105 + 8 | **511** |
+| 8 researcher | 105 + 6 | **509** |
+
+The five staff share a further **105-byte staff base** between the person base and their own handful of
+fields; a guest has none.
+
+> **These are not struct offsets, and the difference is not small.** A thing is written field by field
+> in the order its reader asks for them, so a field's place in the file is the sum of the sizes before
+> it and bears no relation to where it sits in memory. A guest's `mState` is at `+0x220` in memory and
+> at **+505** in the record. Lifting offsets off a decompiler and using them as file offsets produces
+> something that parses and is wrong.
+
+Two parts of the person base are worth knowing about before the guest's own fields. It carries the
+peep's **entire navigation state** — 177 bytes of steering and path data (`force`, `radius`,
+`max_speed`, `nav_mode`, a five-entry `subpath_buffer`, and a family of `path_*` counters) — so a peep
+resumes the route it was walking rather than re-planning on load. It also carries a **144-byte thought
+and event history**: a 32-entry ring of `[u16 type][u16 param]` with its index, plus `mLastThought`,
+`mThoughtScript` and `mTimeBubbleShown`. That ring is what the game renders as a peep's diary.
+
+Two fields of the base are useful on their own, at record-relative offsets: **`mSpriteScript` at +16**,
+which is the peep's slot in the park's table of sprites, and **`mSpriteAngle` at +242**
+(`0xf2`), an 11-bit heading.
+
+A **model 1** guest's own block begins at **+398** and runs 135 bytes:
+
+```text
++398 i32 mArrivalDate          +402 i32 mArrivalIndex     +406 i32 mBalloonScript
++410 i32 mBeenAdmitted         +414 i32 mCash             +418 i32 mExitLevel
++422 f32 happiness             +426 f32 hunger
++430 i32 mLastPosX             +434 i32 mLastPosY         +438 f32 litter carried
++442 u16 mMajorDest
++444 i32 mNumRides             +448 i32 mNumShops         +452 i32 mNumSideshows
++456 i32 mNumSideshowsWon      +460 i32 mPaidAdmission    +464 i32 mParkOpeningWaitingTime
++468 u8  mPersonType           +469 u8  mPrankeryIndex
++470 u16 mPreviousRides[4] and mPreviousTemporaryRides[4], interleaved, 16 bytes
++486 u16 mQNext                +488 u16 mQPrev            +490 i32 mQueueMoveDelay
++494 u8  mQueuePos             +495 i32 mRemainingBalloonLife
++499 u16 mSavedMajorDest       +501 i32 mSavedState       +505 i32 mState
++509 f32 thirst                +513 i32 mTimeOfLastSpotAnim
++517 i32 mTimeStartedIdling    +521 f32 (not identified)
++525 f32 toilet                +529 f32 illness
+```
+
+The six named floats are need meters the engine clamps to `0..100`. Five of them are named by the
+engine's own logging — it prints `thirst`, `hunger`, `toilet` and `illness` while scoring which ride a
+peep will choose, and prints `Litter gone up by %d, is now %d` over the litter field. The seventh float
+at `+521` is left unnamed here rather than guessed.
+
+> **A corroboration worth repeating, because it is the reason to trust the table above.** The theme
+> balance file's `PeepInfo.DecisionVar…Weight` keys run **Dist, Queue, Excitement, Thirst, Hunger,
+> Toilet, Illness** — the same seven terms in the same order that the scoring code multiplies. A text
+> file written by the developers agrees with the disassembly about which float is which.
+
+`mState` is one of 22 behaviour states and `mSavedState` is the one to return to after a one-off
+animation. In the shipped Jungle park every guest reads 2, 3 or 5 — heading for the gate, waiting for
+the park to open, and coming through it — which matches where the same guests stand on the map.
+
+> **How to check a reader of this block.** Four things in the shipped park are specific rather than
+> merely in range, and a map that is even one byte out fails all of them: `happiness` is exactly `50.0`
+> on all thirteen guests (the value a new peep is constructed with), `mSavedState` is `6` on all
+> thirteen, every need is a whole number, and each guest's `mCash` falls within
+> `PeepInfo.StartingCashVarPc` of `PeepTypes[mPersonType].StartingCash` from the balance file. Note
+> that a plain range test on the floats is nearly useless here: a small integer read as a float is a
+> denormal of about `1e-43`, which passes any `0..100` check, so shifting the base by a few bytes still
+> appears to work.
+
 > **Make the trailer an assertion.** Every record length in the block feeds one running offset, so a
 > reader that ends exactly on `DLRW` had all of them right, and one that is a single byte out cannot. It
 > is the same end-to-end check the container already allows: the block length reaching the end of the

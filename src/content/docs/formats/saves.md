@@ -12,30 +12,78 @@ These extensions are:
 
 ## File format
 
+Offsets below are of an offline save; an online one carries extra data after the file info and is not
+covered here.
+
 **Header**
 
-| Size      | Description                  |
-| --------- | ---------------------------- |
-| 4 bytes   | Magic number - `F4 01 00 00` |
-| 823 bytes | Copyright Notice             |
-| 711 bytes | Padding                      |
+| Offset | Size | Description |
+| --- | --- | --- |
+| `0x000` | 4 bytes | Version. The park the game ships carries `400`; a saved park carries `500`. This is **not** a magic number - `F4 01 00 00` is simply `500` written little-endian |
+| `0x004` | 1 byte | Padding |
+| `0x005` | 824 bytes | Copyright notice, UTF-16 - so 412 characters, and reading it as single bytes gives every other byte as a NUL |
+| `0x33D` | 711 bytes | Zeros |
 
 **File info**
 
-| Size    | Description                                     |
-| ------- | ----------------------------------------------- |
-| 4 bytes | File type - `00 01 22 19`                       |
-| 1 byte  | File version - `85`                             |
-| 1 byte  | Online flag - `00` for offline, `01` for online |
-| 2 bytes | Padding                                         |
+| Offset | Size | Description |
+| --- | --- | --- |
+| `0x604` | 4 bytes | File type - `00 01 22 19` |
+| `0x608` | 1 byte | File version - `85` |
+| `0x609` | 1 byte | Online flag - `00` for offline, `01` for online |
+| `0x60A` | 3 bytes | Padding |
 
 **Data (compressed using ZLIB)**
 
-| Size     | Description           |
-| -------- | --------------------- |
-| 4 bytes  | Magic number - `BILZ` |
-| 4 bytes  | Unknown               |
-| 4 bytes  | Compressed length     |
-| 16 bytes | Unknown               |
+| Offset | Size | Description |
+| --- | --- | --- |
+| `0x60D` | 4 bytes | Tag - `BILZ` |
+| `0x611` | 4 bytes | The size the payload inflates to |
+| `0x615` | 4 bytes | The size of this whole block, its tag and header included - so `0x60D` plus this is the file's length |
+| `0x619` | 16 bytes | Not identified; `15, 9, 0, 0` then zeros in the shipped park |
 
-The ZLIB stream begins after this point, and continues to the end of the file.
+Neither of those two sizes is a compressed length. The ZLIB stream begins at `0x629` - the 28-byte
+header counts the tag - and continues to the end of the file.
+
+## Inside the payload
+
+The inflated payload is a run of blocks, each closed by a four-character tag. The tags are written as
+little-endian dwords, so **every one of them reads backwards in a byte dump**: searching an inflated
+save for `WRLD` finds nothing and searching for `DLRW` finds it at once.
+
+### The sprite table (`TPCS`)
+
+Directly after the world block's `DLRW` trailer sits the table of the park's sprites - the guests and
+staff walking about. It is written as:
+
+| Size | Description |
+| --- | --- |
+| 4 bytes | Tag - `TPCS` |
+| 4 bytes | The size of one record - `0x118`, 280 bytes |
+| 4 bytes | How many slots the table has |
+| 4 bytes x slots | One handle per slot; zero where the slot is empty |
+| 280 bytes x live | One record per **non-zero** handle, in slot order |
+
+Slot 0 is never used. The park the game ships has 100 slots of which 18 are live, and those 18 are
+exactly its people: thirteen from the `kids` banks and one each from `entertainers`, `handymen`,
+`mechanics`, `guards` and `researchers`.
+
+A record is a runtime structure written out whole, so most of it is bookkeeping. The fields that can
+be named from the code that fills them are:
+
+| Offset | Size | Description |
+| --- | --- | --- |
+| `0x08` | 4 bytes | Cursor into the sprite's animation program |
+| `0x14` | 4 bytes | Where that program starts; re-pointed on load, so the stored value is meaningless |
+| `0x18` | 4 bytes | State |
+| `0x7C` | 4 bytes | When this sprite is next due to step |
+| `0x80` | 4 bytes | How long between steps |
+| `0xA0` | 4 bytes | Alpha - `255` throughout the shipped park |
+| `0xA4` | 4 bytes | Scale across, a float - `1.0` throughout |
+| `0xA8` | 4 bytes | Scale down, a float - `1.0` throughout |
+| `0xAC` | 4 bytes | Which kind of sprite this is - an index into the table of fourteen in [Sprites](/formats/sprites/) |
+| `0xB0` | 4 bytes | Which bank of that kind |
+| `0xB4` | 4 bytes | Which variant within the bank |
+
+The record carries **no position**. Where a sprite is comes from the thing it belongs to, whose `mX`
+and `mY` are in 256ths of a cell.

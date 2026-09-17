@@ -109,6 +109,71 @@ played, or it is what a park carries before it is first entered. Naming it eithe
 After the header come 150 object-control records, a pool of timers, the 128x128 map, and then the thing
 list.
 
+#### The map
+
+The map is 128x128 cells whatever size the park inside it is, and it is **the bulk of the block** - about
+1.3MB of the shipped park's 1.5MB. It has no fixed stride. **Each cell opens with a status byte saying
+which of three optional sub-records follow it**, one bit each:
+
+| Bit | Sub-record | Size |
+| --- | --- | --- |
+| `0x1` | map | 52 bytes |
+| `0x2` | track | 31 bytes |
+| `0x4` | effects | 10 bytes |
+
+A cell that is entirely default writes its status byte and nothing else, which is where the block's
+variable length comes from. Only two combinations occur in the shipped park - `3` on 16,134 cells and `7`
+on the other 250, coming to 84 and 94 bytes - but the bits add independently, so a walk that sums them
+reads the combinations no shipped park happens to contain.
+
+The map sub-record is a **29-byte tile base** followed by a **23-byte litter block**. The track
+sub-record repeats the same tile base field for field.
+
+| Offset | Size | Name |
+| --- | --- | --- |
+| 0 | 1 byte | `mDirection` |
+| 1 | 2 bytes | `mFlags` |
+| 3 | 4 bytes | `mMeshInstance` |
+| 7 | 1 byte | `mNeighbours` |
+| 8 | 2 bytes | `mOverlapCounter` |
+| 10 | 2 bytes | `mParentID` |
+| 12 | 12 bytes | `mTileData` - three dwords: set, index, angle |
+| 24 | 4 bytes | `mType` |
+| 28 | 1 byte | `mHoardingNeighbours` |
+| 29 | 4 bytes | `mLitter` |
+| 33 | 2 bytes | `mLitterCollector` |
+| 35 | 4 bytes | `mLitterScript` |
+| 39 | 4 bytes | `mLitterScript` **again** |
+| 43 | 2 bytes | `mPylonIndex` |
+| 45 | 1 byte | `mStatusFlags` |
+| 46 | 4 bytes | `mTimeMarkedForLitterCollection` |
+| 50 | 2 bytes | *(unnamed)* - the thing occupying the cell |
+
+The serialiser really does announce `mLitterScript` twice, for two consecutive dwords, and the arithmetic
+is what says so rather than the reading: `4+2+4+4+2+1+4+2` is exactly 23, and `29+23` is exactly the 52
+that the cell walk measures from the other direction. Written once, every field after it would shift by
+four and the record would close four bytes short of the next cell's status byte.
+
+**`mStatusFlags` is the attribute map.** The byte at offset 45 holds the same value `base.map` carries
+for that cell - checked across all 16,384 cells of the shipped park against a separate file, with its own
+header, parsed by different code, and indexed `x * 128 + y` where the save's cells run `y * 128 + x`.
+Every cell agrees. Agreement in aggregate would prove little; agreement cell by cell under *opposite*
+indexing is not something a misaligned or transposed reading can produce. 1,495 cells are non-zero, over
+exactly the eight values the attribute map uses: 0, 1, 3, 8, 17, 128, 144 and 148.
+
+**The unnamed short at 50 is occupancy** - the id of the thing standing on the cell. Twenty-four cells of
+the shipped park carry a value, and eleven of them are exactly its eleven placed catalogue objects, each
+naming *itself* on the cell it stands on: the cell at (55,15) holds `23`, and object `23` stands at
+(55,15), and so for all eleven. The remaining thirteen hold person ids, gathered on the approach to the
+park gates at x 47-48 and at the staff's own positions. A guest waiting to be let in tests the cell
+underfoot against their own id, which is this field read from the other side - though that test is made
+against the cell's *runtime* record, which is `0x44` bytes where the file carries 52, so the two layouts
+do not share offsets.
+
+Nothing has been dropped in the shipped park: `mLitter`, `mLitterCollector`,
+`mTimeMarkedForLitterCollection` and `mPylonIndex` are nought on every one of the 16,384 cells. That is a
+fact about a save nobody has played rather than a gap in the reading.
+
 #### Thing records
 
 The thing list is a **linked list, not an array**. Each record opens with the id of the *next* thing and
@@ -126,6 +191,77 @@ written field by field in the order its reader asks for them, so a field's place
 of the sizes before it and bears no relation to where it sits in memory: `mAdmissionFee` is at `+0x118`
 in the running game and at `+16` in the record. Taking the memory offsets and using them as file offsets
 produces something that parses and is wrong.
+
+#### A catalogue object (model 3)
+
+Model 3 is everything a player buys and places - shops, rides, sideshows and scenery. The shipped park
+holds **fourteen** of them: eleven placed, and three carrying the unplaced sentinel `128` in both
+coordinates, because their positions live in their models rather than in the save. Its record is
+**1,099 bytes**.
+
+| Offset | Size | Name | Notes |
+| --- | --- | --- | --- |
+| 8 | 2 bytes | `mX` | 256ths of a cell, from the shared map base |
+| 10 | 2 bytes | `mY` | |
+| 16 | 4 bytes | `mAngle` | `0`, `90` or `270` in the shipped park |
+| 20 | 2 bytes | `mId` | the item's `Info.Id`, from its own `.sam` |
+| 22 | 32 bytes | eight `tv_t` dwords | packed and unpacked by a helper |
+| 54 | 4 bytes | `MeshInstanceID` | |
+| 58 | 2 bytes | `mFlags` | see below |
+| 60 | 132 bytes | 33 pairs of `mNameA[`*i*`]`, `mNameB[`*i*`]` | 2 bytes each |
+| 192 | 4 bytes | `mRideScriptHandle` | |
+| 196 | 4 bytes | `mTrackRideHandle` | |
+| 200 | 4 bytes | `mState` | |
+| 204 | 2 bytes | `mTopLeft` | |
+| 206 | 2 bytes | `mEntryPos` | the cell a visitor is sent to |
+| 208 | 2 bytes | `mNext` | this object's link in the object list |
+| 210 | 2 bytes | `mAssignedStaffMember` | |
+| 212 | 2 bytes | `mBackOfQueue` | |
+| 214 | 4 bytes | `mCanLoad` | |
+| 218 | 2 bytes | `mExitPos` | |
+| 220 | 2 bytes | `mFirstInQ` | |
+| 222 | 4 bytes | `mIsTrackRideValid` | |
+| 226 | 2 bytes | `mUpgradeParent` | |
+
+After that come several ring buffers - each a `mCurrentEntry`, an `mNumEntries`, an `mWrappedAround` flag,
+an `mTemp` and then `mNumEntries` entries of `mData[`*i*`]` - interleaved with `mNumCustomers` and
+`mNumWalkAways`, and then a long tail of shop and ride fields: `mOperatingCapacity`,
+`mOperatingDuration`, `mOperatingSpeed`, `mPersonBeingLoaded`, `mCostOfGoods`, `mQualityOfGoods`,
+`mChanceOfWinning`, `mPricePerUse` (clamped to 0-500 as it is read), `mAmountOfSpecialIngredient`,
+`mQueueSizeInCells`, `mRequestedService`, `mTimeMarkedForMaintenance`, `mTotalCosts`, `mTotalTakings`,
+`mUpgradeBalloonSprite` and `mUpgradeLevel`. **Those ring buffers make the record variable in principle**;
+1,099 is what every object in the shipped park comes to, all of them with empty rings.
+
+**Two of these offsets check all the others.** `mAngle` at 16 and `mId` at 20 fall out of laying the
+serialiser's write order against the record - eight bytes of list head, then the map base's four shorts -
+and they are exactly the two offsets an entirely separate reading, by emulating the loader, had already
+produced. Since the arithmetic reproduces two known answers before it reaches any unknown one, the
+running total behind `mFlags`, `mEntryPos` and `mNext` is carrying its own evidence.
+
+**`mFlags` bit `0x1` is a toilet and bit `0x2` a rest area.** Two searches in the executable read them,
+one looking for the nearest toilet and one for the nearest rest area - and the second announces itself in
+its own debug string, "Looking for rest area...". Both walk the object list from the header's
+`mFirstObject`, follow `mNext`, and measure distance from the thing's cell. The shipped park has three
+toilets and one rest area, and **the three toilets are three copies of one catalogue item standing in a
+single column**, at (55,15), (55,16) and (55,17) - which is what says the bit is being read rather than
+that some bit happens to be set.
+
+**`mNext` is the object list's own link**, and walking it from `mFirstObject` reaches all fourteen objects
+exactly once and stops on nought. Garbage does not terminate, so a chain that covers the list and ends
+cleanly is itself the evidence for the offset.
+
+**`mEntryPos` is a packed cell id - `y * 128 + x + 1`** - naming the cell people are sent to when they
+want this object. It is the object's own cell or one beside it. The added one is the same packing the
+staff patrol corners use, and the executable's own searches unpack it the same way: they build a cell as
+`(byteAt7 * 0x80) + 1 + byteAt5` and then subtract one before splitting it with `& 0x7f` and `>> 7`.
+
+**That one is easy to miss and plausibility will not catch it**, which is worth saying because it was
+missed here first. Every object's entry is within two cells of it under either reading, so "it lands
+beside the object" looks like confirmation of whichever decode is tried. What discriminates is
+reachability: of the eleven placed objects five decode differently enough to matter, and all five are
+walkable only with the one subtracted. The clearest is the rest area, whose entry unpacks to (58,15) - a
+cell every member of staff can route to - where the plain reading gives (59,15), a cell with **no
+connected edges at all**, which nothing could ever walk to.
 
 #### The economy thing (model 16)
 

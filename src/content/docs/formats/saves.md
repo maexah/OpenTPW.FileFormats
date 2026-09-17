@@ -173,6 +173,67 @@ One reading falls out of that. Every saved `APR_in_percent` is **nought**, which
 `mBalance` is the money and `mBatchBalance` is not a second copy of it: taking an admission fee adds it
 to `mBalance` and to `mProfitThisYear`, and touches neither of the others.
 
+#### A member of staff (models 4 to 8)
+
+Five of the six person models are staff - **4** mechanic, **5** handyman, **6** entertainer, **7** guard,
+**8** researcher - and all five share one block, because the original gives them one class. It begins at
+**+398**, the same place a guest's own block begins: both follow the eight-byte list head and the
+390-byte person base. It is **105 bytes**, and each kind then adds a few fields of its own.
+
+| Offset | Size | Name | Shipped park (25, 26, 27, 28, 30) |
+| --- | --- | --- | --- |
+| 398 | 4 bytes | `mCurrentPayGrade` | `3`, `3`, `3`, `3`, `2` |
+| 402 | 4 bytes | *unnamed float* - happiness | `89`, `89`, `92`, `91`, `97` |
+| 406 | 4 bytes | `mJobsDone` | `0` on all five |
+| 410 | 66 bytes | `mName[0..32]` | 33 shorts, not text |
+| 476 | 2 bytes | `mPatrolRegionBL` | packed cell id |
+| 478 | 2 bytes | `mPatrolRegionTR` | packed cell id |
+| 480 | 1 byte | `mPercentageThroughGrade` | `0` on all five |
+| 481 | 2 bytes | `mRestArea` | `0` on all five |
+| 483 | 4 bytes | `mState` | `1`, `1`, `1`, `0`, `1` |
+| 487 | 4 bytes | `mTimeStartedIdling` | `0`, `0`, `712`, `752`, `0` |
+| 491 | 8 bytes | `mTimeHired` | |
+| 499 | 4 bytes | *unnamed float* - tiredness | `75`, `75`, `82`, `79`, `93` |
+
+Then, at **+503**, whatever the kind adds:
+
+| Model | Fields, in order | Bytes | Record |
+| --- | --- | --- | --- |
+| 4 mechanic | `mDurationOfRepair` 4, `mObjectToRepair` 2, `mNext` 2 | 8 | 511 |
+| 5 handyman | `mTargetLitterCell` 2, `mTimeStartedCleaning` 4, `mToiletToClean` 2, `mNext` 2 | 10 | 513 |
+| 6 entertainer | `mTimeStartedEntertaining` 4, `mNext` 2 | 6 | 509 |
+| 7 guard | `mPerp` 2, `mProsecutionTimestamp` 4, `mNext` 2 | 8 | 511 |
+| 8 researcher | `mTimeStartedResearching` 4, `mNext` 2 | 6 | 509 |
+
+**The sizes close five ways at once, which is the check worth trusting here.** `8 + 390 + 105` is `503`,
+and the five record sizes leave exactly `8`, `10`, `6`, `8` and `6` over it - which is precisely what each
+kind's own serialiser declares. The record sizes were derived by a completely different route (running the
+original's reader and logging what it declared), so the two never shared a step.
+
+Two of the block's fields carry no name in the binary, and they are placed the way the navigator's
+unnamed fields were: the block is written in alphabetical order, so an unnamed field's name is pinned by
+where it sorts. The one at 402 falls between `mCurrentPayGrade` and `mJobsDone`, and the one at 499 after
+`mTimeHired`. What the code does with them agrees - the resting handler recovers the first by
+`HappinessRecuperationRate` and the second by `RecuperationRate`, both indexed by the pay grade, and the
+"too tired to work" test reads the second against `AllStaffConstants.RestLevel`.
+
+**The alphabetical rule is not quite a rule here, though, and that is worth knowing rather than relying
+on.** `mTimeStartedIdling` is written *before* `mTimeHired`, which sorts the other way. The order above is
+the serialiser's own, because the serialiser is what the file follows.
+
+A patrol region is a rectangle, stored as two **packed cell ids** - `y * 128 + 1 + x`, the same one-based
+packing the destination setter takes - naming the bottom-left and top-right corners. Nought means no area
+at all. Unpacking the shipped park's gives places that mean something: the entertainer patrols `(47,18)`
+to `(48,25)`, the two columns running south from the gateway cells at `(47,17)` and `(48,17)`, and the
+researcher's is `(0,0)` to `(127,127)`, the whole map.
+
+**One trap is worth spelling out, because three different numberings of these five kinds are in use.**
+The thing model runs mechanic 4 to researcher 8, as above. The sprite folders in `esprites.wad` run
+entertainers 4, handymen 5, mechanics 6, guards 7, researchers 8. And the balance file's
+`PerTypeStaffConsts` runs handyman 0, mechanic 1, entertainer 2, guard 3, researcher 4. So the mechanic is
+model 4, wears sprite type 6, and is paid as type 1; crossing any two of them reads the wrong constants
+while still looking entirely plausible.
+
 ### The sprite table (`TPCS`)
 
 Directly after the world block's `DLRW` trailer sits the table of the park's sprites - the guests and

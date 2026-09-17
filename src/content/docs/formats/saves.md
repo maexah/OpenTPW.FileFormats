@@ -229,14 +229,39 @@ an `mTemp` and then `mNumEntries` entries of `mData[`*i*`]` - interleaved with `
 `mOperatingDuration`, `mOperatingSpeed`, `mPersonBeingLoaded`, `mCostOfGoods`, `mQualityOfGoods`,
 `mChanceOfWinning`, `mPricePerUse` (clamped to 0-500 as it is read), `mAmountOfSpecialIngredient`,
 `mQueueSizeInCells`, `mRequestedService`, `mTimeMarkedForMaintenance`, `mTotalCosts`, `mTotalTakings`,
-`mUpgradeBalloonSprite` and `mUpgradeLevel`. **Those ring buffers make the record variable in principle**;
-1,099 is what every object in the shipped park comes to, all of them with empty rings.
+`mUpgradeBalloonSprite` and `mUpgradeLevel`.
+
+**Those ring buffers are not empty, and the arithmetic is what says so.** An empty ring writes 13 bytes -
+`mCurrentEntry` 4, `mNumEntries` 4, `mWrappedAround` 1, `mTemp` 4, then `mNumEntries` entries of 4 - and
+laying the whole record out that way totals **379** against the **1,099** the record actually occupies. The
+gap is exactly **720**, which is six rings of thirty entries at four bytes each. At thirty entries a ring is
+133 bytes, and the record then closes on 1,099 **exactly** - the same kind of arithmetic that closes the map
+cell on 52.
+
+That puts `mOperatingCapacity` at 1034, `mOperatingDuration` at 1035, `mOperatingSpeed` at 1036,
+`mPersonBeingLoaded` at 1040, `mCostOfGoods` at 1042, `mQualityOfGoods` at 1046, `mChanceOfWinning` at 1050,
+**`mPricePerUse` at 1054**, `mAmountOfSpecialIngredient` at 1058, **`mQueueSizeInCells` at 1062**,
+`mRequestedService` at 1078, `mTimeMarkedForMaintenance` at 1082, `mTotalCosts` at 1086, **`mTotalTakings`
+at 1090**, `mUpgradeBalloonSprite` at 1094 and `mUpgradeLevel` at 1098.
+
+**A distinction worth keeping.** Those offsets all follow the *last* ring, so they hold for **any** split of
+the 180 entries across the six rings - only the even split is a guess, and it is not one they depend on. The
+two fields that sit *between* rings, `mNumCustomers` and `mNumWalkAways`, do depend on it, and are therefore
+not safe to read on this evidence alone.
 
 **Two of these offsets check all the others.** `mAngle` at 16 and `mId` at 20 fall out of laying the
 serialiser's write order against the record - eight bytes of list head, then the map base's four shorts -
 and they are exactly the two offsets an entirely separate reading, by emulating the loader, had already
 produced. Since the arithmetic reproduces two known answers before it reaches any unknown one, the
 running total behind `mFlags`, `mEntryPos` and `mNext` is carrying its own evidence.
+
+**`mFlags` bit `0x4` is somewhere a guest may be *offered*.** The routine that walks the object list
+looking for somewhere to send a guest tests exactly this before it will even score a candidate. It is not
+"is a ride": the shipped park sets it on **six** objects, and the game's own catalogue names them - three
+`Small Toilet`s, the `Drinks Shop`, the `Jungle Spray` sideshow and the `Belly Bounce` ride, one from each
+of the three folders the game sorts its items into (`shops`, `sideshow`, `rides`). Choosing to visit a
+toilet is a decision a guest makes like any other. What it excludes is the telling part: the object
+carrying the rest-area bit is called `Staff Room`, and a guest has no business in one.
 
 **`mFlags` bit `0x1` is a toilet and bit `0x2` a rest area.** Two searches in the executable read them,
 one looking for the nearest toilet and one for the nearest rest area - and the second announces itself in

@@ -334,6 +334,70 @@ One reading falls out of that. Every saved `APR_in_percent` is **nought**, which
 `mBalance` is the money and `mBatchBalance` is not a second copy of it: taking an admission fee adds it
 to `mBalance` and to `mProfitThisYear`, and touches neither of the others.
 
+#### A guest (model 1)
+
+The sixth person model is the visitor, and its block begins at **+398**, after the same eight-byte list
+head and 390-byte person base a staff member has. It is **135 bytes**, making the record `8 + 390 + 135`
+= **533**.
+
+| Offset | Size | Name | Shipped park |
+| --- | --- | --- | --- |
+| 398 | 4 bytes | `mArrivalDate` | |
+| 402 | 4 bytes | `mArrivalIndex` | |
+| 406 | 4 bytes | `mBalloonScript` | |
+| 410 | 4 bytes | `mBeenAdmitted` | |
+| 414 | 4 bytes | `mCash` | `684`, `510`, `654`, ... eleven different amounts across thirteen guests |
+| 418 | 4 bytes | `mExitLevel` | `142`, `98`, `57`, ... |
+| 422 | 4 bytes | *unnamed float* - happiness | |
+| 426 | 4 bytes | *unnamed float* - hunger | `18`, `25`, `61`, ... |
+| 430 | 4 bytes | `mLastPosX` | |
+| 434 | 4 bytes | `mLastPosY` | |
+| 438 | 4 bytes | *unnamed float* - litter | |
+| 442 | 2 bytes | `mMajorDest` | thing handle - what they have chosen, or none |
+| 444 | 4 bytes | `mNumRides` | |
+| 448 | 4 bytes | `mNumShops` | |
+| 452 | 4 bytes | `mNumSideshows` | |
+| 456 | 4 bytes | `mNumSideshowsWon` | |
+| 460 | 4 bytes | `mPaidAdmission` | |
+| 464 | 4 bytes | `mParkOpeningWaitingTime` | |
+| 468 | 1 byte | `mPersonType` | `5`, `7`, `2`, ... an index into `PeepTypes[0..7]` |
+| 469 | 1 byte | `mPrankeryIndex` | |
+| 470 | 16 bytes | `mPreviousRides[`*i*`]` and `mPreviousTemporaryRides[`*i*`]` | **interleaved in pairs**, four of each, 2 bytes apiece |
+| 486 | 2 bytes | `mQNext` | `0` on all thirteen |
+| 488 | 2 bytes | `mQPrev` | `0` on all thirteen |
+| 490 | 4 bytes | `mQueueMoveDelay` | |
+| 494 | 1 byte | `mQueuePos` | `0` on all thirteen |
+| 495 | 4 bytes | `mRemainingBalloonLife` | |
+| 499 | 2 bytes | `mSavedMajorDest` | |
+| 501 | 4 bytes | `mSavedState` | `6` on all thirteen - a new guest is constructed deciding |
+| 505 | 4 bytes | `mState` | `2`, `5`, `3` - heading for the gate, entering, waiting outside |
+| 509 | 4 bytes | *unnamed float* - thirst | `36`, `13`, `12`, ... |
+| 513 | 4 bytes | `mTimeOfLastSpotAnim` | |
+| 517 | 4 bytes | `mTimeStartedIdling` | |
+| 521 | 4 bytes | *unnamed float* - `mTiredness` | `0` throughout |
+| 525 | 4 bytes | *unnamed float* - toilet | `13`, `15`, `24`, ... |
+| 529 | 4 bytes | *unnamed float* - vomit | |
+
+**The block closes on 533 exactly**, and that is what makes the offsets above worth trusting. They are not
+measured one at a time: they are produced by walking the serialiser's own declared field sizes from +398,
+and that single walk has to land on the record size - derived separately, by running the original's reader
+and logging what it declared - or every offset in it is wrong together.
+
+The two queue links deserve a note, because finding them turned entirely on the **name**. Sweeping the
+executable's serialised field names for `InQ`, `mNext`, `Queue` and `mPrev` finds no per-person queue link
+at all, and it is tempting to conclude the queue is rebuilt at load time. It is not: the field is `mQNext`,
+with `mQPrev` beside it, and no one of those four guesses reaches either spelling. Reading the guest
+serialiser's whole field list is what finds them, and the original's own diagnostic confirms the pair -
+*"Person %d is in queue for object %d (next %d, prev %d) but doesn't think he is"*. A queue is therefore
+**doubly linked through the guests themselves**, headed by the object's `mFirstInQ`, and its length is
+found by walking it. Mind that `mFirstInQ` is a **thing handle** while `mBackOfQueue`, two bytes before it,
+is a **packed cell id**: they are adjacent and they are not the same kind of number.
+
+The unnamed floats are placed the way the staff block's are - this block is written in alphabetical order,
+so an unnamed field's name is pinned by where it sorts. That is also what names the one at 521: it falls
+between `mTimeStartedIdling` and `mToilet`, which leaves `mTiredness`. Unlike the staff block, whose order
+transposes one pair, the guest block's alphabetical order holds throughout.
+
 #### A member of staff (models 4 to 8)
 
 Five of the six person models are staff - **4** mechanic, **5** handyman, **6** entertainer, **7** guard,

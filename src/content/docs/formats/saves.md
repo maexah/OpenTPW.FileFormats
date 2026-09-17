@@ -51,6 +51,64 @@ The inflated payload is a run of blocks, each closed by a four-character tag. Th
 little-endian dwords, so **every one of them reads backwards in a byte dump**: searching an inflated
 save for `WRLD` finds nothing and searching for `DLRW` finds it at once.
 
+### The world block (`WRLD`)
+
+The first block in the payload is the park itself, closed by the `DLRW` trailer. It opens with an
+untagged recording - a flag, then a length, then that many bytes - so where the block's own header begins
+is derived from that length rather than fixed. In the shipped park the length reads 1171, which puts the
+header at `0x49B`.
+
+The header is 26 fields written back to back with no padding. **The names below are the game's own.**
+Each field is announced to a logging call that the release build compiles away, so the names never reach
+the file - but they survive in the executable beside the address each one is read into, which is what
+makes this list checkable rather than inferred.
+
+| # | Size | Name | Notes |
+| --- | --- | --- | --- |
+| 0 | 4 bytes | *(version)* | The one field the logging call does not name |
+| 1-3 | 2 bytes each | `mArrivalVehicle_Size1..3` | |
+| 4 | 2 bytes | `mBankAccount` | A **handle**, not an amount - see below |
+| 5 | 2 bytes | `mCurrentArrivalVehicle` | The bus; zero when none is due |
+| 6 | 4 bytes | `mGameTick` | The park's own tick counter - `755` in the shipped park |
+| 7 | 2 bytes | `mMechanicHQ` | Handle |
+| 8 | 2 bytes | `mParkAnalyser` | Handle |
+| 9 | 4 bytes | `mParkClosed` | **Zero means open** - `0` in the shipped park |
+| 10 | 4 bytes | `mNumberOfVisitorsToDate` | Guests ever admitted - `0` in the shipped park |
+| 11 | 2 bytes | `mParkGates` | Handle - thing `11` |
+| 12 | 2 bytes | `mTrafficLights` | Handle - thing `12` |
+| 13 | 4 bytes | `mRandomSeed` | |
+| 14 | 2 bytes | `mResearchLab` | Handle |
+| 15 | 2 bytes | `mStaffHQ` | Handle |
+| 16 | 2 bytes | `mTagSystem` | Handle |
+| 17 | 2 bytes | `mUIMsgReceiver` | Handle |
+| 18 | 2 bytes | `mWeather` | Handle - the weather is a thing like any other |
+| 19 | 4 bytes | `mWorldState` | A value, not a handle - see below |
+| 20-24 | 2 bytes each | `mFirstHandyman`, `mFirstMechanic`, `mFirstEntertainer`, `mFirstGuard`, `mFirstResearcher` | Heads of the per-trade staff lists. **Guard comes before Researcher** |
+| 25 | 2 bytes | `mFirstObject` | Head of the object list - thing `15` |
+
+A handle is a thing id, compared against a thing's own id with `==`: `11` means "the thing whose id is
+11", not "the eleventh thing".
+
+`mParkClosed` reads the opposite way to its name. The command that opens and shuts a park writes `0` on
+one branch and `1` on the other, then picks the word for its own message with
+`mParkClosed == 0 ? "opened" : "closed"`. The world constructor writes `1` before anything is loaded, so
+a park is born shut and a save holding `0` is one that was opened while it was being played.
+
+`mBankAccount` is the field whose name misleads. It is two bytes, and the shipped park holds `8` in it -
+no sort of balance. The executable reads it in exactly one place, and that reader is the weather thing's
+accessor character for character with one offset changed: take the word, return `thingTable[id]`. So it
+names a *thing*, and the thing it names is the one carrying the park's admission fee, balance, profit for
+the year and loan table - which is why the state a guest is in while judging the admission fee reaches
+the park's money through this very accessor.
+
+`mWorldState` really is a value. The executable writes `1`, `2` and `4` into it and compares it against
+`4` in six places, among them the game's own state machine and the build-a-park menu. The shipped park
+holds `0`, which is not in that set - so either zero is a state nothing writes while a park is being
+played, or it is what a park carries before it is first entered. Naming it either way would be a guess.
+
+After the header come 150 object-control records, a pool of timers, the 128x128 map, and then the thing
+list.
+
 ### The sprite table (`TPCS`)
 
 Directly after the world block's `DLRW` trailer sits the table of the park's sprites - the guests and

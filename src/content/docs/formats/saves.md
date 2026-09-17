@@ -73,7 +73,8 @@ be named from the code that fills them are:
 
 | Offset | Size | Description |
 | --- | --- | --- |
-| `0x08` | 4 bytes | Cursor into the sprite's animation program |
+| `0x08` | 4 bytes | How far into that program it has got. Because showing a frame is the only thing that ends a turn, a saved value always rests just past a frame instruction |
+| `0x0C` | 4 bytes | **Which** animation program - the index of its first instruction, in the same array `0x08` counts into. A jump inside a program moves `0x08` and leaves this alone, so it names the program the sprite was *started* on rather than where it has reached |
 | `0x14` | 4 bytes | Where that program starts; re-pointed on load, so the stored value is meaningless |
 | `0x18` | 4 bytes | State |
 | `0x7C` | 4 bytes | When this sprite is next due to step |
@@ -103,3 +104,45 @@ The thing that owns the sprite knows where it is too, as `mX` and `mY` in 256ths
 agree: across all eighteen of the shipped park's people the two readings differ by less than a third of
 a world unit. The thing is the better source of the two, because it is what the park saved rather than
 where the runtime last drew.
+
+### The animation programs
+
+`0x0C` and `0x08` are indices into an array of animation programs, and **that array is compiled into the
+executable rather than stored in the save**. `SPSC`, despite its name, is the table of sprite *instances*
+above and not the programs: the loader points every instance at the built-in array unconditionally and
+reads no bytecode from the file at all, which is also why `0x14` is meaningless on disk.
+
+The array holds 83 programs back to back. Each word in it is either an opcode or an operand of the one
+before it, so it can only be read by walking it from the start - and walking it with the wrong operand
+widths lands on a word that is not an opcode, which is what makes the widths checkable rather than
+assumed. Of its eighteen opcodes, a person's animation uses four:
+
+| Opcode | Operands | What it does |
+| --- | --- | --- |
+| Set local | 2 | Writes a value into one of the instance's own words. Every person program opens with the same one, and nothing anywhere reads it back |
+| Choose set | 1 | Writes `0xB4` - the set and the bank offset together, as one word. It does **not** end the turn |
+| Show frame | 1 | Writes `0xB8` and **ends the turn**. 581 of the array's 863 instructions are this one |
+| Jump | 1 | Moves `0x08`. It does **not** change `0x0C` |
+
+So a person's program is always the same shape: choose a set, show some frames, jump. None of them
+contains a loop or a branch. The jump is usually back to the program's own first instruction, which is
+what makes a walk cycle; the one-shot animations instead jump into the standing program, so they play
+once and settle.
+
+Because choosing a set does not end a turn, a program's set and its first frame appear together - a
+sprite is never seen for a turn wearing the set it had before. And because showing a frame does end one,
+the shipped park's sixteen walkers are stopped at **seven different positions** of the same eight-frame
+walk, which is what keeps a whole park from stepping in time with itself when it loads.
+
+Programs are stepped by a system that runs **once every two of the game's 31ms ticks**, so every 62ms.
+`0x7C` is when a sprite is next due and `0x80` is how long it waits between turns; the test is a strict
+"is now past it", and the interval a sprite is created with is 62 - exactly one turn - so a sprite left
+alone comes due every *other* turn, at 124ms. A walking person's interval is driven from the distance
+they moved that step, doubled if they are **not** hurrying, and in practice that arithmetic only ever
+yields nothing, one or two. The effect is therefore a doubling of the animation rate rather than a
+continuous control of it. Nothing is written when it yields nothing, so "no distance moved" leaves the
+interval alone rather than setting it to zero.
+
+The ceiling of 250 that the same code applies cannot be reached from a walk at all: the distance is
+squared as a 32-bit integer, and a step large enough to want an interval past 250 would overflow that
+thousands of times over before the ceiling could apply.

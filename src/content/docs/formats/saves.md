@@ -109,6 +109,70 @@ played, or it is what a park carries before it is first entered. Naming it eithe
 After the header come 150 object-control records, a pool of timers, the 128x128 map, and then the thing
 list.
 
+#### Thing records
+
+The thing list is a **linked list, not an array**. Each record opens with the id of the *next* thing and
+then its model number, four bytes each, and a next of zero ends the list. The ids are not in order - the
+shipped park runs 41, 40 … 29, then 15, then 28 - which is what a list with something spliced into it
+looks like, and what a counter cannot be.
+
+Every thing that has a place in the world then writes the same four 2-byte fields in this order: `mX`,
+`mY`, `mMapChild`, `mMapParent`. So a thing's *own* fields begin **16 bytes into its record** - eight of
+list head and eight of map base. `mX` and `mY` are in 256ths of a cell, and their high bytes are the
+cell the thing stands on, which is how the engine reaches a cell without dividing.
+
+**The offsets below are file offsets, and they are not the offsets a decompiler shows.** A thing is
+written field by field in the order its reader asks for them, so a field's place in the record is the sum
+of the sizes before it and bears no relation to where it sits in memory: `mAdmissionFee` is at `+0x118`
+in the running game and at `+16` in the record. Taking the memory offsets and using them as file offsets
+produces something that parses and is wrong.
+
+#### The economy thing (model 16)
+
+This is the thing `mBankAccount` names - thing `8` in the shipped park - and it is where a park's money
+actually lives. Its record is **300 bytes**.
+
+| Offset | Size | Name | Shipped park |
+| --- | --- | --- | --- |
+| 16 | 4 bytes | `mAdmissionFee` | `25` |
+| 20 | 4 bytes | `mBalance` | `87987` |
+| 24 | 4 bytes | `mBatchBalance` | `0` |
+| 28 | 4 bytes | `mWithdrawalsEnabled` | `1` |
+| 32 | 4 bytes | `mLastBalance` | `87787` |
+| 36 | 4 bytes | `mTurnEnteredRed` | `0` |
+| 40 | 4 bytes | `mProfitThisYear` | `-12013` |
+| 44 + 32*i* | 32 bytes | `mLoans[`*i*`]` | eight slots, always written |
+
+Each loan is eight 4-byte fields, in this order:
+
+| Offset in loan | Name |
+| --- | --- |
+| 0 | `loan_available` |
+| 4 | `amount_available` |
+| 8 | `APR_in_percent` |
+| 12 | `repayment_period_in_months` |
+| 16 | `monthly_repayment` |
+| 20 | `loan_bought` |
+| 24 | `months_repaid` |
+| 28 | `lenderNameIndex` |
+
+`44 + 8 * 32` is `300`, which closes on the record size exactly. The in-memory struct agrees from the
+other side: there the loan array runs from `+0x14` for `8 * 0x20` bytes and stops at `+0x114`, which is
+precisely where the next named field, `mWithdrawalsEnabled`, sits.
+
+**The check worth trusting is a different file.** The eight saved loans match `LoanInfo[0..7]` in
+`data/levels/Standard.sam` field for field - amounts 100000, 50000, 25000, 10000, 18000, 30000, 80000,
+65000 and periods 36, 36, 36, 36, 24, 30, 48, 30 - and every `monthly_repayment` is its own
+`amount_available` divided by its own `repayment_period_in_months`, truncated, on all eight. A layout off
+by one field, or by one loan's stride, could not reproduce sixteen unrelated numbers in order.
+
+One reading falls out of that. Every saved `APR_in_percent` is **nought**, which matches
+`jungle/Easy_Standard.sam` exactly and matches the global `Standard.sam` - whose rates are 20, 20, 20,
+20, 23, 22, 18 and 21 - nowhere. The shipped park is an Instant Action park, and its own loans say so.
+
+`mBalance` is the money and `mBatchBalance` is not a second copy of it: taking an admission fee adds it
+to `mBalance` and to `mProfitThisYear`, and touches neither of the others.
+
 ### The sprite table (`TPCS`)
 
 Directly after the world block's `DLRW` trailer sits the table of the park's sprites - the guests and

@@ -35,7 +35,7 @@ instruction, and the same one-to-one relationship holds for limbo and for walk.
 
 | Size    | Description                   |
 | ------- | ----------------------------- |
-| 4 bytes | Instruction count             |
+| 4 bytes | Body length, in **words** - not a count of instructions |
 | n bytes | Instructions                  |
 
 **Instructions**
@@ -44,25 +44,33 @@ Instructions are written in little endian, and take the following form:
 
 | Size    | Description |
 | ------- | ----------- |
-| 4 bytes | Operand     |
-| n bytes | Opcodes     |
+| 4 bytes | Opcode      |
+| n bytes | Operands    |
 
-Instructions can have as many opcodes as necessary (and can also have none at all), however most instructions only require 1 to 3 opcodes.
+An instruction is **one opcode word followed by its operands**, and how many operands it takes is fixed
+per opcode - none for several, one to three for most, and seven for `WALKON`, the most of any. Since the
+body length above is a word count rather than an instruction count, an opcode's arity is the only thing
+that tells a reader where the next instruction begins: get one wrong and the next opcode word is eaten
+as an operand, and the rest of the script silently decodes as something else.
 
 Opcodes and operands follow a specific format:
 
-| Size    | Description |
-| ------- | ----------- |
-| 2 bytes | Value       |
-| 2 bytes | Flags       |
+| Size    | Description         |
+| ------- | ------------------- |
+| 3 bytes | Value (low 24 bits) |
+| 1 byte  | Kind (top byte)     |
 
-Flags are currently as follows:
+**The kind is the top byte alone, and the value is the remaining 24 bits** - not two bytes each. The
+distinction never shows on a shipped script, where no value reaches 65536, but a reader that masks only
+the low sixteen bits is relying on that rather than on the format.
 
-- `00 00` - Literal value
-- `00 10` - String (see **String / variable table** below)
-- `00 20` - Branch / subroutine
-- `00 40` - Variable name (see **String / variable table** below)
-- `00 80` - Opcode
+The kind byte takes these values:
+
+- `0x00` - Literal value
+- `0x10` - String (see **String / variable table** below)
+- `0x20` - Branch / subroutine
+- `0x40` - Variable name (see **String / variable table** below)
+- `0x80` - Opcode
 
 **String / variable table**
 

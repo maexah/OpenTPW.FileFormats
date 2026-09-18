@@ -18,6 +18,18 @@ None
 
 None
 
+## CRIT_UNLOCK
+
+`CRIT_UNLOCK` - Releases the lock `CRIT_LOCK` took, and **gives up the rest of the script's turn**.
+
+The second half is easy to miss and is load-bearing: a script whose main loop contains no `ENDSLICE`
+yields only because its `CRIT_UNLOCK` does, so a reader that treats this as clearing a flag and nothing
+else will have such a script spin until its instruction budget runs out.
+
+### Operands
+
+None
+
 ## COPY
 
 `COPY <dest> <source>` - Copy a value from one variable to another.
@@ -366,11 +378,12 @@ Upon performing this calculation, the relevant flags will be set based on the ca
 
 ## POP
 
-`POP` - Pop a value from the stack.
+`POP <dest>` - Pop a value from the stack into a variable.
 
 ### Operands
 
-None
+One - the destination the popped value is written into. A reader that treats `POP` as taking none will
+swallow the following opcode word as data and decode the rest of the script wrongly.
 
 ## HUSH
 
@@ -850,11 +863,12 @@ Unknown
 
 ## SETLIGHT
 
-`SETLIGHT <unknown>`
+`SETLIGHT <unknown> <unknown>`
 
 ### Operands
 
-Unknown
+Two. What each means is not established, but the arity is: `SETLIGHT` takes 2, where its neighbours
+`ENABLELIGHT` and `DISABLELIGHT` take 1 and `COLOURLIGHT` takes 4.
 
 ## COLOURLIGHT
 
@@ -880,11 +894,13 @@ Unknown
 
 None
 
-## SINGLESREAM
+## SINGLESCREAM
 
 `SINGLESCREAM <visitor ID> <unknown>`
 
 ### Operands
+
+Two - the visitor, and one whose meaning is not established.
 
 ## SCREAMLEVEL
 

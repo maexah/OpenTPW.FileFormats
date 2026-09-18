@@ -217,8 +217,8 @@ coordinates, because their positions live in their models rather than in the sav
 | 208 | 2 bytes | `mNext` | this object's link in the object list |
 | 210 | 2 bytes | `mAssignedStaffMember` | |
 | 212 | 2 bytes | `mBackOfQueue` | |
-| 214 | 4 bytes | `mCanLoad` | |
-| 218 | 2 bytes | `mExitPos` | |
+| 214 | 4 bytes | `mCanLoad` | non-zero when the object will take anyone aboard |
+| 218 | 2 bytes | `mExitPos` | packed like `mEntryPos` - the cell a guest is put down on when they leave |
 | 220 | 2 bytes | `mFirstInQ` | |
 | 222 | 4 bytes | `mIsTrackRideValid` | |
 | 226 | 2 bytes | `mUpgradeParent` | |
@@ -287,6 +287,25 @@ reachability: of the eleven placed objects five decode differently enough to mat
 walkable only with the one subtracted. The clearest is the rest area, whose entry unpacks to (58,15) - a
 cell every member of staff can route to - where the plain reading gives (59,15), a cell with **no
 connected edges at all**, which nothing could ever walk to.
+
+**`mExitPos` is packed the same way**, and names the cell a guest is put down on when they leave rather
+than the one they arrived at. The executable's point-fetching routine decodes both from the same code: a
+non-zero argument selects the exit, nought the stand point, and each is returned as a fixed-point position
+with the cell in the high byte and a sub-cell offset in the low one. Those offsets come from the item's
+own `.sam` - the engine range-checks them and complains "Dodgy X exit point in SAM file" when they look
+wrong - so they are data rather than anything computed.
+
+**Here too the park will flatter a wrong decode, and worse than for `mEntryPos`.** `mExitPos` holds the
+*same value* as `mEntryPos` on **ten of the eleven** placed objects, so counting how many are walkable
+only with the one subtracted mostly restates `mEntryPos`'s answer through a field carrying the same
+number - the two readings agree wherever the two fields do. Exactly one object separates them: the
+`Belly Bounce`, entered from (52,23) and left from (52,26), three cells apart on opposite sides of it. Its
+packed cell has sixteen connected edges where the plain reading gives (53,26), which has none. One object
+is the whole of the evidence for this field, and it is worth knowing that rather than trusting a total.
+
+**`mCanLoad` is non-zero when the object will take anyone aboard.** The filter deciding whether a guest
+may be offered an object refuses on it, and so does the admission that follows. It is `1` on all fourteen
+objects in the shipped park, so nothing there exercises the refusal.
 
 #### The economy thing (model 16)
 

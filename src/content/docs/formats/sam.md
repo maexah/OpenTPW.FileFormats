@@ -70,8 +70,11 @@ suppress the category's.
 | `UsageInfo.ProvidesRelief` | Set for toilets - "set to 1 for toilets" |
 | `UsageInfo.ISIndoors` | Shelter from the rain (the game's own spelling) |
 | `UsageInfo.ExcitementLevel` | How exciting it is |
-| `UsageInfo.ThirstEffect`, `UsageInfo.HungerEffect` | How much of each need using it takes away |
-| `UsageInfo.MinCapacity`, `MaxCapacity`, `MinDuration`, `MaxDuration` | Bounds on how it may be operated |
+| `UsageInfo.ThirstEffect`, `UsageInfo.HungerEffect` | How much of each need using it **takes away** |
+| `UsageInfo.VomitEffect`, `UsageInfo.HappinessEffect`, `UsageInfo.LitterEffect` | How much of each it **adds** |
+| `UsageInfo.MinCapacity`, `MaxCapacity`, `MinDuration`, `MaxDuration` | Bounds the engine clamps to - see below |
+| `UsageInfo.EntryCellStandPosX`, `…PosY` | Where in its entry cell a guest stands to use it |
+| `UsageInfo.ExitCellAppearPosX`, `…PosY` | Where in its exit cell a guest reappears afterwards |
 | `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings |
 
 **Two of these are the text-file side of bits the saved park carries.** `Info.IsChoosable` matches the
@@ -79,6 +82,26 @@ catalogue object's `mFlags` bit `0x4`, and `UsageInfo.ProvidesRelief` matches bi
 for object against Lost Kingdom's save, where the two sources agree on all fourteen objects: six may be
 visited and three are toilets. `Upgrades[0].InitCapacity` and `InitDuration` likewise match the
 `mOperatingCapacity` and `mOperatingDuration` that save records for a placed item.
+
+**The five `*Effect` keys are one block, and two of them run the other way.** They are applied together
+when a guest finishes using something, each to one of that guest's meters - thirst, hunger, sickness,
+happiness and the litter they are carrying - and the files say so themselves in the prose after each
+value: "how much thirst to deduct", "how much vomit to add". So thirst and hunger are subtracted while
+sickness, happiness and litter are added, and a reader that treats all five alike gets three of them
+backwards. The block belongs to shops: `Shops.sam` declares all five at `5` and each of the eight shops
+overrides them, while `Rides.sam` and `SideShow.sam` declare none at all - so a ride reading nought here
+is the category default showing through rather than a value of its own.
+
+**`MinCapacity` and `MaxCapacity` are enforced, not advisory.** When a ride is opened the engine takes the
+capacity it wants, clamps it between these two, writes it into the ride script's own capacity variable and
+stores the same number as the save's `mOperatingCapacity` - so the figure a saved park carries is already
+the clamped answer, and applying the bounds to it again would apply them twice. `MinDuration` and
+`MaxDuration` bound the duration the same way.
+
+**The stand and appear positions are sub-cell offsets**, not cells. A catalogue object records which cell
+it is entered from and which it is left by; these four values say whereabouts *within* those cells a guest
+should be placed, and the engine range-checks them, complaining "Dodgy X exit point in SAM file" when they
+fall outside what it expects.
 
 **An item can be overridden for easy mode too.** Beside `Bouncy.sam` sits `Easy_Bouncy.sam`, changing
 `Upgrades[i].WearRate` and `CostOfResearch` - the same `Easy_` prefix convention the theme-level

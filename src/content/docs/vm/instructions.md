@@ -168,11 +168,17 @@ None
 
 ## TRIGANIM
 
-`TRIGANIM <unknown1> <unknown2> <unknown3>` - Unknown
+`TRIGANIM <role> <entry> <dest>` - Start a one-shot animation on channel 0, and answer how long it runs.
 
 ### Operands
 
-Unknown
+`<role>` - Which of the model's twelve animation roles to play. A role is not a file: the twelve are lettered `C D I L S M E U W B R O`, and the letter names the clips sitting beside the model (`<stem><letter><n>.md2`). 12 means "no animation".
+
+`<entry>` - Which clip within that role, numbered from 0.
+
+`<dest>` - Where the length in milliseconds is written. Most shipped uses name a literal here, which leaves the answer in the result register instead.
+
+The length is the clip's own duration less 300ms, floored at 300 with a **signed** comparison - so a model that has no such clip answers 300. The instruction also arms the deadline `WAIT4ANIM` waits on, and stamps the looping key with `0xFFFF`, which is why a `LOOPANIM` after a trigger always reads as a change. `TRIGANIM_CH` does the same on a chosen channel but does **not** stamp that key.
 
 ## WAITANIM
 
@@ -204,11 +210,13 @@ Unknown
 
 ## GETANIM
 
-`GETANIM <unknown>` - Unknown
+`GETANIM <dest>` - Ask which animation role channel 0 is playing.
 
 ### Operands
 
-Unknown
+`<dest>` - Where the answer is written.
+
+This is `GETANIM_CH` with the channel fixed at 0; see there for what the answer means. **No shipped script uses it** - all 15 uses in the game are of the `_CH` form.
 
 ## TRIGANIMSPEED
 
@@ -228,11 +236,21 @@ Unknown
 
 ## TRIGANIM_CH
 
-`TRIGANIM_CH <unknown1> <unknown2> <unknown3> <unknown4>` - Unknown
+`TRIGANIM_CH <role> <entry> <dest> <channel>` - Start a one-shot animation on a chosen channel.
 
 ### Operands
 
-Unknown
+`<role>` - As `TRIGANIM`.
+
+`<entry>` - As `TRIGANIM`.
+
+`<dest>` - As `TRIGANIM`.
+
+`<channel>` - Which animation player to run it on, counted from 0. Resolved like any other value, so a variable may name it.
+
+A model's channel count is not in the model - it is an argument to the model loader, taken for a placed thing from its item description's `UsageInfo.NumSimultAnims`. The shipped data agrees exactly: the Jungle Spray, Hyenas, Frushy, Squirtem and Marsmoon declare 3 and use channels up to 2, and the Totem declares 4 and uses up to 3.
+
+This is instruction-for-instruction `TRIGANIM` apart from the channel, with **one** difference: `TRIGANIM` ends through a shared tail that writes both the `WAIT4ANIM` deadline and the looping key, while `TRIGANIM_CH` ends inline and writes only the deadline. It is the busiest of the family - 63 uses across 6 scripts.
 
 ## WAITANIM_CH
 
@@ -244,11 +262,19 @@ Unknown
 
 ## LOOPANIM_CH
 
-`LOOPANIM_CH <unknown1> <unknown2> <unknown3>` - Unknown
+`LOOPANIM_CH <role> <entry> <channel>` - Start an animation looping on a chosen channel.
 
 ### Operands
 
-Unknown
+`<role>` - As `TRIGANIM`.
+
+`<entry>` - As `TRIGANIM`.
+
+`<channel>` - Which animation player to run it on. **Taken raw**: unlike `TRIGANIM_CH` and `GETANIM_CH`, this operand gets no variable tag test, so a variable arrives as its tagged word and names no channel at all.
+
+It differs from `LOOPANIM` in two further ways: it has no "already looping" early exit, and it never writes the looping key. It does still clear the `WAIT4ANIM` deadline, because a loop never finishes.
+
+Used **once** in the whole game: space's `Gates.RSE` opens with `LOOPANIM_CH 5, 2, 1` at word 2, before it tests anything, so that park's gate idles on a channel of its own from the moment it loads.
 
 ## TRIGWAITANIM_CH
 
@@ -260,11 +286,17 @@ Unknown
 
 ## GETANIM_CH
 
-`GETANIM_CH <unknown1> <unknown2>` - Unknown
+`GETANIM_CH <dest> <channel>` - Ask which animation role a channel is playing.
 
 ### Operands
 
-Unknown
+`<dest>` - Where the answer is written. Note the order: the destination comes **first** here, the reverse of the triggers.
+
+`<channel>` - Which animation player to ask about. Resolved like any other value.
+
+The answer is the role the channel is running, **or -1 once the clip has finished**. The engine reads the player's flag word and overrides the role with -1 when it carries `0x4`, which is the bit set when a finished clip with nothing queued is parked on its last frame. An idle channel answers 12, the "no animation" sentinel.
+
+Those three answers are what makes it usable as a "has it finished?" test, and the sideshows use it as exactly that: the Jungle Spray checks each occupied lane with `GETANIM_CH 0, <lane>` and branches away on a positive answer and on zero, so **-1 is the only answer that lets a rider off**.
 
 ## RAND
 

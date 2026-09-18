@@ -751,51 +751,87 @@ None
 
 ## BOUNCESETNODE
 
-`BOUNCESETNODE <node>` - Unknown
+`BOUNCESETNODE <node>` - Set the base that slot node numbers are counted from. A visitor placed by
+`BOUNCE` is given the node `<node> + slot index`.
+
+The two setters are named the opposite way round to what they do: this one sets the node base, and
+`BOUNCESETBASE` writes an unrelated field.
+
+Its handler performs no variable-tag test, so the operand is stored **raw** - a variable operand would
+be stored as its tagged word rather than as its value. Every shipped use passes a literal, so the two
+readings cannot differ in practice.
 
 ### Operands
 
-Unknown
+`<node>` - The node number given to the first slot.
 
 ## BOUNCESETBASE
 
-`BOUNCESETBASE <base>` - Unknown
+`BOUNCESETBASE <base>` - Set a 16-bit field that nothing else in the bounce family reads. It is used
+when placing whoever is bouncing, alongside the slot table and the thing's model, so it affects
+presentation rather than bookkeeping.
+
+See `BOUNCESETNODE` for the naming trap: despite its name, this does *not* set the node base.
 
 ### Operands
 
-Unknown
+`<base>` - The value to store.
 
 ## BOUNCE
 
-`BOUNCE <visitor ID> <unknown>` - Unknown
+`BOUNCE <visitor ID> <seconds>` - Put a visitor into the first free slot of the ride's bounce table for
+a given duration. A slot is free when its visitor handle is zero, and the scan starts from the first
+slot every time.
+
+The slot's node becomes the `BOUNCESETNODE` base plus the slot's index. The duration is in **seconds**;
+the engine multiplies it by 1000 before adding it to the clock.
+
+The outcome is reported through the script's result register rather than into an operand: non-zero if a
+slot was free, zero if the table was full. How many slots exist is declared in the script's header and
+is not `VAR_CAPACITY` - scripts gate themselves on that variable before calling this.
 
 ### Operands
 
-Unknown
+`<visitor ID>` - The visitor to put on the ride.
+
+`<seconds>` - How long their go lasts.
 
 ## UNBOUNCE
 
-`UNBOUNCE <visitor ID>` - Unknown
+`UNBOUNCE <dest>` - Take off whoever is ready to come off and **write** their ID into the operand. This
+instruction writes its operand rather than reading it. Zero means nobody was ready.
+
+It walks from the first slot and takes the first occupied one whose duration has elapsed, clearing that
+slot and decrementing the bouncing tally.
+
+Releases are only made during a window at the start of each second of a rider's go, so a rider whose
+time is up may still wait briefly before coming off.
 
 ### Operands
 
-Unknown
+`<dest>` - Receives the visitor who came off, or zero.
 
 ## FORCEUNBOUNCE
 
-`FORCEUNBOUNCE <visitor ID>` - Unknown
+`FORCEUNBOUNCE <dest>` - As `UNBOUNCE`, but without requiring the rider's duration to have elapsed.
+
+It still observes the same release window, so "forcible" means "regardless of the duration", not
+"unconditionally".
 
 ### Operands
 
-Unknown
+`<dest>` - Receives the visitor who came off, or zero.
 
 ## BOUNCING
 
-`BOUNCING <visitor ID>` - Unknown
+`BOUNCING <dest>` - Write the number of visitors currently bouncing into the operand, as a signed
+16-bit value.
+
+Scripts use this to gate admission, comparing it against `VAR_CAPACITY` before calling `BOUNCE`.
 
 ### Operands
 
-Unknown
+`<dest>` - Receives the number currently bouncing.
 
 ## WALKON
 

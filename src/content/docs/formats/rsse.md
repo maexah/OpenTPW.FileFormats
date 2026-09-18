@@ -10,14 +10,26 @@ RSE is a file that encompasses compiled bytecode, the contents of which are deci
 
 | Size     | Description                                                                 |
 | -------- | --------------------------------------------------------------------------- |
-| 8 bytes  | Magic number - `RSSEQ` (`52 53 53 45 51 0F 01 00`)                          |
+| 4 bytes  | Magic number - `RSSE` (`52 53 53 45`)                                       |
+| 4 bytes  | Version - `0x00010F51` in every shipped file                                |
 | 4 bytes  | variable count (see **String / variable table** below)                      |
 | 4 bytes  | stack size (defined by `#setstack`)                                         |
 | 4 bytes  | time slice - almost always `50` (`0x32`), preprocessor directive is unknown |
-| 4 bytes  | limbo size (defined by `#setlimbo`)                                         |
-| 4 bytes  | bounce size (defined by `#setbounce`)                                       |
-| 4 bytes  | walk size (defined by `#setwalk`)                                           |
+| 4 bytes  | limbo size (defined by `#setlimbo`) - allocates that many 8-byte slots      |
+| 4 bytes  | bounce size (defined by `#setbounce`) - that many 16-byte slots             |
+| 4 bytes  | walk size (defined by `#setwalk`) - that many 32-byte slots                 |
 | 16 bytes | Padding - `Pad Pad Pad Pad` (includes a trailing space)                     |
+
+The first eight bytes are a four-byte magic followed by a four-byte version, not an
+eight-byte `RSSEQ` magic: the `Q` is the low byte of the version `0x00010F51`. The loader
+reads the two separately, and a version that does not match the one the executable was
+built for only produces a warning - the script still loads - so treating all eight bytes as
+a magic number would reject a file the game itself accepts.
+
+The three sizes above are counts of slots, and the loader allocates an array for each one
+straight after reading it. A script declares only what it uses: of the 308 scripts the game
+ships, the ones declaring a non-zero bounce size are exactly the ones using the `BOUNCE`
+instruction, and the same one-to-one relationship holds for limbo and for walk.
 
 **Body**
 

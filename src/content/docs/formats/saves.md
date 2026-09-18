@@ -535,8 +535,8 @@ where the runtime last drew.
 ### The animation programs
 
 `0x0C` and `0x08` are indices into an array of animation programs, and **that array is compiled into the
-executable rather than stored in the save**. `SPSC`, despite its name, is the table of sprite *instances*
-above and not the programs: the loader points every instance at the built-in array unconditionally and
+executable rather than stored in the save**. `CSPS` - the trailer closing the `TPCS` block, and despite
+its name - marks the table of sprite *instances* above and not the programs: the loader points every instance at the built-in array unconditionally and
 reads no bytecode from the file at all, which is also why `0x14` is meaningless on disk.
 
 The array holds 83 programs back to back. Each word in it is either an opcode or an operand of the one

@@ -28,10 +28,22 @@ Comments are preceded with a pound symbol (`#`) and continue until the end of th
 
 Strings are surrounded with double quotes (`"`) and are used for various properties, i.e. the ride's name.
 
-**A value is the first word after the key, and the rest of the line is prose.** The shipped files
+**A key takes one word per field it names, and the rest of the line is prose.** The shipped files
 routinely write an explanation after the value with no comment marker at all - `Info.IsChoosable 1 People
 CAN use this` - so a reader that takes the remainder of the line as the value gets a sentence where it
 expected a number.
+
+Most keys name a single field and so take a single word. **But a key may name several fields, separated
+by dots, and then it takes that many values in order:**
+
+```
+PeepTypes[0].PreferredExcitement.StartingCash.BoredomThreshold 80 300 40
+```
+
+That is three settings rather than one - `PreferredExcitement` 80, `StartingCash` 300 and
+`BoredomThreshold` 40. A reader that takes only the first word after the key gets the first field right
+and silently drops the others, which is what makes the peep constants look as though they are missing
+from a file that states them plainly.
 
 ## An item's description is an override, not a whole description
 

@@ -87,5 +87,6 @@ A path is driven by a **per-frame scalar**, stored in an animation track that se
 outside `0…100` wrap: the bus's three clips run 42.435 → 55.997 → 99.835 → 142.460, one full lap
 of 100.025 beginning part-way round, and the haunted house's run 0.004 → 199.995, which is two laps.
 
-The scalar does not always increase. The ferry traverses its path backwards, its clips descending
-99.983 → 43.844 and 33.903 → −0.017; of the game's 71 `0x200` tracks, 46 ascend and the rest descend.
+The scalar does not always increase. Of the game's 71 `0x200` tracks, 46 never fall, only 4 never
+rise, and 21 do both — the ferry's third clip falls 33.903 → −0.017, while its first rises 99.983 past
+100 to 104.006 and then comes round to 43.844, which is the wrap showing up in the authored data.

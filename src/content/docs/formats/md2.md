@@ -2,8 +2,10 @@
 title: Models and Animation (*.md2)
 ---
 
-Despite the extension, these are not Quake II models. Every `.md2` in the game shares the magic
-`0x1CD15D46` with the constants `0xDD` and `0xCB` at `0x04` and `0x08`, and comes in one of two kinds:
+Despite the extension, these are not Quake II models. Every `.md2` in the game starts with the magic
+`0x1CD15D46`, and all but four carry the version words `0xDD` and `0xCB` at `0x04` and `0x08` (see
+[Three versions, and the loader takes one](#three-versions-and-the-loader-takes-one)). They come in one of
+two kinds:
 
 | Kind | How to tell | Count in the game |
 | ---- | ----------- | ----------------- |
@@ -13,6 +15,28 @@ Despite the extension, these are not Quake II models. Every `.md2` in the game s
 An animation file carries no geometry at all — no vertex positions, no texture names — and poses the
 nodes of a separate base model whose name is a prefix of its own. Parsing one as a mesh is what runs
 off the end of the file.
+
+## Three versions, and the loader takes one
+
+Measured over every `.md2` in the game, loose and inside every `.wad` — 2,129 files:
+
+| Words at `0x04` / `0x08` | Files |
+| ------------------------ | ----- |
+| `0xDD` / `0xCB` | 2,125 |
+| `0xCF` / `0xC9` | 2 — `wr_tunnel.md2` and `wr_tunnelm.md2`, in the Jungle's `rides/wateride.wad` |
+| `0x18` / `0x17` | 2 — `garrow.MD2` and `rarrow.MD2`, loose in `data/generic/dynamic/` |
+
+> **The engine loads only `0xDD`.** Its one model reader refuses anything above `0xDD`, and anything
+> below unless the caller asks for the older layout — which no caller in the shipped executable does.
+> So the four odd files are shipped data the game never draws.
+
+`garrow.MD2` and `rarrow.MD2` are a green and a red block arrow, each a single node named `Line01`
+with 14 vertices and 24 triangles: 5 units wide at the head, 8 long pointing +Z, 2 thick. They differ
+only in their name, their texture (`green.tga` against `red.tga`) and three header words, one a save
+time dated September 1998 — thirteen months before the release models. Their layout is **not** the
+one this page describes: 32-byte vertex records, 24-byte face records and a 136-byte node, reached
+through unaligned pointers from `0x5A`. A reader for the `0xDD` layout that meets one will take the
+dword at `0x70` (`0x05F90000`) as a mesh table pointer and run off the end of the file.
 
 ## A model is a tree of nodes, not a list of meshes
 

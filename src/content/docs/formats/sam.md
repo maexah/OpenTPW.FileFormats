@@ -113,11 +113,68 @@ Info.Shape
 A parser that reads a value as the single word after the key returns `---` for these and leaves the
 picture behind as unparsed junk, which is easy not to notice.
 
-The picture is the item's footprint, drawn top-down. `*` marks a cell, `2` the cell people enter by, and
-`S` a cell with its own special meaning to the item. **The footprint is the box the picture is drawn in
+The picture is the item's footprint, drawn top-down. **The footprint is the box the picture is drawn in
 — its widest row by its number of rows — not the number of marks inside it**; see the
 [footprint file](/formats/hmp/), which agrees with that reading on every item and with the other on very
 few.
+
+### What each character means
+
+Each character is a cell **kind**, looked up in a nineteen-row table inside the executable. The ways in
+and out are laid out like a numeric keypad: `8 6 2 4` are entrances facing north, east, south and west,
+and `N E S W` the exits facing the same. **So `2` is the entrance and `S` is an exit** — not a second
+entrance, and not the entrance itself.
+
+| Character | Kind | Facing | Meaning |
+| --------- | ---- | ------ | ------- |
+| `.` | 0 | — | an empty cell inside the box |
+| `*` | 4 | — | the body of the item |
+| `Q` | 3 | — | a queue cell |
+| `@` | 1 | — | a path cell |
+| `+` | 11 | — | track |
+| `#` | 16 | — | track |
+| `D` | 23 | — | track station |
+| `>` `<` | 23 | east, west | track station, facing |
+| `8` `6` `2` `4` | 9 | north, east, south, west | **entrance** |
+| `O` | 9 | north | entrance |
+| `N` `E` `S` `W` | 10 | north, east, south, west | **exit** |
+| `X` | 10 | north | exit |
+
+"Facing" is a compass bit: north `0x01` is −y, east `0x04` +x, south `0x10` +y and west `0x40` −x.
+**Because the rows are flipped (below), +y runs UP the picture as drawn**, so south points toward its
+top. Read that way, a facing is the direction a guest travels through the cell: the Belly Bounce's `2`
+sits on its bottom edge and is walked into upward, and its `S` sits on its top edge and is walked out of
+upward.
+
+What the shipped items actually use, across all 274 shape blocks in the four themes: `*`, `.`, `+`, `<`,
+`>`, `2`, `S`, `N` and `E`. **Every entrance is a `2`**, 137 of them, never more than one per item. The
+72 exits are 44 `S`, 26 `N` and 2 `E`, again never more than one per item, and every item with an exit
+also has an entrance. No shipped picture contains a space, a tab, a blank line or a character outside
+the table.
+
+### How the picture is read
+
+> **The rows are read upside down.** Once the closing dashes are reached, the reader swaps the first row
+> with the last, the second with the second-last, and so on. Row 0 of the stored grid is the **last**
+> row drawn. This matters for every item whose entrance is not on its middle row: the Jungle's Staff
+> Room (`**` over `*2`) enters on row 0, not row 1.
+
+- A space is skipped: it is not a cell and takes no column.
+- A blank line is still a row, with no cells in it.
+- Any character not in the table makes the engine refuse the whole picture.
+- A row may hold at most 20 cells, and the picture at most 20 rows.
+
+The entrance is the **first** kind-9 cell and the exit the first kind-10 cell, searching **column by
+column** from the left and each column from row 0. Positions are the column and row in the flipped grid.
+Two fallbacks follow:
+
+- **No exit:** the exit is put on the entrance cell and takes the entrance's facing. This is the common
+  case: ten of the Jungle park's eleven placed objects have their exit on their entrance.
+- **No entrance:** both are put at column 0, row 0, facing north and south respectively, even if the
+  picture has an exit character.
+
+Every placed object in the Jungle's shipped park has the entry and exit cells this reading predicts,
+once each is turned by its placement angle — all fourteen of them.
 
 ## An item ships only its own art
 

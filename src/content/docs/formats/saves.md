@@ -168,6 +168,16 @@ Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
 | 1     | The animation role, or **12** for "running nothing"                                 |
 | 2     | Which clip of that role                                                             |
 
+> **The flag word is the engine's own field, not the one a caller passes when starting a clip**, and
+> the two disagree where it matters. A caller's flags are `0x1` loop, `0x2` start at once, `0x4` do not
+> lay the rest pose down, `0x8` do not apply the hide list. Stored on the channel, `0x1` and `0x8` mean
+> the same, but `0x2` means **frozen at frame nought** and `0x4` means **held on the last frame** —
+> states the engine has recorded, not requests. The game does not even express "held" as a flag when it
+> restores: it re-enters the channel with role **14**, which acts on the clip already loaded and
+> backdates the timebase by one whole clip so the elapsed frame lands exactly on the total. Role **13**
+> does the same for a freeze. Feeding the stored word back in as caller flags therefore drops the held
+> pose — in the shipped park that is **eleven of the fifteen** channels that hold a real role.
+
 > **The module does not say how many channels a thing has**, and the walk cannot step over a record
 > without knowing. The count is the item's own `NumSimultAnims` — the Jungle Spray runs three lanes and
 > everything else one. This is not a detail: walked with one channel for everything, the cursor lands

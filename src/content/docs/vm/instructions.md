@@ -1008,37 +1008,65 @@ Takes 4 operands, those not named above being unknown. No script the game ships 
 
 ## STARTSCREAM
 
-`STARTSCREAM <visitor ID> <unknown>` - Unknown, likely causes a visitor to scream.
+`STARTSCREAM <band> <level>` - Start the ride screaming, and hold the voice so that `STOPSCREAM` and `SCREAMLEVEL` can reach it.
 
 ### Operands
 
-Takes 2 operands, those not named above being unknown. Across the 308 shipped scripts the 40 uses of this instruction write them as: 1 — variable; 2 — literal.
+`<band>` - **Not a visitor id**, which is what this entry used to call it. It selects one of four scream effects from the `kids` category: 0 screams not at all, 1 is effect `0x47`, 2-3 `0x48`, 4-7 `0x49`, and 8 or more `0x4a`. Always a variable in shipped scripts, and in practice it is **how many riders are aboard** - see below.
+
+`<level>` - Loudness, but not directly. The engine plays at `(level + speed) / 2`, clamped to 0..100, where `speed` is the script's own speed word - 50 unless a placed item overrides it. So `STARTSCREAM <band>, 20` is volume 35, and **a scream gets louder as the script runs faster**.
+
+The instruction **refuses if this script is already holding a scream**, logging its own `RSSE: Started screaming without s...` (the string is truncated in the binary). The sound is placed at the **ride's** position, never a rider's. 40 uses across 40 of the 308 shipped scripts.
+
+**The band is the rider count, and the pair is a restart idiom.** Every scream-capable ride calls a subroutine on *every pass* of its ride loop; `Bouncy.RSE`'s is at instruction 193:
+
+```
+193  BOUNCING     VAR_TEMP        ; how many riders are aboard NOW
+195  CMP          VAR_SCREAMING, VAR_TEMP
+198  BRANCH_Z     ->207           ; unchanged? leave the scream alone
+200  STOPSCREAM
+201  STARTSCREAM  VAR_TEMP, 20    ; band = the rider count
+204  COPY         VAR_SCREAMING, VAR_TEMP
+207  RETURN
+```
+
+So the scream is torn down and restarted whenever the rider count crosses one of the band edges above. The script seeds its cache with 65535 (-1), a value the count can never take, so the first pass always starts one.
 
 ## STOPSCREAM
 
-`STOPSCREAM`
+`STOPSCREAM` - Fade out the scream this script is holding, and forget it.
 
 ### Operands
 
-None
+None.
+
+It fades rather than cutting, and clears the handle whether or not anything was playing. **It outnumbers `STARTSCREAM` two to one** - 80 uses in 41 scripts against 40 in 40 - because of the restart idiom above rather than because rides stop screaming twice.
 
 ## SINGLESCREAM
 
-`SINGLESCREAM <visitor ID> <unknown>`
+`SINGLESCREAM <band> <level>` - Play one scream, once. Nothing is held: the engine keeps no handle and sets no volume, so neither `STOPSCREAM` nor `SCREAMLEVEL` can reach it.
 
 ### Operands
 
-`<visitor ID>` - The visitor who screams; always a variable in shipped scripts.
+`<band>` - As `STARTSCREAM`'s, and again **not** a visitor id. 0 plays nothing.
 
-`<unknown>` - Always a literal in shipped scripts. Its meaning is not yet known.
+`<level>` - **Its sign chooses between two different tables**, which is the part that was not known. Negative, and the band alone decides: 1 is effect `0x69`, 2-3 `0x6a`, 4-7 `0x6c`, 8 or more `0x6d`. **`0x6b` is skipped**, and that gap is the engine's own - the shipped `kids` category declares 105, 106, 108 and 109 with 107 absent, agreeing with it from the other direction. Zero or above, and the band is crossed with `(level + speed) / 50`, held at 3, giving a 4x4 grid of ids `0x4b` to `0x5a`.
+
+**Both branches are reached by shipped content**, so neither may be treated as dead: of the 46 uses across 44 scripts, 44 pass 65535 - which the operand fetch sign-extends to -1 - while `Monkey.rse` passes 90 and `Totem.RSE` passes 100, landing on grid steps 2 and 3.
+
+**The grid's first column cannot be reached at all**, and that is arithmetic rather than an oversight. The step is `(level + speed) / 50` with speed 50, so a step of 0 needs a level below 0 - and a level below 0 is exactly what takes the other branch. `0x4b`, `0x4f`, `0x53` and `0x57` are unreachable for any script that could be written.
 
 ## SCREAMLEVEL
 
-`SCREAMLEVEL <level>`
+`SCREAMLEVEL <level>` - Move the volume of the scream this script is already holding.
 
 ### Operands
 
-`<level>` - The desired ride scream level (from 0 to 100).
+`<level>` - **Not a level from 0 to 100**, which is what this entry used to say. It goes through the same arithmetic as `STARTSCREAM`'s second operand: the volume becomes `(level + speed) / 2`, clamped to 0..100. At the usual speed of 50, a `<level>` of 20 gives volume 35 and a `<level>` of 100 gives 75.
+
+It does nothing at all when no scream is held. 81 uses across 36 scripts, which makes it the **third most used member of the family** - commoner than `STARTSCREAM` itself.
+
+> **One quirk to be careful about reproducing.** The handler writes the **return value of the volume call** back over the scream handle. What that value is cannot be determined from the executable, because the chain ends in a virtual call - so an implementation that copies this faithfully will have a later `STOPSCREAM` fade something that is not the voice.
 
 ## FINDSCRIPTRAND
 

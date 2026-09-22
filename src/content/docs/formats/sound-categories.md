@@ -80,10 +80,28 @@ Bank order matters — sample records index into this list.
 | Offset | Size | Description |
 | --- | --- | --- |
 | `+0x00` | 4 bytes | **Effect id** — what code passes to the play call |
-| `+0x04` | 4 bytes | Unknown — 1 to 5 |
+| `+0x04` | 4 bytes | **Variation count** — how many weighted sample lists this effect picks between |
 | `+0x08` | 4 bytes | Zero |
 | `+0x0c` | 4 bytes | **Repeat delay**, in milliseconds |
-| `+0x10` | 4 bytes | Unknown |
+| `+0x10` | 4 bytes | Unknown — but **not** a loop flag; see below |
+
+`+0x04` was recorded here as "Unknown — 1 to 5", and both halves of that were wrong. It is the number
+of weighted sample lists the effect picks between, and across the **1,267** effect records in all
+**31** categories the game ships it runs **0 to 30**. Jungle's ambient alone declares 9, 5, 7, 4, 1,
+0, 1, 1, 1 — which sums to exactly the twenty-nine lists that follow it, and that agreement over nine
+effects is what identifies the field. **A zero is real**, meaning an effect with nothing to play;
+hallow's, jungle's and space's ambient each carry one. This count is also what divides the sample
+records up between effects — see below.
+
+`+0x10` is still undecoded, and one tempting reading is **refuted** rather than left open. In
+`cat_kids` alone it looks exactly like a loop flag: `0` for every one-shot scream effect, and
+`0x00060404` for all four of the held, repeating ones. It is not one. Swept across all 1,267 records,
+**45** carry a value at or above `0x10000`, and they include the **music** category's effect 2 — which
+the game *replays* rather than loops, waiting out its own 10,000 ms delay between arrangements — and
+**ui** effects 154 and 155, which are button sounds. Whatever the field means, it does not mean "this
+effect repeats". The rest of the distribution: `0x200` on 651 records, `0` on 331, `6` on 91, `8` on
+83, `0x201` on 29, `4` on 16, `0x206` on 15. The 651 are mostly one category — speech declares 641
+uniform records, each carrying that same trailing `0x200` (see below).
 
 Ids are not indices: a category's need not start at 1 or run in order, and the ride categories' run
 into the hundreds. The delays are all round numbers between 700 and 10,000 ms.
@@ -118,12 +136,23 @@ A **list** ends when its odds saturate, since they are cumulative: a list of six
 32766, 43688, 54610, 65532. Rounding leaves that last figure anywhere from 65,529 to 65,535, while
 the largest that is *not* the end of a list is 58,248 — a wide gap to put a threshold in.
 
-An **effect** ends when the space before the next list is big enough to be a new effect's header.
-These are well separated too: a list following another inside the same effect starts 0, 16 or 24
-bytes later, and a list starting a new effect starts 42, 58, 84, 168 or 210 bytes later.
+An **effect** ends once it has taken as many lists as its own record declares at **`+0x04`**. Read the
+count out of the file; do not try to infer the boundary from the gap before the next list.
 
-An effect holding more than one list appears to be picking between variations. Nothing found so far
-weights the lists against each other.
+> **The gap rule this page used to give does not work, and it fails on shipped data.** It said an
+> effect ends "when the space before the next list is big enough to be a new effect's header", with
+> lists inside one effect 0, 16 or 24 bytes apart and a new effect's 42, 58, 84, 168 or 210 bytes
+> apart. **Those two ranges overlap.** Jungle's ambient runs **64** bytes between two lists of the
+> *same* effect, while the smallest gap between two *different* effects is **42** — so no threshold
+> separates them. The lobby never noticed, because all four of its local sfx categories and all four
+> of its music ones declare a single variation each and group identically either way. Every park
+> category did not: jungle's nine ambient effects came out as twenty-six, which left effects 178 to
+> 192 each playing one of effect 177's beasts, and the global lobby and UI categories were wrong too.
+
+So an effect holding more than one list is picking between **variations**, and how many it holds is
+stated in the file rather than inferred. Nothing weights the variations against each other, so they
+are even — which for hallow means its rain, its terrors, its three pairs of bats and its spirit each
+get a turn, rather than the bats crowding everything else out.
 
 ### Worked example
 

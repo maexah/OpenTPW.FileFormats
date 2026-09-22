@@ -131,5 +131,60 @@ the three toilets and the sideshow.
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
 > object's own operating speed over it — that ride's `mOperatingSpeed` is 60 in the same file.
 
+## The ride system module (`SYSR`)
+
+What every thing's **model** was doing when the park was saved. It is the other half of a park that
+loads without rebuilding itself: the script module above stops the construction clip being replayed,
+and this one stops everything standing frozen once it is.
+
+| Size    | Description                                                      |
+| ------- | ---------------------------------------------------------------- |
+| 4 bytes | Module length in bytes                                           |
+| 4 bytes | Present record count — **161** in the shipped park                |
+| 4 bytes | Free record count                                                |
+| 4 bytes | High-water mark                                                  |
+| n       | One record per slot                                              |
+
+A slot that holds **nothing costs exactly one byte** — the tag alone — which is how a module with far
+more slots than things stays small. A present record is:
+
+| Offset   | Size     | Description                                                     |
+| -------- | -------- | --------------------------------------------------------------- |
+| `0x00`   | 1 byte   | Tag — `01` for present                                          |
+| `0x01`   | 4 bytes  | The **item** id, not a thing id                                 |
+| `0x2b`   | 2 bytes  | Node flag-word count                                            |
+| `0x2d`   | 2 bytes  | Count of a block that precedes the flag words                   |
+| `0x37`   | n×8      | That block — two dwords per entry                               |
+| —        | n×4      | One flag word per node; bit `0x10` is hidden                    |
+| —        | n×44     | The animation channels — see below                              |
+
+Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
+
+**A channel is 11 dwords**, of which three are established:
+
+| Dword | Description                                                                        |
+| ----- | ----------------------------------------------------------------------------------- |
+| 0     | Flags — `0x1` loop, `0x4` hold the last frame rather than count as busy             |
+| 1     | The animation role, or **12** for "running nothing"                                 |
+| 2     | Which clip of that role                                                             |
+
+> **The module does not say how many channels a thing has**, and the walk cannot step over a record
+> without knowing. The count is the item's own `NumSimultAnims` — the Jungle Spray runs three lanes and
+> everything else one. This is not a detail: walked with one channel for everything, the cursor lands
+> **5,786 bytes short** of the module's end; with the real counts it lands **exactly** on it across all
+> 161 records, which is what makes the layout above trustworthy.
+
+In the shipped park **15 of 163 channels hold a real role** and the other 148 hold the sentinel — most
+records are scenery with nothing to animate. The fourteen placed things are saved as: Gates role 5
+entry 1, Traffic Lights role 5 (looping), Belly Bounce role 2 (looping), Jungle Spray role 2 on all
+three lanes, Coconut Kiosk role 5 (looping), Litter Bin role 0, both Security Cameras role 6, Staff
+Room nothing, the three Small Toilets role 5, Fountain role 5 (looping) and the Bus role 5 entry 2.
+
+> Because a record names an **item**, three Small Toilets are three records that read alike, and the
+> module carries nothing that tells them apart. In this file the records of placed things happen to run
+> in ascending script-handle order, which pairs them off — but that is an ordering that matches, not a
+> decoded thing handle, and within one item id the choice is unobservable because those records are
+> identical.
+
 Everything here is measured from `Easymode.TPWI`, the one file of this shape that ships. No `.TPWS`
 written by the game has ever been read, so treat this as what that file proves and no more.

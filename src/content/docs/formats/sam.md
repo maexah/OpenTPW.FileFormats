@@ -192,6 +192,27 @@ objects the Jungle's shipped park places name **40 textures that are in none of 
 loader that looks only beside the model finds no art for most of every item's surfaces. Resolve a
 material by looking in the item's own folder first and the theme's shared archive second.
 
+## The particle effects an item gives off
+
+Four keys each name a particle effect by number. The category files set them, with the same values in
+all four themes:
+
+| Key                          | Rides | Sideshows | Shops | Features | Upgrades |
+| ---------------------------- | ----- | --------- | ----- | -------- | -------- |
+| `Info.CreateParticleEffect`  | 79    | 80        | 81    | 82       | 80       |
+| `Info.DestroyParticleEffect` | 75    | 76        | 77    | 78       | 76       |
+| `Info.RepairParticleEffect`  | 51    | —         | —     | —        | —        |
+| `Info.UpgradeParticleEffect` | 89    | —         | —     | —        | —        |
+
+An item's own file overrides `Create` and `Destroy` together in **69 of the 138 feature archives**, and
+in no ride, shop, sideshow or upgrade archive. **24 of the 69 set both to 0**, which is no effect at
+all: the bus, the ferry, the seaplane, the gates, the traffic lights and `end`, in every theme. Of the
+rest, 36 take the shops' pair (81/77) and 5 the rides' (79/75). Three mix the shops' and the features'
+values - the Jungle's Large Tree and Staff Room declare 82/77, its Lava Fountain 81/78 - and its Mammoth
+Fountain restates the features' own 82/78. So an item's effect is its own value where it declares one and
+its category's otherwise; a reader that takes only the category gives the Jungle's Round Fountain 78
+where it declares 77.
+
 ## Where the approach is placed
 
 A theme's `Standard.sam` also states the shape of the playable map and the cells the fixed approach

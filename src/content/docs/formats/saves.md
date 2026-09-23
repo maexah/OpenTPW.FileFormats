@@ -190,6 +190,19 @@ neighbour mask from the cells around it. They share one compass: over the Jungle
 `mDirection` only ever reads 0, 1, 4, 16 or 64 — the four cardinals of an
 `N NE E SE S SW W NW` layout, and nothing between them.
 
+`mOverlapCounter` is **how many more times a cell has been built over** — the engine bumps it when a
+path is laid on a cell that is already path, and deleting the cell takes one off, removing it only once
+the count falls below nought. In the Jungle park 14 path cells carry it, every one a corner or a junction:
+eleven at 1 — (39,21), (39,28), (43,29), (44,28), (47,28), (48,20), (56,15), (56,16), (56,17), (56,21) and
+(56,28) — and three at 2 — (47,21), (48,21) and (48,28). The queue cell at (52,22) reads 1.
+
+`mFlags` bit `0x40` **marks land outside the park**. It is set on 13,878 of the Jungle park's 16,384
+cells, all of `mType` 7, 0, 2 or 30, and every path, queue and footprint cell is among the 2,506 without
+it. The meaning is read from that split; nothing in the file names it. Bit `0x20` is the engine's
+NOMODIFY, set on 18 of the 78 path cells.
+
+In the **track cell**, `mNeighbours` is 0 on all 16,384 cells of the Jungle park.
+
 `mTileData` is **three dwords**, not one opaque run:
 
 | Dword | Meaning | Values in the Jungle park |

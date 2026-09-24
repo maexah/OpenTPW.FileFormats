@@ -87,6 +87,10 @@ suppress the category's.
 | `UsageInfo.MinCapacity`, `MaxCapacity`, `MinDuration`, `MaxDuration` | Bounds the engine clamps to - see below |
 | `UsageInfo.EntryCellStandPosX`, `…PosY` | Where in its entry cell a guest stands to use it |
 | `UsageInfo.ExitCellAppearPosX`, `…PosY` | Where in its exit cell a guest reappears afterwards |
+| `UsageInfo.InitCostOfGoods` | What one use costs the park to provide - and a sideshow's prize |
+| `UsageInfo.RipOffOK` | How far over what a thing is worth a guest will still pay, in per cent - see below |
+| `UsageInfo.SpecialIngredient` | A shop's goods: "0 = none, 1 = Fat, 2 = Salt, 3 = Ice, 4 = Sugar" |
+| `UsageInfo.AppearanceEffect` | What a shop changes about a guest's looks: "1 = Balloon, 2 = Costume" |
 | `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings |
 
 **Two of these are the text-file side of bits the saved park carries.** `Info.IsChoosable` matches the
@@ -103,6 +107,19 @@ sickness, happiness and litter are added, and a reader that treats all five alik
 backwards. The block belongs to shops: `Shops.sam` declares all five at `5` and each of the eight shops
 overrides them, while `Rides.sam` and `SideShow.sam` declare none at all - so a ride reading nought here
 is the category default showing through rather than a value of its own.
+
+**`UsageInfo.RipOffOK` is set by the category files alone.** `Shops.sam` declares `100` and `SideShow.sam`
+`250`, the second annotated "%premium peeps willing to pay above 'average win'", identically in all four
+themes; no item's own file overrides it (checked across the `.sam` inside every one of the 312 `.wad` files
+the game ships), and `Rides.sam` and `Features.sam` do not declare it, so a ride reads nought. It is what
+lifts a thing's worth to a guest above its cost of goods before the price is compared with it: without it
+the jungle's Drinks Shop can be worth as little as 21 against its price of 30, with it no less than 42.
+
+**`SpecialIngredient` and `AppearanceEffect` are shop keys.** `Shops.sam` declares both at `0`; among the
+jungle's shops the Drinks Shop (`Coconut.sam`) sets ingredient `3`, ice, the Burger `1`, the Fries `2` and
+the Ice Cream `4`, while the Balloon sets appearance `1` and the Costume Shop `2`. The Steak's value is `0`
+beside a comment reading `FAT=1`, and the value is what is read. Nothing outside the `shops` folders declares
+either.
 
 **`MinCapacity` and `MaxCapacity` are enforced, not advisory.** When a ride is opened the engine takes the
 capacity it wants, clamps it between these two, writes it into the ride script's own capacity variable and

@@ -140,6 +140,22 @@ mFirstEntertainer 2 | mFirstGuard 2 | mFirstResearcher 2 | mFirstObject 2
 them against a thing's own id with `==`, so `mParkGates` of 11 means "the thing whose id is 11", not
 "the eleventh thing".
 
+### The object controls
+
+`mObjectControls` holds one 32-byte record per kind of item the park has had, keyed by the item's id; the
+rest of the 150 slots are zero, and `mNumObjectControls` after the array counts the used ones (50 in Lost
+Kingdom's save, `mPreviousSearchKey` 1100). Three fields are settled, each checked against the item files
+for all 50 records with no mismatch:
+
+| Offset | Type | Holds |
+| --- | --- | --- |
+| `0x00` | u16 | The item's `Info.Id` |
+| `0x04` | i32 | What buying one costs, the item's `Upgrades[0].CostOfUpgrade` - Belly Bounce 500, Drinks Shop 650 |
+| `0x0C` | i32 | The item's `UsageInfo.RipOffOK` - 100 for the six shops, 250 for the four sideshows, 0 for the rest |
+
+The other fields (`0x08`, a byte at `0x10`, and `0x14`, `0x18`, `0x1C`) are not settled here. The game fills a
+record from the item's own description, so a save carries whatever the item files said when the record was made.
+
 ### The map: 16,384 gated cells
 
 Each cell begins with a status byte whose low three bits say which sub-records follow it. A cell that is

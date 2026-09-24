@@ -215,7 +215,7 @@ coordinates, because their positions live in their models rather than in the sav
 | 204 | 2 bytes | `mTopLeft` | |
 | 206 | 2 bytes | `mEntryPos` | the cell a visitor is sent to |
 | 208 | 2 bytes | `mNext` | this object's link in the object list |
-| 210 | 2 bytes | `mAssignedStaffMember` | |
+| 210 | 2 bytes | `mAssignedStaffMember` | a handle: the member of staff sent to service it, `0` for none |
 | 212 | 2 bytes | `mBackOfQueue` | |
 | 214 | 4 bytes | `mCanLoad` | non-zero when the object will take anyone aboard |
 | 218 | 2 bytes | `mExitPos` | packed like `mEntryPos` - the cell a guest is put down on when they leave |
@@ -305,7 +305,15 @@ is the whole of the evidence for this field, and it is worth knowing that rather
 
 **`mCanLoad` is non-zero when the object will take anyone aboard.** The filter deciding whether a guest
 may be offered an object refuses on it, and so does the admission that follows. It is `1` on all fourteen
-objects in the shipped park, so nothing there exercises the refusal.
+objects in the shipped park, so nothing there exercises the refusal. Closing an object - the park's door
+shuts every one a guest may be offered, and each object's window has a door of its own - writes `0`, and
+opening it writes `1`.
+
+**`mRequestedService` is non-zero while a mechanic has been called to the object** - four bytes at 1078.
+Calling one closes the object and writes `1`; a repair or a cancelled call writes `0`, and while it is set
+nothing opens the object. It is `0` on all fourteen objects in the shipped park. Its offset rests on the
+chain that closes on `mTotalTakings` at 1090 rather than on a value, since nought is also what its
+neighbour after it holds.
 
 #### The economy thing (model 16)
 

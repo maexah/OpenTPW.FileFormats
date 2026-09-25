@@ -118,6 +118,7 @@ This is where a park's contents live. Its layout, with every boundary closing ex
           mType 4, mName 4, mPayGrade 1, mSubType 1, mValid 1,
           mOnPointer 1, mTimeSig 4, mTimeoutTime 4
 0x001A21  arrival and clock fields, 76 bytes                       ->  0x001A6D
+          the last 18 of them the arrival block (below), from 0x001A5B
 0x001A6D  16,384 map cells (below)                                 ->  0x152431
 0x152431  u32 Used Thing Head                                      ->  0x152435
 0x152435  the thing list (below)                                   ->  0x16D1A6
@@ -155,6 +156,41 @@ for all 50 records with no mismatch:
 
 The other fields (`0x08`, a byte at `0x10`, and `0x14`, `0x18`, `0x1C`) are not settled here. The game fills a
 record from the item's own description, so a save carries whatever the item files said when the record was made.
+
+### The arrival and clock fields
+
+The 76 bytes after the 32 records are three blocks the game reads one after another: the end of the staff pool
+(30 bytes, read by `0x00507850` after its records), the park clock (28 bytes, `0x004f7f30`) and the arrival
+timer (18 bytes, `0x004cf050`). The names are the game's own, passed to its logging call as each field is read:
+
+| Offset | Size | Field | Lost Kingdom |
+| --- | --- | --- | --- |
+| `0x001A21` | 4, 1 | `mPeopleInCat[0]`, `mStopProducing[0]`, and so on for five pairs | 1, 0 in each pair |
+| `0x001A3A` | 4 | `mTimeSig` - the staff pool's own, not the arrival timer's | 722 |
+| `0x001A3E` | 1 | `mOpeningStaffPoolGenerated` | 1 |
+| `0x001A3F` | 8 | `mFunnyTimeStart`, a Windows FILETIME | 2000-01-01 00:00:00 |
+| `0x001A47` | 8 | `mSessionStart`, a Windows FILETIME | 1999-10-21 20:54:53.29 |
+| `0x001A4F` | 4 | `mMonthAtLastUpdate` | 1 |
+| `0x001A53` | 4 | `mDayAtLastUpdate` | 2 |
+| `0x001A57` | 4 | `mFunnySecsPerRealSec` | 15000 |
+
+#### The arrival block
+
+The last 18 bytes are the state of the game's arrival timer:
+
+| Offset | Size | Field | Lost Kingdom | Holds |
+| --- | --- | --- | --- | --- |
+| `0x001A5B` | 4 | `mArrivalRate` | 0 | Not settled |
+| `0x001A5F` | 4 | `mTimeSig` | 661 | The `mGameTick` of the turn that found the last load of visitors all off |
+| `0x001A63` | 4 | `mTargetVehicleCapacity` | 5 | Not settled; 5 is also what a park starts with before any save is read |
+| `0x001A67` | 4 | `mPeopleOnBus` | 0 | How many of the load in progress are still to get off |
+| `0x001A6B` | 1 | `mOffloading` | 0 | 1 while a load is in progress |
+| `0x001A6C` | 1 | `mGatesOpen` | 1 | Not settled; 1 is also what a park starts with |
+
+`mTimeSig` is measured against the header's `mGameTick` (755 in Lost Kingdom), and both are in the same unit, one
+count per turn of the game's things. The game calls the next load once `mGameTick / 4` has passed `mTimeSig / 4`
+(each rounded down) by more than `Arrival.TimeBetweenArrivals`. Both fields are saved, so a park loaded from this file
+is 94 counts into its wait already. The executable's side is in OpenTPW's `docs/exe/park.md`, "Arrivals".
 
 ### The map: 16,384 gated cells
 

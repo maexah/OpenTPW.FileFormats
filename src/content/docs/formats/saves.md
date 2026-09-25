@@ -473,6 +473,17 @@ where it sorts. The one at 402 falls between `mCurrentPayGrade` and `mJobsDone`,
 on.** `mTimeStartedIdling` is written *before* `mTimeHired`, which sorts the other way. The order above is
 the serialiser's own, because the serialiser is what the file follows.
 
+**What the stamps count.** `mTimeStartedIdling` is a reading of the World header's `mGameTick`, the park's own
+clock, which goes up once a thing sweep (248 ms). The save writes that clock and every member of staff in one pass,
+so a stamp is never ahead of it: the shipped park's `712` and `752` sit just under its `755`. **Nought is not "since
+the start"**: the game writes `0` whenever a member of staff stops to idle from anything but a walk, and that wait is
+over on the next sweep. Three of the shipped five carry it, and a walk does not clear a stamp - the entertainer is
+saved walking with `712`, left from their last idle. Of the kinds' own fields, `mTimeStartedCleaning`,
+`mTimeStartedEntertaining` and `mTimeStartedResearching` are readings of the same clock, taken as the job began;
+**`mDurationOfRepair` and `mProsecutionTimestamp` are not readings at all**, whatever the second's name says. Each
+holds the sweeps left, loaded from its kind's `WorkDuration` (the mechanic's scaled by what the ride needs) and
+taken down by one a sweep.
+
 A patrol region is a rectangle, stored as two **packed cell ids** - `y * 128 + 1 + x`, the same one-based
 packing the destination setter takes - naming the bottom-left and top-right corners. Nought means no area
 at all. Unpacking the shipped park's gives places that mean something: the entertainer patrols `(47,18)`

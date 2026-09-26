@@ -89,7 +89,7 @@ makes this list checkable rather than inferred.
 A handle is a thing id, compared against a thing's own id with `==`: `11` means "the thing whose id is
 11", not "the eleventh thing".
 
-`mParkClosed` reads the opposite way to its name. The command that opens and shuts a park writes `0` on
+`mParkClosed` is `1` while the park is shut and `0` while it is open. The command that opens and shuts a park writes `0` on
 one branch and `1` on the other, then picks the word for its own message with
 `mParkClosed == 0 ? "opened" : "closed"`. The world constructor writes `1` before anything is loaded, so
 a park is born shut and a save holding `0` is one that was opened while it was being played.
@@ -106,7 +106,7 @@ the park's money through this very accessor.
 holds `0`, which is not in that set - so either zero is a state nothing writes while a park is being
 played, or it is what a park carries before it is first entered. Naming it either way would be a guess.
 
-After the header come 150 object-control records, a pool of timers, the 128x128 map, and then the thing
+After the header come 150 object-control records, the staff pool, the park clock and the arrival timer, the 128x128 map, and then the thing
 list.
 
 #### The map
@@ -164,8 +164,9 @@ exactly the eight values the attribute map uses: 0, 1, 3, 8, 17, 128, 144 and 14
 **The unnamed short at 50 is occupancy** - the id of the thing standing on the cell. Twenty-four cells of
 the shipped park carry a value, and eleven of them are exactly its eleven placed catalogue objects, each
 naming *itself* on the cell it stands on: the cell at (55,15) holds `23`, and object `23` stands at
-(55,15), and so for all eleven. The remaining thirteen hold person ids, gathered on the approach to the
-park gates at x 47-48 and at the staff's own positions. A guest waiting to be let in tests the cell
+(55,15), and so for all eleven. Twelve more hold person ids, gathered on the approach to the
+park gates at x 47-48 and at the staff's own positions, and (0,0) holds `15`, one of the three
+unplaced objects. A guest waiting to be let in tests the cell
 underfoot against their own id, which is this field read from the other side - though that test is made
 against the cell's *runtime* record, which is `0x44` bytes where the file carries 52, so the two layouts
 do not share offsets.

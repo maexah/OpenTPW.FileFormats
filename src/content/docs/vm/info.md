@@ -52,6 +52,6 @@ Each script therefore gets one turn in eight ticks, and the eight are spread apa
 
 On its turn a script runs instructions until its time slice is spent or it gives the rest up. The slice is a count of **instructions**, not of time, and it comes from the script's own header - 50 in every shipped script. `ENDSLICE` and `CRIT_UNLOCK` both end the turn immediately, and `WAIT` ends it by putting the program counter back onto itself so the same instruction runs again next turn.
 
-`CRIT_LOCK` stops instructions counting against the slice until the matching `CRIT_UNLOCK`. The flag behind that is cleared at the top of every tick, so **a critical section cannot outlive the turn that took it** - a script that locks and then yields comes back with instructions counting normally again.
+`CRIT_LOCK` stops instructions counting against the slice until the matching `CRIT_UNLOCK`. The flag behind that is cleared as each script's turn begins, so **a critical section cannot outlive the turn that took it** - a script that locks and then yields comes back with instructions counting normally again.
 
 A script whose program counter has been parked by `END` is taken off the list at the end of the same tick.

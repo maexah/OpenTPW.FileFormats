@@ -46,7 +46,8 @@ These don't have any specific character encoding - they use the two aforemention
 **The note on the second word.** Measured across all 42 `.str` files the game ships, 21 tables in each of
 `data/Language/English` and `data/Language/american`: every table has a value of its own, the 21 values run
 1000 to 1020 with none repeated, and a table carries the same value, and the same string count, in both folders.
-What the game does with it is not known.
+It is the table's own resource id: `residx.dat` in the same folder lists each of the 21 tables under
+exactly that value, with type `3`. What the game does with the header's copy is not known.
 
 | Value | Table | | Value | Table | | Value | Table |
 |---|---|---|---|---|---|---|---|

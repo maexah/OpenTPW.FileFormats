@@ -2,7 +2,7 @@
 title: Sound Data (*.sdt)
 ---
 
-SDT is an archive format that contains one or many MPEG audio files that are used for sound effects, speech, and music throughout the game. Despite the `.mp2` extension on every name inside a bank, most are **Layer I**, not Layer II: of the 3,739 entries the game ships, 2,646 are Layer I and 1,093 are Layer II, so a decoder must read the layer out of each frame header rather than assume it.  These files are usually uncompressed (in the archive), and the archive format is relatively simple.
+SDT is an archive format that contains one or many MPEG audio files that are used for sound effects, speech, and music throughout the game. Despite the `.mp2` extension on every name inside a bank, most are **Layer I**, not Layer II: of the 3,739 entries the game ships, 2,650 are Layer I and 1,089 are Layer II, so a decoder must read the layer out of each frame header rather than assume it.  These files are usually uncompressed (in the archive), and the archive format is relatively simple.
 
 ### File Format
 

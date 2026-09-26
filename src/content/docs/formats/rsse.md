@@ -14,7 +14,7 @@ RSE is a file that encompasses compiled bytecode, the contents of which are deci
 | 4 bytes  | Version - `0x00010F51` in every shipped file                                |
 | 4 bytes  | variable count (see **String / variable table** below)                      |
 | 4 bytes  | stack size (defined by `#setstack`)                                         |
-| 4 bytes  | time slice - almost always `50` (`0x32`), preprocessor directive is unknown |
+| 4 bytes  | time slice - `50` (`0x32`) in all 308 shipped files, preprocessor directive unknown |
 | 4 bytes  | limbo size (defined by `#setlimbo`) - allocates that many 8-byte slots      |
 | 4 bytes  | bounce size (defined by `#setbounce`) - that many 16-byte slots             |
 | 4 bytes  | walk size (defined by `#setwalk`) - that many 32-byte slots                 |

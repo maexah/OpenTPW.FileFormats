@@ -73,8 +73,10 @@ What the game does with it is not known.
 | *n* bytes          | Characters in BFMU format                                                      |
 | 4 bytes            | Padding                                                                        |
 
-**The note on string length.** Every shipped record reads `01 <len> 00 00`, so a three-byte
-little-endian length and a one-byte length followed by two zero bytes are indistinguishable in the
-game's own data - nothing here can tell them apart. Worth knowing because an implementation that takes
-only the first byte, as this project's reader does, is correct for every string the game ships and would
-truncate one of 256 characters or more.
+**The note on string length.** Of the 4,730 records in the 42 shipped `.str` files, four are longer
+than 255 characters, all in `UITEXT.str`: row 400 reads `01 06 01 00` (262) in English and `01 00 01 00`
+(256) in american, and row 417 reads `01 67 02 00` (615) and `01 66 02 00` (614). Each decodes cleanly to
+that full length and ends at the zero padding before the next record, so the length is at least two
+bytes, little-endian. The fourth byte is `00` in every record, so whether it is the length's third byte
+cannot be told from the game's own data. A reader that takes only the first byte cuts those four short:
+English row 400 comes out as `CHANGE`, the american one as nothing.

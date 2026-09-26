@@ -244,7 +244,7 @@ neighbour mask from the cells around it. They share one compass: over the Jungle
 
 `mOverlapCounter` is **how many more times a cell has been built over** — the engine bumps it when a
 path is laid on a cell that is already path, and deleting the cell takes one off, removing it only once
-the count falls below nought. In the Jungle park 14 path cells carry it, every one a corner or a junction:
+the count falls below nought (a forced clear, or one with no step, removes it at once). In the Jungle park 14 path cells carry it, every one a corner or a junction:
 eleven at 1 — (39,21), (39,28), (43,29), (44,28), (47,28), (48,20), (56,15), (56,16), (56,17), (56,21) and
 (56,28) — and three at 2 — (47,21), (48,21) and (48,28). The queue cell at (52,22) reads 1.
 

@@ -4,7 +4,7 @@ title: Sound Data (*.sdt)
 
 SDT is an archive format that contains one or many MPEG audio files that are used for sound effects, speech, and music throughout the game.  These files are usually uncompressed (in the archive), and the archive format is relatively simple.
 
-Despite the `.mp2` extension on every name inside a bank, the audio is **not always Layer II**: 2,646 of the game's 3,739 streams are MPEG-1 **Layer I**, and the rest are Layer II. Layer III does not occur. A decoder has to handle both.
+Despite the `.mp2` extension on every name inside a bank, the audio is **not always Layer II**: 2,650 of the game's 3,739 streams are MPEG **Layer I**, and the rest are Layer II. Layer III does not occur. A decoder has to handle both.
 
 ### File Format
 

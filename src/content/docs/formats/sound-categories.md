@@ -22,7 +22,7 @@ level under `data\levels\<park>`.
 > files parse to exactly the end of the file with nothing over. All thirty-one SFX files do too,
 > walked the way the game's loader walks them: 1,267 effects and 1,595 variations. A few fields are
 > still unnamed, and are marked. The sample records can also be found by validation instead, and
-> both ways find the same lists.
+> both ways find the same lists everywhere but in hallow's and space's rides (below).
 
 ## Common header
 
@@ -31,8 +31,8 @@ Both files start the same way.
 | Offset | Size | Description |
 | --- | --- | --- |
 | `0x00` | 16 bytes | A GUID saying which of the two this is |
-| `0x10` | 4 bytes | Zero in every BANK file. In an SFX file, 1 where the variation weights are stored as shares (global speech and the four park music categories) and 0 where they are running totals — see below |
-| `0x14` | 4 bytes | Zero in most files, never read by the loader. The global speech and speech maps carry odd leftovers here |
+| `0x10` | 4 bytes | In a BANK file, 1 in the global speech and the four park music categories and 0 in the rest. In an SFX file, 1 where the variation weights are stored as shares (global speech and the four park music categories) and 0 where they are running totals — see below |
+| `0x14` | 4 bytes | Zero in most files, never read by the loader. The speech maps and fantasy's two ambient maps carry odd leftovers here |
 | `0x18` | 4 bytes | A count — banks in a BANK file; in an SFX file, groups of effects, 1 in every file |
 
 The two GUIDs are `{E9612C01-31D0-11D2-B409-00A0C993F203}` for a BANK file and
@@ -91,10 +91,10 @@ After the common header, the SFX file's one group has a 24-byte header:
 
 `+0x04` runs **0 to 30** across the 1,267 records. Jungle's ambient declares 9, 5, 7, 4, 1, 0, 1, 1, 1,
 which sums to exactly the twenty-nine variations that follow it. **A zero is real**, meaning an effect
-with nothing to play; hallow's, jungle's and space's ambient each carry one.
+with nothing to play; hallow's, jungle's and space's ambient each carry one, and so does jungle's rides category (effect 218).
 
-**`+0x0c` is a priority, not a repeat delay.** This page used to call it a delay in milliseconds, and
-the numbers invite it: 2700 for every kids scream, 6000 for speech, 10,000 for music. They are not all
+**`+0x0c` is a priority, not a repeat delay.** The numbers invite reading it as a delay in
+milliseconds: 2700 for every kids scream, 6000 for speech, 10,000 for music. They are not all
 round, though (999, 4999, 5310, 5320 and 5999 ship). The game reads the field in two places and never
 as a time:
 - it becomes the high half of the key that ranks voices when there are more than the mixer will play;
@@ -102,11 +102,9 @@ as a time:
 
 Nothing in the game waits on it.
 
-**`+0x10` is a flags word, and `+0x12` a parameter id.** This page used to call the dword at `+0x10`
-unknown, and to refute one reading of it: that it was a loop flag, which it looks like in `cat_kids`
-alone (`0x00060404` for the four held screams, 0 for one-shots). That refutation stands, but the field
-is decoded now:
-- **Bit `0x4` clear** means an effect that plays one sample and is done: 1,067 of the 1,267 records.
+**`+0x10` is a flags word, and `+0x12` a parameter id.** It is not a loop flag, which it
+looks like in `cat_kids` alone (`0x00060404` for the four held screams, 0 for one-shots):
+- **Bit `0x4` clear** means an effect that plays one sample and is done: 1,097 of the 1,267 records, 30 of them with bit `0x1`.
 - **`0x0404`** is a voice that keeps playing fresh samples until it is stopped, each after a wait taken
   from its variation (below). There are 18 of these: kids 71-74, staff 188 and several ambient beds.
 - **Bits `0x4` and `0x2`** mark a different repeating voice (135 records, music effect 2 among them).
@@ -159,14 +157,13 @@ nought means no wait. The four held screams carry these waits in all four of the
 | 73 | 100 to 1000 ms |
 | 74 | 0 to 500 ms |
 
-Four ride variations hold the pair the wrong way round (fantasy 156, hallow 187, jungle 216 and
-space 188, 100 to 0), and fourteen hold both ends equal.
+Four ride variations hold the pair the wrong way round (fantasy 156, jungle 216 and space 188 at
+100 to 0, hallow 187 at 60 to 0), and fourteen hold both ends equal.
 
 **The weight** is a running total across the effect's variations when the common header's `0x10` is
 0, and a variation's own share when it is 1. The game turns running totals into shares as it loads.
-**Variations are therefore weighted, not even.** This page used to say the opposite. For most effects
-the shares happen to be equal, so it made no difference, but 4 of the 63 effects with more than one
-variation are uneven. Global ambient 172, for instance, gives its last two variations a tenth of the
+**Variations are therefore weighted, not even.** For most effects the shares happen to be equal, but
+4 of the 63 effects with more than one variation are uneven. Global ambient 172, for instance, gives its last two variations a tenth of the
 others' share.
 
 #### Sample record
@@ -200,9 +197,10 @@ by weight when more than one fits. So zones are two things in the shipped data:
 
 ### Finding the sample records without the headers
 
-This page used to locate the sample records by what they contain, before the variation headers were
-decoded, and the method still works. Every list it finds is the
-same as the walk above. A 16-byte window is a sample record if:
+The sample records can also be located by what they contain, without the variation headers. That method finds the walk's lists everywhere
+but in hallow's and space's rides, where three effects (hallow's 98 and 103, space's 112) declare one
+variation holding no samples: a scan cannot see an empty list, so each takes the next one found and the
+effects after it in the category are shifted along. A 16-byte window is a sample record if:
 - its bank and index are both in range;
 - its two spare bytes are zero;
 - its odds are inside 1..65,535;
@@ -215,21 +213,21 @@ that last test wants a tolerance of a few per cent.
 Two rules then divide such a run of records up.
 
 A **list** ends when its odds saturate, since they are cumulative: a list of six reads 10922, 21844,
-32766, 43688, 54610, 65532. Rounding leaves that last figure anywhere from 65,529 to 65,535, while
-the largest that is *not* the end of a list is 58,248 — a wide gap to put a threshold in.
+32766, 43688, 54610, 65532. Rounding leaves that last figure anywhere from 65,516 to 65,535, while
+the largest that is *not* the end of a list is 64,260 — still a gap to put a threshold in.
 
 An **effect** ends once it has taken as many lists as its own record declares at **`+0x04`**. Read the
 count out of the file; do not try to infer the boundary from the gap before the next list.
 
-> **The gap rule this page used to give does not work, and it fails on shipped data.** It said an
+> **A gap rule does not work, and it fails on shipped data.** Such a rule says an
 > effect ends "when the space before the next list is big enough to be a new effect's header", with
 > lists inside one effect 0, 16 or 24 bytes apart and a new effect's 42, 58, 84, 168 or 210 bytes
 > apart. **Those two ranges overlap.** Jungle's ambient runs **64** bytes between two lists of the
 > *same* effect, while the smallest gap between two *different* effects is **42** — so no threshold
-> separates them. The lobby never noticed, because all four of its local sfx categories and all four
-> of its music ones declare a single variation each and group identically either way. Every park
-> category did not: jungle's nine ambient effects came out as twenty-six, which left effects 178 to
-> 192 each playing one of effect 177's beasts, and the global lobby and UI categories were wrong too.
+> separates them. In the lobby it goes unseen, because all four of its local sfx categories and all four
+> of its music ones declare a single variation each and group identically either way. In a park it
+> does not: jungle's nine ambient effects come out as twenty-six, which leaves effects 178 to
+> 192 each playing one of effect 177's beasts, and the global lobby and UI categories group wrongly too.
 
 So an effect holding more than one list is picking between **variations**, and how many it holds is
 stated in the file rather than inferred — and weighted as their headers say.
@@ -245,7 +243,7 @@ effects with priorities of 1000, 6000, 5000 and 3000. Applying the rules above:
 | 1 | 1000 | `Thunder2`, `Thunder3`, `Thunder4`, `massivlg` — evenly weighted |
 | 2 | 6000 | `level4c`, `level4w` from the global music bank |
 | 3 | 5000 | `ew_space_1` to `ew_space_4`, as four one-sample variations |
-| 4 | 3000 | none — the table names it, the file has no list for it |
+| 4 | 3000 | `keyexplode`, the fifth sample in `Sound\Sfx` |
 
 Effect 1 is what the lobby plays on a lightning strike.
 

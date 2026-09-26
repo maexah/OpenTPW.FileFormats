@@ -40,8 +40,23 @@ These don't have any specific character encoding - they use the two aforemention
 | Size               | Description                                                                    |
 |--------------------|--------------------------------------------------------------------------------|
 | 4 bytes            | Magic number - `BFST`                                                          |
-| 4 bytes            | Unknown                                                                        |
+| 4 bytes            | A number from 1000 to 1020, different in every table (see note)                |
 | 4 bytes            | String count                                                                   |
+
+**The note on the second word.** Measured across all 42 `.str` files the game ships, 21 tables in each of
+`data/Language/English` and `data/Language/american`: every table has a value of its own, the 21 values run
+1000 to 1020 with none repeated, and a table carries the same value, and the same string count, in both folders.
+What the game does with it is not known.
+
+| Value | Table | | Value | Table | | Value | Table |
+|---|---|---|---|---|---|---|---|
+| 1000 | `ERRORMSG` | | 1007 | `UIHELPTEXT` | | 1014 | `GUARD_NAMES` |
+| 1001 | `INGREDIENT` | | 1008 | `CHAT_COMMANDS` | | 1015 | `RESEARCHER_NAMES` |
+| 1002 | `TAG_SYSTEM` | | 1009 | `THEMENAMES` | | 1016 | `FEMALE_NAMES` |
+| 1003 | `THOUGHTS` | | 1010 | `OBJECT_NAMES` | | 1017 | `ITEMTYPES` |
+| 1004 | `KIDSTATES` | | 1011 | `HANDYMAN_NAMES` | | 1018 | `LOANNAMES` |
+| 1005 | `STAFFSTATES` | | 1012 | `MECHANIC_NAMES` | | 1019 | `STAFF_TYPES` |
+| 1006 | `UITEXT` | | 1013 | `ENTERTAINER_NAMES` | | 1020 | `KEYBOARD` |
 
 **String Directory**
 

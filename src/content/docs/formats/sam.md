@@ -81,6 +81,7 @@ suppress the category's.
 | `Info.NewAttractionDecayTime` | How long it counts as new |
 | `UsageInfo.ProvidesRelief` | Set for toilets - "set to 1 for toilets" |
 | `UsageInfo.ISIndoors` | Shelter from the rain (the game's own spelling) |
+| `UsageInfo.CannotRide` | Whether it cannot be ridden by walking onto its entrance in first person: 0 in every theme's `Rides.sam` and 1 in its `Shops.sam`, `SideShow.sam` and `Features.sam`; `Upgrades.sam` leaves it unset, and none of the 274 items, the 11 upgrades included, overrides it |
 | `UsageInfo.ExcitementLevel` | How exciting it is |
 | `UsageInfo.ThirstEffect`, `UsageInfo.HungerEffect` | How much of each need using it **takes away** |
 | `UsageInfo.VomitEffect`, `UsageInfo.HappinessEffect`, `UsageInfo.LitterEffect` | How much of each it **adds** |

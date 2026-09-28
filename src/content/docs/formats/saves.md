@@ -396,7 +396,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 490 | 4 bytes | `mQueueMoveDelay` | |
 | 494 | 1 byte | `mQueuePos` | `0` on all thirteen |
 | 495 | 4 bytes | `mRemainingBalloonLife` | |
-| 499 | 2 bytes | `mSavedMajorDest` | |
+| 499 | 2 bytes | `mSavedMajorDest` | thing handle - where they were going when something on the way took them, to go on to after it, or none; `0` on all thirteen |
 | 501 | 4 bytes | `mSavedState` | `6` on all thirteen - a new guest is constructed deciding |
 | 505 | 4 bytes | `mState` | `2`, `5`, `3` - heading for the gate, entering, waiting outside |
 | 509 | 4 bytes | *unnamed float* - thirst | `36`, `13`, `12`, ... |
@@ -415,7 +415,8 @@ and logging what it declared - or every offset in it is wrong together.
 empty, so a reader at the wrong offset would read the same noughts. Two saves of
 one jungle park played in the original to `mGameTick` 19,004 and 19,007 - not files the game ships - each hold
 1,060 non-zero entries across 339 guests, and every one is the thing handle of an object in the same save;
-none follows a nought, which is what a newest-first list of four looks like.
+none follows a nought, which is what a newest-first list of four looks like. The same saves hold a non-zero
+`mSavedMajorDest` on 51 and 50 of the 339 guests, 31 of them a toilet in each.
 
 The two queue links deserve a note, because finding them turned entirely on the **name**. Sweeping the
 executable's serialised field names for `InQ`, `mNext`, `Queue` and `mPrev` finds no per-person queue link

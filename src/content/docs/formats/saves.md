@@ -101,9 +101,10 @@ Then one record per script. Each is a struct followed by a run of length-prefixe
 | -------- | ----------------------------------------------------------------------- |
 | 244      | The script struct — see below                                           |
 | 4 + n    | The script body, as words                                               |
-| 4 + n    | Block 1                                                                 |
+| 4 + n    | **Block 1 — the stack**, one dword per slot; empty with no `#setstack`  |
 | 4 + n    | **Block 2 — the variables**, one dword per slot                         |
-| 4 + n    | Blocks 3, 4 and 5                                                       |
+| 4 + n    | **Block 3 — the string blob**, byte for byte the `.RSE` file's          |
+| 4 + n    | Blocks 4 and 5                                                          |
 | 4 + n×32 | A count, and that many 32-byte records                                  |
 | 4 + n    | Two further blocks                                                      |
 | 4 bytes  | Guard — `OBJ `                                                          |
@@ -111,13 +112,17 @@ Then one record per script. Each is a struct followed by a run of length-prefixe
 | 4 bytes  | Bytes per object                                                        |
 | n        | The script's own object list                                            |
 
-Three fields of the struct are established:
+Seven fields of the struct are established:
 
 | Offset | Dword | Description                                                                     |
 | ------ | ----- | ------------------------------------------------------------------------------- |
 | `0x08` | 2     | The script handle — the number an object record's `mRideScriptHandle` also holds |
 | `0x3c` | 15    | The program counter, in **words** from the start of the body                     |
+| `0x40` | 16    | The call index — the stack slot the next `JSR` writes, counting down              |
+| `0x44` | 17    | The heap index — how many values `HUSH` has pushed, counting up                   |
+| `0x48` | 18    | The result register, which the conditional branches test                         |
 | `0x50` | 20    | The body length in words, which the counter is bounds-checked against            |
+| `0x54` | 21    | The stack size in dwords — block 1's length over four                             |
 
 **How those were pinned rather than guessed.** Dword 20 equals the length of the body block that
 follows it for all fourteen scripts, which fixes the struct's alignment and with it the other two
@@ -126,6 +131,16 @@ fields; every one of the fourteen counters then lands on an exact instruction bo
 because slot 2 is `VAR_CAPACITY` and slot 3 `VAR_DURATION`, and both agree with the **object records**
 in the World module, a wholly separate part of the file: 5 and 30 for the ride, and 1, 1, 1 and 3 for
 the three toilets and the sideshow.
+
+**The stack and its two indices.** Block 1 is 12 bytes for the one script that declares a stack, the
+Belly Bounce's `Bouncy.RSE` (`#setstack 3`), and empty for the other thirteen, and dword 21 is its
+length over four in all fourteen. `JSR` fills the stack down from its top slot and `HUSH` fills it up
+from slot 0 (the [Instruction Set](/vm/instructions/)). The Belly Bounce was saved with dword 16 at 2,
+the top slot, so nothing was pushed, and dword 17 at 0; the thirteen others read -1 and 0. **Only the
+slots above the call index are live.** The Belly Bounce's block reads `CD CD CD CD` twice, slots never
+written, then `18 00 00 20`: the return address of a call that had already returned, still there. Block
+3 was compared byte for byte with each script's `.RSE` file. Dword 18 reads 3033 for the fountain, 1 for
+the gate and 0 for the other twelve.
 
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an

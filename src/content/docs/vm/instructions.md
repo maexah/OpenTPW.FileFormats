@@ -44,11 +44,13 @@ None
 
 ## SETLV
 
-`SETLV <unknown>` - Unknown
+`SETLV <value>` - Load the operand word into the result register, unresolved.
+
+The whole word goes in, tag and all, so a variable operand puts its tagged index there rather than its value. No script the game ships uses it.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<value>` - The word to load.
 
 ## SUB
 
@@ -58,7 +60,7 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 
 ### Operands
 
-`<dest>` - The variable the result is stored in. It must be a variable; the engine ignores the instruction otherwise.
+`<dest>` - Where the result goes: the result register first, then the variable. A literal keeps it in the register alone, which space's orbiter does twice, branching on the sign.
 
 `<value>` - A literal or a variable.
 ## ENDSLICE
@@ -188,7 +190,7 @@ None
 
 `<parameter>` - Which entry within that role to play. The engine tests it against the number of entries the slot holds and does nothing whatever when it is not less, so it indexes rather than flags.
 
-`<dest>` - Where the length is written, in milliseconds. 64 of the 74 shipped uses write a literal here, which cannot be written to: the length still lands in the result register, and the branch that follows reads it.
+`<dest>` - Where the length is written, in milliseconds: the result register first, then the variable. 64 of the 74 shipped uses write a literal here, so the length is kept only in the register, and no shipped script reads it there: every path from each overwrites the register before it reaches a branch.
 
 The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script whose model reports nothing gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does. It plays on **channel 0** with no flags; the `_CH` variants exist to name a different channel.
 
@@ -250,31 +252,41 @@ It arms the same deadline `TRIGANIM` arms, and then rewinds onto itself - so unl
 
 ## GETANIM
 
-`GETANIM <unknown>` - Unknown
+`GETANIM <dest>` - Ask which animation the model's first channel is playing.
+
+It is [`GETANIM_CH`](#getanim_ch) with the channel fixed at nought, in a handler of its own: the answer is the role that channel is playing, the sentinel 12 where it has played nothing, or `-1` when the channel is holding its last pose, and with no model the result register is left as it stands. No script the game ships uses it.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<dest>` - Where the answer goes. A literal leaves it in the result register alone.
 
 ## TRIGANIMSPEED
 
-`TRIGANIMSPEED <unknown1> <unknown2> <unknown3> <unknown4>` - Unknown
+`TRIGANIMSPEED <animation> <parameter> <dest> <rate>` - Start a one-shot animation at a given rate, and put its length at the ordinary rate into `<dest>`. The time it actually runs is that length times 1000 / `<rate>`.
 
 ### Operands
 
-Takes 4 operands, those not named above being unknown. Across the 308 shipped scripts the 4 uses of this instruction write them as: 1 — literal; 2 — literal; 3 — variable; 4 — literal.
+`<animation>` - Which role to start, from the same twelve [`TRIGANIM`](#triganim) names.
+
+`<parameter>` - Which entry within that role.
+
+`<dest>` - Where the length is written, on the same terms as `TRIGANIM`'s third operand: the result register first, then the variable.
+
+`<rate>` - How fast to play it, in thousandths: the clip plays at `<rate>` / 1000 times the rate `TRIGANIM` plays it at (the divisor 0.5 + 0.01 x speed, which is 1 at 50). The deadline `WAIT4ANIM` waits on is the length times 1000 / `<rate>`, and unlike `TRIGANIM`'s it is not divided by that divisor.
+
+The four shipped uses are the four themes' park gates, each with a variable `<dest>` and a `<rate>` of 4000, 4000, 2000 or 1800.
 
 ## FLUSHANIM_CH
 
-`FLUSHANIM_CH <unknown>` - Unknown
+`FLUSHANIM_CH <channel>` - [`FLUSHANIM`](#flushanim) on a named channel. No script the game ships uses it.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<channel>` - Which of the model's animation players to flush.
 
 ## TRIGANIM_CH
 
-`TRIGANIM_CH <animation> <parameter> <rate> <channel>` - Start a one-shot animation on a named channel.
+`TRIGANIM_CH <animation> <parameter> <dest> <channel>` - Start a one-shot animation on a named channel, and put how long it runs into `<dest>`.
 
 ### Operands
 
@@ -282,9 +294,9 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 
 `<parameter>` - Which entry within that role.
 
-`<rate>` - Goes where the plain instruction puts the speed the interpreter scales by. Nothing further about it is established.
+`<dest>` - Where the length is written, on the same terms as `TRIGANIM`'s third operand. 60 of the 63 shipped uses write a literal here, which keeps the length in the result register alone; nothing reads it there.
 
-`<channel>` - Which of the model's animation players to start it on. **This is the whole difference between the `_CH` instructions and their plain siblings**, which pass a literal nought here. A model is built with as many players as whatever created it asked for - one for scenery, five for a coaster's trains - and none of the three functions that index them checks the number against the count the model actually has.
+`<channel>` - Which of the model's animation players to start it on. **The channel is what the `_CH` instructions add to their plain siblings**, which pass a literal nought here. It is not their only difference: see `WAITANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH`. A model is built with as many players as whatever created it asked for - one for scenery, five for a coaster's trains - and none of the three functions that index them checks the number against the count the model actually has.
 
 Across the 308 shipped scripts the 63 uses of this instruction name channels 0, 1, 2 and 3.
 
@@ -292,27 +304,41 @@ Reading the first operand as the role is what makes a census of animation use co
 
 ## WAITANIM_CH
 
-`WAITANIM_CH <unknown1> <unknown2> <unknown3>` - Unknown
+`WAITANIM_CH <animation> <parameter> <channel>` - Start an animation on a named channel and wait for it.
+
+**It cannot work as shipped.** Having triggered the clip it steps back three words to wait, one short of the start of this four-word instruction, so the next word the engine reads is the first operand, which it refuses as an instruction, and the script ends. Unlike [`WAITANIM`](#waitanim) it does not divide its wait by the script's speed. No script the game ships uses it.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<animation>`, `<parameter>` - As for `WAITANIM`.
+
+`<channel>` - Which of the model's animation players to start it on, taken as written.
 
 ## LOOPANIM_CH
 
-`LOOPANIM_CH <unknown1> <unknown2> <unknown3>` - Unknown
+`LOOPANIM_CH <animation> <parameter> <channel>` - [`LOOPANIM`](#loopanim) on a named channel.
+
+Unlike `LOOPANIM` it has no guard against asking for the same clip again: it hands the clip to the model every time, and the model queues it behind anything the channel is already playing.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 1 uses of this instruction write them as: 1 — literal; 2 — literal; 3 — literal.
+`<animation>`, `<parameter>` - As for `LOOPANIM`.
+
+`<channel>` - Which of the model's animation players to loop it on, taken as written. The one shipped use, space's park gate, writes `5, 2, 1`.
 
 ## TRIGWAITANIM_CH
 
-`TRIGWAITANIM_CH <unknown1> <unknown2> <unknown3> <unknown4>` - Unknown
+`TRIGWAITANIM_CH <animation> <parameter> <dest> <channel>` - Start a one-shot animation on a named channel, put how long it runs into `<dest>`, and wait for it.
+
+**It cannot work as shipped.** Having triggered the clip it steps back four words to wait, one short of the start of this five-word instruction, so the next word the engine reads is the first operand, which it refuses as an instruction, and the script ends. No script the game ships uses it.
 
 ### Operands
 
-Takes 4 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<animation>`, `<parameter>` - As for [`TRIGWAITANIM`](#trigwaitanim).
+
+`<dest>` - Where the length is written, on the same terms as `TRIGANIM`'s third operand.
+
+`<channel>` - Which of the model's animation players to start it on.
 
 ## GETANIM_CH
 
@@ -320,13 +346,13 @@ Takes 4 operands, those not named above being unknown. No script the game ships 
 
 ### Operands
 
-`<dest>` - Where the answer goes: the role that channel is currently playing, or the "no animation" sentinel where it is playing nothing.
+`<dest>` - Where the answer goes: the role that channel is playing, the "no animation" sentinel 12 where it has played nothing, or `-1` once it is holding the last pose of a clip that has ended, which is what ends every shipped wait on it. With no model the result register is left as it stands.
 
 `<channel>` - Which of the model's animation players to ask.
 
-**Its first operand is a destination and not a role, which is the opposite shape to every other `_CH` instruction on this page.** `TRIGANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH` all take the role first and the channel last; this one takes the destination first and the channel second. Reading it like its neighbours is a live trap rather than a tidiness point: it inflates any census of which roles the shipped scripts name, because a destination gets counted as a role.
+**Its first operand is a destination and not a role, which is the opposite shape to every other `_CH` instruction on this page that names a role.** `TRIGANIM_CH`, `WAITANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH` all take the role first and the channel last; this one takes the destination first and the channel second. Reading it like its neighbours is a live trap rather than a tidiness point: it inflates any census of which roles the shipped scripts name, because a destination gets counted as a role.
 
-All 15 uses the game ships write a **literal** where the destination goes, which cannot be written to - so the store is skipped and the answer is left in the result register for the branch that follows, the same idiom as `COAST 2 0`. `GETANIM` is the same instruction with the channel assumed to be nought, and no shipped script uses it.
+All 15 uses the game ships write a **literal** where the destination goes, which cannot be written to - so the store is skipped and the answer is left in the result register for the branch that follows, the same idiom as `COAST 2 0`. [`GETANIM`](#getanim) does the same with the channel fixed at nought, and no shipped script uses it.
 
 ## RAND
 
@@ -534,7 +560,7 @@ No script the game ships uses this instruction, so its behaviour here is read fr
 
 ### Operands
 
-`<dest>` - The variable the result is stored in.
+`<dest>` - Where the product goes: the result register first, then the variable.
 
 `<value>` - A literal or a variable.
 ## DIV
@@ -545,18 +571,18 @@ No script the game ships uses this instruction, so its behaviour here is read fr
 
 ### Operands
 
-`<dest>` - The variable the quotient is stored in.
+`<dest>` - Where the quotient goes: the result register first, then the variable.
 
 `<value>` - A literal or a variable.
 ## MOD
 
 `MOD <dest> <value> <value>` - The remainder of dividing the second operand by the third.
 
-**The destination comes first.** `DIV` and `MOD` are the same code path - one signed division, with `DIV` keeping the quotient and `MOD` the remainder - so **a divisor of zero yields 0 here too** rather than faulting.
+**The destination comes first.** `DIV` and `MOD` each test for a zero divisor and make their own signed division, and share the rest - the nought a zero divisor gives and the store - so **a divisor of zero yields 0 here too** rather than faulting.
 
 ### Operands
 
-`<dest>` - The variable the remainder is stored in.
+`<dest>` - Where the remainder goes: the result register first, then the variable. Four of the five shipped uses, the tour rides' `MOD 0 VAR_CAPACITY 9` (8 in space's), write a literal and branch on the register.
 
 `<value>` - A literal or a variable.
 ## TURBO
@@ -585,15 +611,17 @@ None
 
 `<command>` - The command to use
 
-`<params>` - The parameter(s) to give to the command
+`<params>` - The command's value, or for `4` and `16` where the answer is written.
 
 #### Commands
 
 - `1`: Set style of ride
 
-- `4`: Let off visitor
+- `2`: Calls the engine without reading its parameter, so the next word the engine reads is that parameter, which it refuses as an instruction, and the script ends. No shipped script uses it
 
-- `3`: Let on visitor
+- `4`: Let off visitor. The visitor let off is written into the parameter, which must be a variable: the engine tests it before anything else, and with a literal lets nobody off and writes nothing.
+
+- `3`: Let on visitor, named by the parameter's variable; the answer goes to the result register.
 
 - `5`: Number of cars
 
@@ -613,19 +641,23 @@ None
   
   - `4`: Condemned
 
-- `10`: Check if there is a car in the station (sets flags)
+- `10`: Check if there is a car in the station; the answer goes to the result register.
 
-- `11`: Activate launch / start flight
+- `11`: Activate launch / start flight; it also writes the result register.
 
 - `12`: Set whether ride uses runway type of approach (0/1)
 
+- `13`: Unused ("Unknown tour ride command")
+
 - `14`: Set whether ride is open (0/1)
 
-- `15`: Check if there is a broken car in the station (sets flags)
+- `15`: Check if there is a broken car in the station; the answer goes to the result register.
 
-- `16`: Set whether the ride is running (0/1)
+- `16`: Answer a status of the ride, 1 or 0, into the parameter, on the same terms as `4`. It reads; it sets nothing.
 
 - `17`: Set size of car (1024 == 1)
+
+- `18`: Unknown
 
 ## BUMP
 
@@ -643,19 +675,19 @@ The ride this reaches is not the one [`COAST`](#coast) reaches, although the two
 
 `<command>` - The ID of the property being set
 
-`<params>` - The value to assign to the property
+`<params>` - The command's value, or for `2` and `11` where the answer is written.
 
 #### Commands
 
-- `1` (`BUMP_PEEPON`): Add visitor to ride
+- `1` (`BUMP_PEEPON`): Add the visitor named by the parameter's variable; the answer, 1 or 0, goes to the result register, and a literal does nothing.
 
-- `2` (`BUMP_PEEPOFF`): Get visitor from ride
+- `2` (`BUMP_PEEPOFF`): Get visitor from ride. The visitor is written into the parameter, which must be a variable: the engine tests it first, and with a literal takes nobody off and writes nothing.
 
 - `3` (`BUMP_STARTRACE`): Start the race
 
 - `4` (`BUMP_LAUNCHCAR`): Launch car
 
-- `5` (`BUMP_ISTRACKVALID`): Get whether the track is valid (sets flags)
+- `5` (`BUMP_ISTRACKVALID`): Get whether the track is valid; the answer goes to the result register.
 
 - `6` (`BUMP_CLOSERIDE`): Close the ride
 
@@ -667,7 +699,7 @@ The ride this reaches is not the one [`COAST`](#coast) reaches, although the two
 
 - `10` (`BUMP_HALTRIDE`): Eject all visitors from the ride
 
-- `11` (`BUMP_CARSONRIDE`): Get whether there are cars on the ride (0/1)
+- `11` (`BUMP_CARSONRIDE`): Answer a word of the ride's own record (its `+0x5c`), into the result register first and then the parameter; it is not 0 or 1, since the water rides compare it with 64. Each theme's water ride uses it three times: into `VAR_RUNNING`, into `VAR_TEMP` to compare, and as `BUMP 11 0`, which keeps the answer in the register for the `BRANCH_NZ` that follows.
 
 - `12`: Unknown
 
@@ -771,9 +803,11 @@ The slots are walked from the first, and a visitor is due once their release tim
 
 `INLIMBO <destination>` - How many visitors the script is holding at the moment.
 
+Four of the six shipped uses, one in each theme's arcade, write a literal `0` where the destination goes, so the count lands in the result register alone for the branch that follows.
+
 ### Operands
 
-`<destination>` - The variable the count is written into.
+`<destination>` - The variable the count is written into, or a literal to leave it in the result register.
 
 ## LIMBOSPACE
 
@@ -906,35 +940,41 @@ Takes 1 operand. Across the 308 shipped scripts the 4 uses of this instruction w
 
 ## BOUNCE
 
-`BOUNCE <visitor ID> <unknown>` - Unknown
+`BOUNCE <visitor ID> <seconds>` - Start a visitor bouncing for this many seconds, answering 1 in the result register, or 0 when no slot is free.
 
 ### Operands
 
-Takes 2 operands, those not named above being unknown. Across the 308 shipped scripts the 4 uses of this instruction write them as: 1 — variable; 2 — variable.
+`<visitor ID>` - Who to bounce.
+
+`<seconds>` - How long for: the engine multiplies it by 1000 and adds it to the clock. The 4 shipped uses name variables for both.
 
 ## UNBOUNCE
 
-`UNBOUNCE <visitor ID>` - Unknown
+`UNBOUNCE <dest>` - Let go of the first bouncing visitor whose time is up, and answer who it was, or nought when nobody is due.
+
+A visitor is let go only on the first fifth of a second of each second counted from when they started bouncing.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 4 uses of this instruction write it as a variable.
+`<dest>` - Where the visitor goes: the result register first, then the variable. With a literal the visitor is still let go, and is kept only in the register. The 4 shipped uses name a variable.
 
 ## FORCEUNBOUNCE
 
-`FORCEUNBOUNCE <visitor ID>` - Unknown
+`FORCEUNBOUNCE <dest>` - Let go of the first bouncing visitor whatever their time, and answer who it was, or nought.
+
+Like [`UNBOUNCE`](#unbounce) it lets go only on the first fifth of a second of each bouncing second; it skips the test of whether the time is up.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 8 uses of this instruction write it as a variable.
+`<dest>` - Where the visitor goes, on the same terms as `UNBOUNCE`'s. The 8 shipped uses name a variable.
 
 ## BOUNCING
 
-`BOUNCING <visitor ID>` - Unknown
+`BOUNCING <dest>` - How many visitors are bouncing at the moment.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 25 uses of this instruction write it as a variable.
+`<dest>` - Where the count goes: the result register first, then the variable. The 25 shipped uses name a variable.
 
 ## WALKON
 
@@ -954,31 +994,35 @@ Takes 1 operand. Across the 308 shipped scripts the 53 uses of this instruction 
 
 ## WALKGET
 
-`WALKGET <dest>` - Unknown
+`WALKGET <dest>` - Take the first visitor who has finished walking off, and answer who it was, or nought when nobody has.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 43 uses of this instruction write it as a variable.
+`<dest>` - Where the visitor goes: the result register first, then the variable. With a literal the visitor is still taken. The 43 shipped uses name a variable.
 
 ## WALKST_FLOAT
 
-`WALKST_FLOAT <unknown1> <unknown2> <unknown3>` - Unknown
+`WALKST_FLOAT <seconds> <unknown1> <unknown2>` - Start a float lasting `<seconds>`.
 
 ### Operands
 
-Takes 3 operands, those not named above being unknown. Across the 308 shipped scripts the 1 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal.
+`<seconds>` - How long the float lasts; the engine keeps it in milliseconds, with the time it started.
+
+`<unknown1>`, `<unknown2>` - Kept as two 16-bit words and not yet understood. The one shipped use, in space's Zero G ride, writes a variable and two literals.
 
 ## WALKFLOATSTAT
 
-`WALKFLOATSTAT <unknown>` - Unknown
+`WALKFLOATSTAT <dest>` - How long the float [`WALKST_FLOAT`](#walkst_float) started runs, in milliseconds, or nought once it has run out.
+
+The answer is the first operand of `WALKST_FLOAT` times 1000, 1000 after a [`WALKFLOATSTOP`](#walkfloatstop) has re-timed a running float, and nought before any float and once one has run its time.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. Across the 308 shipped scripts the 1 uses of this instruction write it as a literal.
+`<dest>` - Where the answer goes. The one shipped use, in space's Zero G ride, writes a literal and branches on the result register straight after, waiting for the float to end.
 
 ## WALKFLOATSTOP
 
-`WALKFLOATSTOP`
+`WALKFLOATSTOP` - Re-time a running float to one second at the same point in it, so that it ends sooner; with no float running it does nothing.
 
 ### Operands
 
@@ -1140,11 +1184,15 @@ Ids reach this instruction through variables rather than literals, having usuall
 
 ## GETCUSTPTCLCODE
 
-`GETCUSTPTCLCODE <unknown1> <unknown2>` - Unknown
+`GETCUSTPTCLCODE <dest> <unused>` - Always answers nought.
+
+The engine reads and resolves the second operand, then throws it away, and writes nought to the result register and to the destination. No script the game ships uses it.
 
 ### Operands
 
-Takes 2 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<dest>` - Where the nought goes.
+
+`<unused>` - Read and ignored.
 
 ## SETTIMER
 
@@ -1172,51 +1220,63 @@ All 21 shipped uses name a literal where the destination goes, which means the w
 
 ## YEAR
 
-`YEAR <dest>` - Get the current in-game year, and put it in the destination variable.
+`YEAR <dest>` - Get the year from the computer's own clock: the years since 1900 (126 in 2026).
+
+**It is the real local time, not the park's calendar.**
 
 ### Operands
 
-`<dest>` - The destination variable for the instruction's result.
+`<dest>` - Where the answer goes: the result register first, then the variable.
 
 ## MONTH
 
-`MONTH <dest>` - Get the current in-game month, and put it in the destination variable.
+`MONTH <dest>` - Get the month from the computer's own clock: 1 to 12.
+
+**It is the real local time, not the park's calendar.**
 
 ### Operands
 
-`<dest>` - The destination variable for the instruction's result.
+`<dest>` - Where the answer goes: the result register first, then the variable.
 
 ## DAY
 
-`DAY <dest>` - Get the current in-game day, and put it in the destination variable.
+`DAY <dest>` - Get the day from the computer's own clock: the day of the month, 1 to 31.
+
+**It is the real local time, not the park's calendar.**
 
 ### Operands
 
-`<dest>` - The destination variable for the instruction's result.
+`<dest>` - Where the answer goes: the result register first, then the variable.
 
 ## HOUR
 
-`HOUR <dest>` - Get the current in-game hour, and put it in the destination variable.
+`HOUR <dest>` - Get the hour from the computer's own clock: 0 to 23.
+
+**It is the real local time, not the park's calendar.**
 
 ### Operands
 
-`<dest>` - The destination variable for the instruction's result.
+`<dest>` - Where the answer goes: the result register first, then the variable.
 
 ## MIN
 
-`MIN <dest>` - Get the current in-game minute, and put it in the destination variable.
+`MIN <dest>` - Get the minute from the computer's own clock: 0 to 59.
+
+**It is the real local time, not the park's calendar.**
 
 ### Operands
 
-`<dest>` - The destination variable for the instruction's result.
+`<dest>` - Where the answer goes: the result register first, then the variable.
 
 ## SEC
 
-`SEC <dest>` - Get the current in-game second, and put it in the destination variable.
+`SEC <dest>` - Get the second from the computer's own clock: 0 to 59.
+
+**It is the real local time, not the park's calendar.**
 
 ### Operands
 
-`<dest>` - The destination variable for the instruction's result.
+`<dest>` - Where the answer goes: the result register first, then the variable.
 
 ## SETREVERB
 

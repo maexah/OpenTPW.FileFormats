@@ -38,7 +38,9 @@ There are no condition flags. The VM keeps a single **result register**: every i
 
 `BRANCH_Z` and `BRANCH_NZ` then branch on the register being zero or non-zero, and `BRANCH_NV` and `BRANCH_PV` on it being negative or greater than zero. The comparison is signed, and `BRANCH_PV` does not branch on zero.
 
-An instruction whose destination operand is not a variable is ignored rather than refused - the engine steps over it and carries on.
+An instruction whose destination operand is not a variable skips only the store, and carries on. Most write the result register first, so a literal destination is how a script tests an answer and keeps nothing: `LIMBOSPACE 0` and `COAST 2 0` are written that way every time, every `GETTIMER` has a literal destination (0, or 10000 in four scripts), and 95 shipped instructions in all branch on an answer they left only in the register. Five instructions test the destination before anything else, and with a literal write nothing at all: `ADD`, `FORCEUNLIMBO`, `GETVARINCHILD`, `GETVARINPARENT`, and `COPY`, which has not yet read its source and so ends the script; the `BUMP` command 2 and the `TOUR` commands 4 and 16 do the same with their parameter. None of these ships with a literal destination.
+
+Another 256 shipped instructions pass a literal where an animation trigger writes the clip's length (`TRIGANIM`, `TRIGANIM_CH`, `TRIGWAITANIM`), keeping a number nothing reads.
 
 ## When a script runs
 

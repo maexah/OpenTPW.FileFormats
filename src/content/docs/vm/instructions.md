@@ -346,18 +346,22 @@ The range is **nought to the bound inclusive**: the engine halves a draw from it
 
 `JSR <subroutine>` - Jump to a subroutine, remembering where to come back to.
 
-The return address is pushed onto the script's own call stack, whose size is set by `#setstack` and recorded in the file header. The stack grows **downwards** and is last-in-first-out, so nested calls return in the order you would expect. Overrunning it, or using `JSR` in a script with no stack at all, is refused.
+The return address is pushed onto the script's own call stack, whose size is set by `#setstack` and recorded in the file header. The stack grows **downwards** and is last-in-first-out, so nested calls return in the order you would expect. **With no room left, or in a script with no stack at all, the engine still jumps**, with no return address pushed. In a script with no stack, the subroutine's `RETURN` then ends the script. With a full stack, that `RETURN` goes back to where the call before it came from, one level too far, and the rest of the enclosing subroutine is skipped. No shipped script gets there: every script that calls declares a stack, and no call is ever more than one deep.
 
 ### Operands
 
-`<subroutine>` - The destination subroutine to jump to.
+`<subroutine>` - The destination subroutine to jump to. Every shipped use names a label. Given anything else, the engine pushes the return address and carries on at the next instruction; with no room to push, the script ends.
+
 ## RETURN
 
-`RETURN` - Return to the instruction after the most recent `JSR`.
+`RETURN` - Return to the instruction after the most recent `JSR` still waiting for it.
+
+With nothing to return to, **the script ends**. A value popped that is not a return address, one a `PUSH` or a `HUSH` left there, is thrown away and the script carries on after the `RETURN`.
 
 ### Operands
 
 None
+
 ## BRANCH
 
 `BRANCH <location>` - Branch to another location.
@@ -440,7 +444,9 @@ The result is left in the result register and nothing is stored, so `CMP` follow
 `<value>` - A literal or a variable to compare against.
 ## PUSH
 
-`PUSH <value>` - Push a value to the stack.
+`PUSH <value>` - Push a value onto the call stack, the end `JSR` uses.
+
+The value also lands in the result register. A full stack, or none at all, ends the script. No shipped script uses it.
 
 ### Operands
 
@@ -448,7 +454,9 @@ The result is left in the result register and nothing is stored, so `CMP` follow
 
 ## POP
 
-`POP <dest>` - Pop a value from the stack into a variable.
+`POP <dest>` - Pop a value from the call stack into a variable.
+
+The value lands in the result register, and in `<dest>` when that is a variable; a return address comes back with its label flag still on. An empty stack, or none at all, puts nought in both and ends the script. No shipped script uses it.
 
 ### Operands
 
@@ -458,20 +466,22 @@ The result is left in the result register and nothing is stored, so `CMP` follow
 
 `HUSH <value>` - Push a value onto the script's stack.
 
-`HUSH` and `HOP` share the storage set aside by `#setstack`, but keep their own position in it, filling from the bottom while `JSR` fills from the top. The engine checks the two do not meet.
+`HUSH` and `HOP` share the storage set aside by `#setstack`, but keep their own position in it, filling from the bottom while `JSR` fills from the top. **Nothing stops the two meeting**: each end checks only its own position against the size, so a `HUSH` can write over a return address that `JSR` left, and a `JSR` over a value that `HUSH` left. The value also lands in the result register. With no room left, or no stack at all, the instruction does nothing. Every shipped `HUSH` loads a rider, and no ride takes more riders than its stack can hold beside its one call.
 
 ### Operands
 
 `<value>` - The value to push. All 39 uses in the shipped scripts name a variable.
+
 ## HOP
 
 `HOP <dest>` - Pop a value from the script's stack into a variable.
 
-The counterpart to `HUSH`, and unrelated to `RETURN`, which pops from the other end of the same storage.
+The counterpart to `HUSH`, and unrelated to `RETURN`, which pops from the other end of the same storage. The value lands in the result register as well. With nothing to pop, or no stack at all, the instruction does nothing, and neither the register nor `<dest>` changes.
 
 ### Operands
 
-`<dest>` - The variable the popped value is written to. It must be a variable; the engine ignores the instruction otherwise.
+`<dest>` - Where the popped value is written. With a literal here the value is still popped and still lands in the result register; only the write to `<dest>` is skipped.
+
 ## WAIT
 
 `WAIT <time>` - Wait for a period of time before continuing.

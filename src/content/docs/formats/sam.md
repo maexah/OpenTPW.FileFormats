@@ -91,6 +91,8 @@ suppress the category's.
 | `UsageInfo.ISIndoors` | Shelter from the rain (the game's own spelling) |
 | `UsageInfo.CannotRide` | Whether it cannot be ridden by walking onto its entrance in first person: 0 in every theme's `Rides.sam` and 1 in its `Shops.sam`, `SideShow.sam` and `Features.sam`; `Upgrades.sam` leaves it unset, and none of the 274 items, the 11 upgrades included, overrides it |
 | `UsageInfo.ExcitementLevel` | How exciting it is |
+| `UsageInfo.GoldenTicketCost` | What a golden ticket costs to ride it. Nine rides of the 274 `.wad` files set it: `fantasy`'s `dragfly` 4 and `twetours` 2, `hallow`'s `spider` 3 and `tourride` 1, `jungle`'s `tourride` (Jurassic Tours) 1 and `volcano` (Eruption) 3, and `space`'s `scitour` 2, `spawheel` 5 and `station` 3. Of the category files only `hallow/rides/Rides.sam` declares it, at `0` |
+| `Bumper.BumperType` | Which bumper vehicle the ride makes. Twelve rides set it, each to a different value from `-1` to `-14`: every theme's go-karts and water ride, and its bumper ride (`bumper`, or `fantasy`'s `bbugs`); the jungle's Hot Pot `-1`, Dino Karts `-4` and Splish Splash `-5`. Every other item reads `0`, which the four `Rides.sam` declare |
 | `UsageInfo.ThirstEffect`, `UsageInfo.HungerEffect` | How much of each need using it **takes away** |
 | `UsageInfo.VomitEffect`, `UsageInfo.HappinessEffect`, `UsageInfo.LitterEffect` | How much of each it **adds** |
 | `UsageInfo.MinCapacity`, `MaxCapacity`, `MinDuration`, `MaxDuration` | Bounds the engine clamps to - see below |
@@ -100,7 +102,7 @@ suppress the category's.
 | `UsageInfo.RipOffOK` | How far over what a thing is worth a guest will still pay, in per cent - see below |
 | `UsageInfo.SpecialIngredient` | A shop's goods: "0 = none, 1 = Fat, 2 = Salt, 3 = Ice, 4 = Sugar" |
 | `UsageInfo.AppearanceEffect` | What a shop changes about a guest's looks: "1 = Balloon, 2 = Costume" |
-| `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings |
+| `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings: `Rides.sam`'s `InitSpeed` is 60, 75 and 90 for the three levels, its `InitDuration` 3 at each |
 
 **Two of these are the text-file side of bits the saved park carries.** `Info.IsChoosable` matches the
 catalogue object's `mFlags` bit `0x4`, and `UsageInfo.ProvidesRelief` matches bit `0x1` - checked object

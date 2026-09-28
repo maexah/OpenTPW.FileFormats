@@ -390,7 +390,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 464 | 4 bytes | `mParkOpeningWaitingTime` | |
 | 468 | 1 byte | `mPersonType` | `5`, `7`, `2`, ... an index into `PeepTypes[0..7]` |
 | 469 | 1 byte | `mPrankeryIndex` | |
-| 470 | 16 bytes | `mPreviousRides[`*i*`]` and `mPreviousTemporaryRides[`*i*`]` | **interleaved in pairs**, four of each, 2 bytes apiece |
+| 470 | 16 bytes | `mPreviousRides[`*i*`]` and `mPreviousTemporaryRides[`*i*`]` | **interleaved in pairs**, four of each, 2 bytes apiece, thing handles newest first; `0` on all thirteen |
 | 486 | 2 bytes | `mQNext` | `0` on all thirteen |
 | 488 | 2 bytes | `mQPrev` | `0` on all thirteen |
 | 490 | 4 bytes | `mQueueMoveDelay` | |
@@ -410,6 +410,12 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 measured one at a time: they are produced by walking the serialiser's own declared field sizes from +398,
 and that single walk has to land on the record size - derived separately, by running the original's reader
 and logging what it declared - or every offset in it is wrong together.
+
+**The shipped park cannot check the two histories; a played one can.** Every guest in `Easymode.TPWI` has both
+empty, so a reader at the wrong offset would read the same noughts. Two saves of
+one jungle park played in the original to `mGameTick` 19,004 and 19,007 - not files the game ships - each hold
+1,060 non-zero entries across 339 guests, and every one is the thing handle of an object in the same save;
+none follows a nought, which is what a newest-first list of four looks like.
 
 The two queue links deserve a note, because finding them turned entirely on the **name**. Sweeping the
 executable's serialised field names for `InQ`, `mNext`, `Queue` and `mPrev` finds no per-person queue link

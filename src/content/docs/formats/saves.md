@@ -206,7 +206,7 @@ coordinates, because their positions live in their models rather than in the sav
 | 10 | 2 bytes | `mY` | |
 | 16 | 4 bytes | `mAngle` | `0`, `90` or `270` in the shipped park |
 | 20 | 2 bytes | `mId` | the item's `Info.Id`, from its own `.sam` |
-| 22 | 32 bytes | eight `tv_t` dwords | packed and unpacked by a helper |
+| 22 | 32 bytes | eight `tv[`*t*`]` dwords | when the object was built: year, month, day, day of the week, hour, minute, second, millisecond - not `SYSTEMTIME`'s order, which puts the day of the week third. It is a date on the **park's own calendar**, not the real one; the game writes it with `FileTimeToSystemTime` and reads it back with `SystemTimeToFileTime`, ignoring the day of the week; a stamp that will not convert loads as nought. The shipped park: the Belly Bounce and ten more read 2000-01-01 15:37:30, the bus 2000-01-27 05:10:00, the gates and the lights 2000-01-01 00:00:00 |
 | 54 | 4 bytes | `MeshInstanceID` | |
 | 58 | 2 bytes | `mFlags` | see below |
 | 60 | 132 bytes | 33 pairs of `mNameA[`*i*`]`, `mNameB[`*i*`]` | 2 bytes each |

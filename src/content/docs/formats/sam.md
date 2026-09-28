@@ -45,6 +45,14 @@ That is three settings rather than one - `PreferredExcitement` 80, `StartingCash
 and silently drops the others, which is what makes the peep constants look as though they are missing
 from a file that states them plainly.
 
+**Only the two global files set a `PeepTypes` row.** A park's balance is read from `data/levels/Standard.sam`
+(or `Online_Standard.sam` for an online game), then the theme's own `Standard.sam` and `Easy_Standard.sam`. Of the
+56 loose `.sam` files under `data/`, only the two global ones name `PeepTypes[n]`, each rows 0 to 7
+(`Standard.sam` lines 56-63, `Online_Standard.sam` lines 53-60), so every shipped park has eight kinds of guest. They
+differ: `Online_Standard.sam`'s row 6 prefers 65 excitement where `Standard.sam`'s prefers 45, and its starting cash
+runs 400 to 1000 where `Standard.sam`'s runs 300 to 750. How the game counts the rows it was given is the
+executable's business (OpenTPW's `docs/exe/ride-operation.md`, "What a thing is worth to a guest").
+
 ## An item's description is an override, not a whole description
 
 Buildable items - rides, shops, sideshows and features - each carry a `.sam` inside their own `.wad`, and

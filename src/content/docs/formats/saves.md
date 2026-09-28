@@ -125,8 +125,8 @@ Seven fields of the struct are established:
 | `0x54` | 21    | The stack size in dwords — block 1's length over four                             |
 
 **How those were pinned rather than guessed.** Dword 20 equals the length of the body block that
-follows it for all fourteen scripts, which fixes the struct's alignment and with it the other two
-fields; every one of the fourteen counters then lands on an exact instruction boundary, and on a
+follows it for all fourteen scripts, which fixes the struct's alignment and with it every offset in the
+table; every one of the fourteen counters then lands on an exact instruction boundary, and on a
 `BRANCH`, `BRANCH_Z`, `TEST` or `WAIT` — what a settled script waits on. Block 2 is the variable array
 because slot 2 is `VAR_CAPACITY` and slot 3 `VAR_DURATION`, and both agree with the **object records**
 in the World module, a wholly separate part of the file: 5 and 30 for the ride, and 1, 1, 1 and 3 for

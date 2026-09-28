@@ -147,7 +147,7 @@ sub-record repeats the same tile base field for field.
 | 43 | 2 bytes | `mPylonIndex` |
 | 45 | 1 byte | `mStatusFlags` |
 | 46 | 4 bytes | `mTimeMarkedForLitterCollection` |
-| 50 | 2 bytes | *(unnamed)* - the thing occupying the cell |
+| 50 | 2 bytes | `mWho` - the first thing on the cell; the rest hang off it by each thing's `mMapChild` |
 
 The serialiser really does announce `mLitterScript` twice, for two consecutive dwords, and the arithmetic
 is what says so rather than the reading: `4+2+4+4+2+1+4+2` is exactly 23, and `29+23` is exactly the 52
@@ -362,6 +362,49 @@ One reading falls out of that. Every saved `APR_in_percent` is **nought**, which
 `mBalance` is the money and `mBatchBalance` is not a second copy of it: taking an admission fee adds it
 to `mBalance` and to `mProfitThisYear`, and touches neither of the others.
 
+#### The person base
+
+Every person - guest or staff - writes the same 390 bytes after its eight-byte list head, from the person
+serialiser's write arm (`FUN_004f8b10`), which names each field and states its size. The list head and the
+map base come first, as for every placed thing.
+
+| Offset | Size | Name |
+| --- | --- | --- |
+| 8 | 2 bytes | `mX` |
+| 10 | 2 bytes | `mY` |
+| 12 | 2 bytes | `mMapChild` |
+| 14 | 2 bytes | `mMapParent` |
+| 16 | 4 bytes | `mSpriteScript` |
+| 20 | 4 bytes | `mNextAnim` |
+| 24 | 4 bytes | `mNextServiceInterval` |
+| 28 | 2 bytes | `mAccurateDestX` |
+| 30 | 2 bytes | `mAccurateDestY` |
+| 32 | 2 bytes | `mAdjustorSpeed` |
+| 34 | 2 bytes | `mBaseSpeed` |
+| 36 | 1 byte | `mCount` |
+| 37 | 4 bytes | `mESPSprite` |
+| 41 | 2 bytes | `mLastRecordedMapId` |
+| 43 | 177 bytes | the navigator |
+| 220 | 4 bytes | `mPreviousSpeed` |
+| 224 | 4 bytes | `mPreviousX` |
+| 228 | 4 bytes | `mPreviousY` |
+| 232 | 4 bytes | `mStrandedTime` |
+| 236 | 2 bytes | `mPurposeSpeed` |
+| 238 | 4 bytes | `mSetDestSuccessfully` |
+| 242 | 4 bytes | `mSpriteAngle` |
+| 246 | 4 bytes | `mSpriteID` |
+| 250 | 4 bytes | `mSpriteUnderRideCtrl` |
+| 254 | 144 bytes | the event ring: a count, 32 entries of 4, and three dwords |
+
+It closes on 398, where each model's own block begins, and it lands on the two places read independently of
+it: the navigator at 43 and `mSpriteAngle` at 242.
+
+**`mCount` is a guest's walking-turn count**: the walk to a chosen thing adds one each turn and, on the
+twelfth, zeroes it and makes its minor decision. In the shipped park it is 0 on all eighteen people. In
+Alexah's played parks it spans exactly 0 to 11 - a count reset at twelve never shows 12 - on every guest:
+339 in each of two jungle saves (264 and 262 of them non-zero) and 53 in each of two fantasy saves (39
+non-zero); the jungle saves' staff all hold 0.
+
 #### A guest (model 1)
 
 The sixth person model is the visitor, and its block begins at **+398**, after the same eight-byte list
@@ -416,7 +459,8 @@ empty, so a reader at the wrong offset would read the same noughts. Two saves of
 one jungle park played in the original to `mGameTick` 19,004 and 19,007 - not files the game ships - each hold
 1,060 non-zero entries across 339 guests, and every one is the thing handle of an object in the same save;
 none follows a nought, which is what a newest-first list of four looks like. The same saves hold a non-zero
-`mSavedMajorDest` on 51 and 50 of the 339 guests, 31 of them a toilet in each.
+`mSavedMajorDest` on 51 and 50 of the 339 guests, 31 of them a toilet in each, and two fantasy saves on 6 of
+53; every one names an object in its own save.
 
 The two queue links deserve a note, because finding them turned entirely on the **name**. Sweeping the
 executable's serialised field names for `InQ`, `mNext`, `Queue` and `mPrev` finds no per-person queue link

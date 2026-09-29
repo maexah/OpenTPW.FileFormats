@@ -112,7 +112,7 @@ Then one record per script. Each is a struct followed by a run of length-prefixe
 | 4 bytes  | Bytes per object                                                        |
 | n        | The script's own object list                                            |
 
-Seven fields of the struct are established:
+Thirteen fields of the struct are established:
 
 | Offset | Dword | Description                                                                     |
 | ------ | ----- | ------------------------------------------------------------------------------- |
@@ -123,7 +123,12 @@ Seven fields of the struct are established:
 | `0x48` | 18    | The result register, which the conditional branches test                         |
 | `0x50` | 20    | The body length in words, which the counter is bounds-checked against            |
 | `0x54` | 21    | The stack size in dwords — block 1's length over four                             |
+| `0xa0` | 40    | The deadline a `WAIT`, `WAITABS`, `WAITANIM` or `WAITANIM_CH` is sitting on, a clock reading; nought for none |
+| `0xa4` | 41    | The deadline the last trigger armed, a clock reading, which `WAIT4ANIM` waits on. It is not cleared when it passes, only by a passed `WAIT4ANIM`, a `WAITANIM` or a `LOOPANIM` that starts a loop, so a save can hold one long past; nought for none |
+| `0xa8` | 42    | The looping key: `(entry << 16) + role` of the last `LOOPANIM`, or `0xffff` from creation, a `TRIGANIM`, `TRIGANIMSPEED`, `TRIGWAITANIM` or `WAITANIM`; the `_CH` forms leave it alone |
+| `0xbc` | 47    | `TRIGWAITANIM`'s mark (shared with `TRIGWAITANIM_CH`): the role it is waiting for, plus one; nought when not waiting |
 | `0xe0` | 56    | A coaster script's ride handle, which its `COAST 8` stores; nought before that   |
+| `0xe4` | 57 (low word) | A 16-bit play rate in thousandths: 1000, or a `TRIGANIMSPEED`'s rate. The word above it, `0xe6`, is a separate field; it reads `0xffff` in every script of the shipped park |
 
 **How those were pinned rather than guessed.** Dword 20 equals the length of the body block that
 follows it for all fourteen scripts, which fixes the struct's alignment and with it every offset in the
@@ -142,6 +147,14 @@ slots above the call index are live.** The Belly Bounce's block reads `CD CD CD 
 written, then `18 00 00 20`: the return address of a call that had already returned, still there. Block
 3 was compared byte for byte with each script's `.RSE` file. Dword 18 reads 3033 for the fountain, 1 for
 the gate and 0 for the other twelve.
+
+**The animation fields.** The game reads the whole struct back, so these come back as they were saved. The
+shipped park holds `0xffff` at `0xa8` for ten of the fourteen, 5 for the fountain, the drinks kiosk and the traffic
+lights, and 2 for the ride; `0xbc` is nought for all fourteen and `0xe4` 1000. The deadlines are readings of the game
+clock, which the save keeps in the clock module (`KOLC`) as the first of its two dwords, `0x06D13894` here, and which
+the game puts back on loading, so a deadline less that reading is the time still to wait. `0xa4` is set only for the
+sideshow, 180,933 ms in the past; `0xa0` for the two security cameras, 2,341 and 2,329 ms ahead, and for the ride, 63 ms
+ahead.
 
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
@@ -188,11 +201,10 @@ Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
 > the two disagree where it matters. A caller's flags are `0x1` loop, `0x2` start at once, `0x4` do not
 > lay the rest pose down, `0x8` do not apply the hide list. Stored on the channel, `0x1` and `0x8` mean
 > the same, but `0x2` means **frozen at frame nought** and `0x4` means **held on the last frame** —
-> states the engine has recorded, not requests. The game does not even express "held" as a flag when it
-> restores: it re-enters the channel with role **14**, which acts on the clip already loaded and
-> backdates the timebase by one whole clip so the elapsed frame lands exactly on the total. Role **13**
-> does the same for a freeze. Feeding the stored word back in as caller flags therefore drops the held
-> pose — in the shipped park that is **eleven of the fifteen** channels that hold a real role.
+> states the engine has recorded, not requests. On loading, the game copies the word back as it stands
+> and adds `0x10` to a held channel (OpenTPW's `docs/exe/ride-operation.md`). Feeding the stored word back
+> in as caller flags therefore drops the held pose — in the shipped park that is **eleven of the fifteen**
+> channels that hold a real role.
 
 > **The module does not say how many channels a thing has**, and the walk cannot step over a record
 > without knowing. The count is the item's own `NumSimultAnims` — the Jungle Spray runs three lanes and

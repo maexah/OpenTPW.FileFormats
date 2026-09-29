@@ -19,15 +19,19 @@ Instructions stop counting against the script's time slice, so everything up to 
 ### Operands
 
 None
+
 ## CRIT_UNLOCK
 
 `CRIT_UNLOCK` - End a critical section, and give up the rest of this slice.
 
 Instructions count against the slice again, and the script stops running until its next turn - the engine ends the slice as it leaves, so a script cannot hold the interpreter after unlocking.
 
+That second half is what ends the turn of a script whose loop holds no `ENDSLICE`. Lost Kingdom's coaster, `Coaster1.RSE`, is one: its main loop, from word 18 to the `BRANCH` back at word 67, holds no `ENDSLICE` and no wait, and its turn ends at the `CRIT_UNLOCK` at word 62. An interpreter that treats `CRIT_UNLOCK` as clearing a flag and nothing else still ends such a turn once the instruction budget is spent, but only after running the loop about four times over.
+
 ### Operands
 
 None
+
 ## COPY
 
 `COPY <dest> <source>` - Copy a value from one variable to another.
@@ -63,6 +67,7 @@ The whole word goes in, tag and all, so a variable operand puts its tagged index
 `<dest>` - Where the result goes: the result register first, then the variable. A literal keeps it in the register alone, which space's orbiter does twice, branching on the sign.
 
 `<value>` - A literal or a variable.
+
 ## ENDSLICE
 
 `ENDSLICE` - Stop running for this tick.
@@ -72,6 +77,7 @@ The script gives up the rest of its slice and resumes at the next instruction on
 ### Operands
 
 None
+
 ## GETTIME
 
 `GETTIME <dest>` - Read the game's clock.
@@ -188,15 +194,15 @@ None
 
 `<animation>` - Which of the model's animations to start. **It names a role, and not one of the animation files an item happens to ship.** A model carries exactly twelve animation slots, and the id picks one of them: ids 0 to 11 are the letters `C`, `D`, `I`, `L`, `S`, `M`, `E`, `U`, `W`, `B`, `R` and `O`, taken from a twelve-entry table the model loader walks in step with the slots. Each letter names files sitting beside the model - `<name><letter>.md2`, or `<name><letter><n>.md2` for a role holding more than one. **12 is the sentinel for "no animation"**, and is what the engine writes into a slot it clears, so the usable range is 0 to 11.
 
-`<parameter>` - Which entry within that role to play, an index into the role's entries. The engine does not bound it: started on a channel, an entry past the count plays whatever lies past that role's clips, with the role standing, and answers 1000; queued, it answers the time still to run plus 1000. No shipped literal names one.
+`<parameter>` - Which entry within that role to play, an index into the role's entries numbered from nought, so entry 0 is the role's first clip. The engine does not bound it: started on a channel, an entry past the count plays whatever lies past that role's clips, with the role standing, and answers 1000; queued, it answers the time still to run plus 1000. No shipped literal names one.
 
 `<dest>` - Where the length is written, in milliseconds: the result register first, then the variable. 64 of the 74 shipped uses write a literal here, so the length is kept only in the register, and no shipped script reads it there: every path from each overwrites the register before it reaches a branch.
 
-The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script whose model reports nothing gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does. It plays on **channel 0** with no flags; the `_CH` variants exist to name a different channel.
+The length is whatever the model reports, less 300, floored at 300 by a **signed** comparison - so a script with no model, for which the engine takes the length as nought, gets 300 rather than a negative. Triggering also arms the deadline `WAIT4ANIM` waits on, exactly as `TRIGWAITANIM` does, and forgets the key [`LOOPANIM`](#loopanim) remembers, so a `LOOPANIM` after it always starts its loop. It plays on **channel 0** with no flags; the `_CH` variants exist to name a different channel.
 
 **What the model reports is the clip's own declared length.** Each entry of a role points at an animation, and the engine takes the frame span that animation declares in its own header - not the span its keyframes happen to cover - and multiplies by the 32-bit float held at `0x006fec08`, which is 33.33333206176758 rather than the exact 1000/30. **The conversion truncates**: it goes through the compiler's float-to-integer helper, which saves the x87 control word, selects rounding toward zero and only then stores, so the product falls to the whole millisecond below. The two readings agree except where the span is a multiple of three - that being exactly where exact arithmetic lands on a whole millisecond and the float lands just under it - so a 600-frame clip is **19999** milliseconds and not 20000. It is not a curiosity of rounding: it moves 293 of the 1,237 clips under `levels/` that declare a span, and each one of those milliseconds went into a script's own deadline. Every clip in the game declares a start of nought and an end of at least one, so there is no zero-length clip to guard against. Where a channel is already playing something, the time still to run on it is added, because a trigger queues behind rather than cutting in; for an idle channel the answer is the new clip alone.
 
-**Where the model has no such role, or no such entry within it, the engine substitutes a flat 1000 instead of a clip length.** That is not a hypothetical branch: eight of the role references the shipped scripts make name a role their own archive ships no file for - `royaloo`, `fries`, `icecream` and `purse` in fantasy, and `crys_b`, `scentro` and `spawheel` in space.
+**Where the model has no such role, or no such entry within it, the engine substitutes a flat 1000 instead of a clip length**, so on an idle channel the answer is 700 - not the 300 a script with no model gets. That is not a hypothetical branch: eight of the role references the shipped scripts make name a role their own archive ships no file for - `royaloo`, `fries`, `icecream` and `purse` in fantasy, and `crys_b`, `scentro` and `spawheel` in space.
 
 **That the id names a role rather than a file is measured rather than inferred.** Of the 72 ride archives whose script names a literal animation id, every single one uses an id at or above the number of numbered `<name>M<n>.md2` files it ships - and two of them ship none at all while still triggering ids 0 and 5 - so an id cannot be selecting one of those files. Reading the same data the other way round confirms the table: among those 72, an archive shipping `<name>c.md2` uses id 0 in every case and one without it never does, `<name>l.md2` tracks id 3, `<name>s.md2` id 4, `<name>e.md2` id 6, and `<name>b.md2` and `<name>r.md2` track ids 9 and 10. Six of the twelve letters land exactly where the table puts them, from the shipped data alone.
 
@@ -214,9 +220,9 @@ The length is whatever the model reports, less 300, floored at 300 by a **signed
 
 It waits on the same deadline as `WAIT`, not on the separate one `WAIT4ANIM` uses, and it gives up the rest of the turn on the visit that sets that deadline whether or not the deadline has already passed. **That first visit also clears the deadline `WAIT4ANIM` waits on and forgets the key `LOOPANIM` remembers**, with a model or without; a later visit touches neither. So a `LOOPANIM` after it starts its loop again even when that loop was already running.
 
-Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer. The length-less-300 is stored as the low half of a qword whose high half is nought and read back with `FILD qword`, so a negative arrives as a number just under 2^32; and the 300 floor is then compared **unsigned**, which a negative passes. So where `TRIGANIM` floors at 300, `WAITANIM` does not: a model that reports nothing gives a deadline 300ms in the *past*, and the instruction costs one turn rather than any particular length of time - at the divisor 1, below; with any other, the quotient of that near-2^32 number lands far from it, ahead or behind by hours to weeks.
+Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer. The length-less-300 is stored as the low half of a qword whose high half is nought and read back with `FILD qword`, so a negative arrives as a number just under 2^32; and the 300 floor is then compared **unsigned**, which a negative passes. So where `TRIGANIM` floors at 300, `WAITANIM` does not: a script with no model, or a model whose answer is under 300 ms, gives a deadline already in the *past* (300ms past with no model), and the instruction costs one turn rather than any particular length of time - at the divisor 1, below; with any other, the quotient of that near-2^32 number lands far from it, ahead or behind by hours to weeks. The answer is under 300 only for a clip that short with nothing still running ahead of it on the channel. Shipped clips that short exist - space's Small Crystals `Crys_aM.MD2` declares 5 frames, 166 ms - but the one `WAITANIM` that plays it, `WAITANIM 5, 0` at word 5 of `Crys_a.RSE`, comes straight after a `WAITANIM 0, 0` whose deadline falls 300 ms before its own clip ends, so it queues behind that remainder and its answer is over 300.
 
-**With a model it does wait, and that is the largest difference a model makes anywhere in the family.** The unsigned floor only lets a negative slip through; a real clip length is positive and survives it, so the deadline lands the clip's own length less 300 in the future and the script sits on the instruction until it passes. `WAITANIM` is the most used animation instruction the game ships - 547 uses across 250 scripts - so where every one of those cost a single turn without a model, with one they cost anything up to the 19999 milliseconds a ferry's clip runs for - a millisecond under twenty seconds, for the reason `TRIGANIM` gives above.
+**With a model whose answer is 300 ms or more it does wait, and that is the largest difference a model makes anywhere in the family.** The unsigned floor only lets a negative slip through; an answer of 300 or more survives it, so the deadline lands that answer less 300 in the future and the script sits on the instruction until it passes. `WAITANIM` is the most used animation instruction the game ships - 547 uses across 250 scripts - so where every one of those cost a single turn without a model, with one each costs its answer less 300 - its clip's length plus whatever it queues behind - and the longest clip any of them plays is the 19999 milliseconds of hallow's Demon Statue, `demstatm2.MD2` - a millisecond under twenty seconds, for the reason `TRIGANIM` gives above. (A ferry's 600-frame clip runs as long, but a ferry plays it with `TRIGWAITANIM`.)
 
 **Both instructions scale by the script's speed, and they apply the 300 floor on opposite sides of it.** `TRIGANIM` subtracts its 300 and floors the result *before* converting, so the floor is applied to a frame-derived length; `WAITANIM` converts first - `FILD` the qword, divide by the same `0.5 + 0.01 x speed` divisor the dispatcher works out for every instruction, then truncate - and only then compares against 300, unsigned. So the two differ in the order of the divide and the floor as well as in the signedness - and at the 50 a script is loaded with, the divisor is exactly 1, so only the signedness shows.
 
@@ -230,7 +236,7 @@ Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer.
 
 `<parameter>` - Which entry within that role.
 
-The two operands together make the key `(<parameter> << 16) + <type>`, which the script remembers until a `TRIGANIM`, `TRIGANIMSPEED`, `TRIGWAITANIM` or the first visit of a `WAITANIM` forgets it; the `_CH` forms leave it alone, and a new script starts with it forgotten. Asked again with none of those between, it does nothing at all - it is not restarted. Naming any other animation clears the deadline `TRIGANIM` and `TRIGWAITANIM` arm, because a loop never finishes and there would be nothing left for `WAIT4ANIM` to wait for.
+The two operands together make the key `(<parameter> << 16) + <type>`, which the script remembers until a `TRIGANIM`, `TRIGANIMSPEED`, `TRIGWAITANIM` or the first visit of a `WAITANIM` forgets it; the `_CH` forms leave it alone, and a new script starts with it forgotten. Forgetting it means writing `0xFFFF` there, and no shipped `LOOPANIM` makes that key: all 210 name two literals. Asked again with none of those between, it does nothing at all - it is not restarted. Naming any other animation clears the deadline `TRIGANIM` and `TRIGWAITANIM` arm, because a loop never finishes and there would be nothing left for `WAIT4ANIM` to wait for.
 
 ## TRIGWAITANIM
 
@@ -254,7 +260,7 @@ It arms the same deadline `TRIGANIM` arms, and then rewinds onto itself - so unl
 
 `GETANIM <dest>` - Ask which animation the model's first channel is playing.
 
-It is [`GETANIM_CH`](#getanim_ch) with the channel fixed at nought, in a handler of its own: the answer is the role that channel is playing, the sentinel 12 where it has played nothing, or `-1` when the channel is holding its last pose, and with no model the result register is left as it stands. No script the game ships uses it.
+It is [`GETANIM_CH`](#getanim_ch) with the channel fixed at nought, in a handler of its own: the answer is the role that channel is playing, the sentinel 12 where it has played nothing, or `-1` when the channel is holding its last pose, and with no model the result register is left as it stands. A newly built thing's channel 0 does not start at 12 where its model has a role 0: it starts on that role, held at frame nought, so it answers 0 until the script's first trigger. No script the game ships uses it.
 
 ### Operands
 
@@ -296,9 +302,11 @@ The four shipped uses are the four themes' park gates, each with a variable `<de
 
 `<dest>` - Where the length is written, on the same terms as `TRIGANIM`'s third operand. 60 of the 63 shipped uses write a literal here, which keeps the length in the result register alone; nothing reads it there.
 
-`<channel>` - Which of the model's animation players to start it on. **The channel is what the `_CH` instructions add to their plain siblings**, which pass a literal nought here. It is not their only difference: see `WAITANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH`. A model is built with as many players as whatever created it asked for - one for scenery, five for a coaster's trains - and none of the three functions that index them checks the number against the count the model actually has.
+`<channel>` - Which of the model's animation players to start it on, counted from nought. It is resolved like any other value, so a variable may name it, although every shipped use writes a literal. **The channel is what the `_CH` instructions add to their plain siblings**, which pass a literal nought here. It is not their only difference: see the end of this entry, and `WAITANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH`. A model is built with as many players as whatever created it asked for - one for scenery, five for a coaster's trains, and for a placed thing the number its item description declares in `UsageInfo.NumSimultAnims`, nought counting as one - and none of the three functions that index them checks the number against the count the model actually has. The count is not in the model file.
 
-Across the 308 shipped scripts the 63 uses of this instruction name channels 0, 1, 2 and 3.
+Across the 308 shipped scripts the 63 uses of this instruction, in six scripts, name channels 0, 1, 2 and 3, which makes it the busiest of the `_CH` forms. Each script reaches exactly the last channel its item declares: the Jungle Spray, Hyenas, Frushy, Squirtem and Marsmoon declare 3 and use channels 0 to 2, and the Totem declares 4 and uses 1 to 3. Space's park gate, which declares 2, loops on channel 1 (see [`LOOPANIM_CH`](#loopanim_ch)).
+
+Apart from the channel it is `TRIGANIM` instruction for instruction, with one difference: `TRIGANIM` ends through a shared tail that writes both the `WAIT4ANIM` deadline and the looping key, while `TRIGANIM_CH` ends inline and writes only the deadline.
 
 Reading the first operand as the role is what makes a census of animation use come out right: it is the same operand, in the same position, that the plain instruction passes. `GETANIM_CH` is the exception and is **not** of this shape - see its own entry.
 
@@ -318,13 +326,15 @@ Reading the first operand as the role is what makes a census of animation use co
 
 `LOOPANIM_CH <animation> <parameter> <channel>` - [`LOOPANIM`](#loopanim) on a named channel.
 
-Unlike `LOOPANIM` it has no guard against asking for the same clip again: it hands the clip to the model every time, and the model queues it behind anything the channel is already playing.
+Unlike `LOOPANIM` it has no guard against asking for the same clip again: it hands the clip to the model every time, and the model queues it behind anything the channel is already playing. It still clears the deadline `WAIT4ANIM` waits on, because a loop never finishes.
 
 ### Operands
 
 `<animation>`, `<parameter>` - As for `LOOPANIM`.
 
-`<channel>` - Which of the model's animation players to loop it on, taken as written. The one shipped use, space's park gate, writes `5, 2, 1`.
+`<channel>` - Which of the model's animation players to loop it on. **Taken raw**: unlike `TRIGANIM_CH` and `GETANIM_CH`, this operand gets no variable tag test, so a variable arrives as its tagged word and names no channel at all.
+
+Used **once** in the whole game: space's `Gates.RSE` opens with `LOOPANIM_CH 5, 2, 1` at word 2, before it tests anything, so that park's gate idles on a channel of its own from the moment it loads.
 
 ## TRIGWAITANIM_CH
 
@@ -346,13 +356,17 @@ Unlike `LOOPANIM` it has no guard against asking for the same clip again: it han
 
 ### Operands
 
-`<dest>` - Where the answer goes: the role that channel is playing, the "no animation" sentinel 12 where it has played nothing, or `-1` once it is holding the last pose of a clip that has ended, which is what ends every shipped wait on it. With no model the result register is left as it stands.
+`<dest>` - Where the answer goes: the role that channel is playing, the "no animation" sentinel 12 where it has played nothing, or `-1` once it is holding the last pose of a clip that has ended. With no model the result register is left as it stands. Channel 0 of a newly built thing is the exception to the 12: where the model has a role 0, the build starts channel 0 on it and holds it at frame nought, so there the answer is 0 until the script's first trigger. No shipped script asks that early: the five that use this instruction open with `WAITANIM 0, 0` at word 2 and three `TRIGANIM_CH`, and their first `GETANIM_CH` is at word 176 or later.
 
-`<channel>` - Which of the model's animation players to ask.
+`<channel>` - Which of the model's animation players to ask. Resolved like any other value, so a variable may name it.
+
+The `-1` comes from the player's flag word: the engine answers `-1` in place of the role when that word carries `0x4`, the bit set when a finished clip with nothing queued is held on its last frame.
+
+Those three answers are what make it usable as a "has it finished?" test, and the five lane sideshows use it as exactly that: the Jungle Spray, Hyenas, Squirtem, Frushy and Marsmoon each check an occupied lane with `GETANIM_CH 0, <lane>` and branch away on a positive answer and on zero, so **-1 is the only answer that lets a rider off**.
 
 **Its first operand is a destination and not a role, which is the opposite shape to every other `_CH` instruction on this page that names a role.** `TRIGANIM_CH`, `WAITANIM_CH`, `LOOPANIM_CH` and `TRIGWAITANIM_CH` all take the role first and the channel last; this one takes the destination first and the channel second. Reading it like its neighbours is a live trap rather than a tidiness point: it inflates any census of which roles the shipped scripts name, because a destination gets counted as a role.
 
-All 15 uses the game ships write a **literal** where the destination goes, which cannot be written to - so the store is skipped and the answer is left in the result register for the branch that follows, the same idiom as `COAST 2 0`. [`GETANIM`](#getanim) does the same with the channel fixed at nought, and no shipped script uses it.
+All 15 uses the game ships write a **literal** where the destination goes, which cannot be written to - so the store is skipped and the answer is left in the result register for the branch that follows, the same idiom as `COAST 2 0`.
 
 ## RAND
 
@@ -405,6 +419,7 @@ The result register holds whatever the last instruction computed - see [Informat
 ### Operands
 
 `<location>` - The branch to execute.
+
 ## BRANCH_NZ
 
 `BRANCH_NZ <location>` - Branch to another location if the result register is not zero.
@@ -414,6 +429,7 @@ The result register holds whatever the last instruction computed - see [Informat
 ### Operands
 
 `<location>` - The branch to execute.
+
 ## BRANCH_NV
 
 `BRANCH_NV <location>` - Branch to another location if the result register is negative.
@@ -423,6 +439,7 @@ The result register holds whatever the last instruction computed - see [Informat
 ### Operands
 
 `<location>` - The branch to execute.
+
 ## BRANCH_PV
 
 `BRANCH_PV <location>` - Branch to another location if the result register is greater than zero.
@@ -434,6 +451,7 @@ The result register holds whatever the last instruction computed - see [Informat
 ### Operands
 
 `<location>` - The branch to execute.
+
 ## DBGMSG
 
 `DBGMSG <unknown>` - Unknown
@@ -457,6 +475,7 @@ Takes 1 operand, which is not named above and is not yet understood. No script t
 ### Operands
 
 `<variable>` - The variable to test. It must be a variable; the engine ignores the instruction otherwise, and every one of the 1,318 uses in the shipped scripts is one.
+
 ## CMP
 
 `CMP <variable> <value>` - Compare a variable against a value by **subtracting** the second operand from the first.
@@ -468,6 +487,7 @@ The result is left in the result register and nothing is stored, so `CMP` follow
 `<variable>` - The variable compared. It must be a variable; all 61 uses in the shipped scripts are.
 
 `<value>` - A literal or a variable to compare against.
+
 ## PUSH
 
 `PUSH <value>` - Push a value onto the call stack, the end `JSR` uses.
@@ -518,11 +538,12 @@ The engine does not block. The first time a `WAIT` runs it works out a deadline,
 
 The operand *is* scaled by the script's own speed first - the engine divides it by `0.5 + 0.01 x speed`, worked out afresh for every instruction. **No instruction writes that speed word**, and for a script running on its own it is the 50 the loader seeds, where the divisor is exactly 1 and a wait is its operand unchanged.
 
-**This page previously said the scaling "can never do anything", and that was too strong.** The claim rested on a sweep of the script subsystem which found exactly two writers - the loader's hardcoded 50, and the scheduler copying it into a linked script - but the sweep stopped a little short of the end of the subsystem, and there is a third just past where it stopped. It is a plain setter whose only caller is the object constructor, which pushes a **placed item's own operating speed** into the script it has just bound. So a script belonging to something standing in a park can be scaled, and only a script with no thing behind it is guaranteed the neutral 50. Which key of the item's description supplies that speed is not yet established, so how far from 50 it goes in practice is unknown.
+**This page previously said the scaling "can never do anything", and that was too strong.** The claim rested on a sweep of the script subsystem which found exactly two writers - the loader's hardcoded 50, and the scheduler copying it into a linked script - but the sweep stopped a little short of the end of the subsystem, and there is a third just past where it stopped: a plain setter that pushes a **placed item's own operating speed** into its script. Three places call it. The object constructor pushes the item's `Upgrades[0].InitSpeed` (see [the `.sam` keys](/formats/sam/)) into the script it has just bound, and only when that is above nought; the ride window's speed control pushes the speed the player sets; and the repair that completes an upgrade pushes the new level's `InitSpeed`, again only when above nought. So a script belonging to something standing in a park can be scaled, and only a script with no thing behind it is guaranteed the neutral 50. Every theme's `Rides.sam` gives `InitSpeed` 60 at level nought and no ride sets its own, while `Features.sam`, `Shops.sam`, `SideShow.sam` and `Upgrades.sam` give nought, so a newly built ride's script runs at 60, where the divisor is 1.1, and every other placed thing's keeps the 50.
 
 ### Operands
 
 `<time>` - How long to wait. Usually a literal; 13 of the 458 uses in the shipped scripts name a variable.
+
 ## WAITABS
 
 `WAITABS <time>` - Wait until the clock reaches a given reading.
@@ -552,6 +573,7 @@ It waits on a single deadline - set by `TRIGANIM`, `TRIGANIM_CH`, `TRIGANIMSPEED
 `<dest>` - The variable added to, and where the result is stored. It must be a variable; the engine ignores the instruction otherwise.
 
 `<value>` - The value to add, either a literal or a variable.
+
 ## MULT
 
 `MULT <dest> <value> <value>` - Multiply the second and third operands.
@@ -563,6 +585,7 @@ No script the game ships uses this instruction, so its behaviour here is read fr
 `<dest>` - Where the product goes: the result register first, then the variable.
 
 `<value>` - A literal or a variable.
+
 ## DIV
 
 `DIV <dest> <value> <value>` - Divide the second operand by the third.
@@ -574,6 +597,7 @@ No script the game ships uses this instruction, so its behaviour here is read fr
 `<dest>` - Where the quotient goes: the result register first, then the variable.
 
 `<value>` - A literal or a variable.
+
 ## MOD
 
 `MOD <dest> <value> <value>` - The remainder of dividing the second operand by the third.
@@ -585,6 +609,7 @@ No script the game ships uses this instruction, so its behaviour here is read fr
 `<dest>` - Where the remainder goes: the result register first, then the variable. Four of the five shipped uses, the tour rides' `MOD 0 VAR_CAPACITY 9` (8 in space's), write a literal and branch on the register.
 
 `<value>` - A literal or a variable.
+
 ## TURBO
 
 `TURBO <0 or 1>` - Run this script on every tick instead of every eighth.
@@ -594,6 +619,7 @@ Scripts normally get a turn once every eight ticks, staggered by script so the w
 ### Operands
 
 `<value>` - 1 to run every tick, 0 to return to the usual schedule. The engine stores the low byte of the operand word as written, without resolving a variable.
+
 ## END
 
 `END` - Stop the script.
@@ -603,6 +629,7 @@ The program counter is parked, and the execution loop tears the script down when
 ### Operands
 
 None
+
 ## TOUR
 
 `TOUR <command> <params>` - Call a tour ride command (with parameter if applicable)
@@ -924,23 +951,33 @@ The counterpart to `GETVARINCHILD`, sharing its code and all of its behaviour, a
 
 ## BOUNCESETNODE
 
-`BOUNCESETNODE <node>` - Unknown
+`BOUNCESETNODE <node>` - Set the base that slot node numbers are counted from. A visitor placed by `BOUNCE` is given the node `<node> + slot index`.
+
+The two setters are named the opposite way round to what they do: this one sets the node base, and `BOUNCESETBASE` writes an unrelated field. A script that never runs it counts from nought: jungle's `Bouncy.RSE` never does, so its riders take nodes 0 to 9.
+
+Its handler performs no variable-tag test, so the operand is stored **raw** - a variable operand would be stored as its tagged word rather than as its value. The one shipped use, fantasy's `Jelly.RSE` with `BOUNCESETNODE 3`, passes a literal, so the two readings cannot differ in practice.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 1 uses of this instruction write it as a literal.
+`<node>` - The node number given to the first slot.
 
 ## BOUNCESETBASE
 
-`BOUNCESETBASE <base>` - Unknown
+`BOUNCESETBASE <base>` - Set a 16-bit field that nothing else in the bounce family reads. Only the routine that places whoever is bouncing reads it, alongside the slot table and the thing's model, so it affects presentation rather than bookkeeping.
+
+See `BOUNCESETNODE` for the naming trap: despite its name, this does *not* set the node base.
 
 ### Operands
 
-Takes 1 operand. Across the 308 shipped scripts the 4 uses of this instruction write it as a literal.
+`<base>` - The value to store, resolved like any other value. The 4 shipped uses, one per theme's bouncing ride, write literals: 8 in jungle's `Bouncy.RSE`, 12 in fantasy's `Jelly.RSE`, 6 in hallow's `Brainb.RSE` and 16 in space's `Bouncy.RSE`.
 
 ## BOUNCE
 
 `BOUNCE <visitor ID> <seconds>` - Start a visitor bouncing for this many seconds, answering 1 in the result register, or 0 when no slot is free.
+
+The visitor goes into the first free slot of the ride's bounce table. A slot is free when its visitor handle is zero, and the scan starts from the first slot every time. The slot's node becomes the `BOUNCESETNODE` base plus the slot's index.
+
+How many slots exist is declared in the script's file header - 10 or 12 in the four shipped bouncing rides - and is not `VAR_CAPACITY`. The scripts gate themselves on that variable before calling this: each runs `BOUNCING VAR_TEMP`, `CMP VAR_CAPACITY, VAR_TEMP` and a `BRANCH_PV` first.
 
 ### Operands
 
@@ -951,6 +988,8 @@ Takes 1 operand. Across the 308 shipped scripts the 4 uses of this instruction w
 ## UNBOUNCE
 
 `UNBOUNCE <dest>` - Let go of the first bouncing visitor whose time is up, and answer who it was, or nought when nobody is due.
+
+**It writes its operand rather than reading it.** It walks from the first slot and takes the first occupied one whose time has passed, clearing that slot and taking one off the bouncing tally.
 
 A visitor is let go only on the first fifth of a second of each second counted from when they started bouncing.
 
@@ -970,7 +1009,9 @@ Like [`UNBOUNCE`](#unbounce) it lets go only on the first fifth of a second of e
 
 ## BOUNCING
 
-`BOUNCING <dest>` - How many visitors are bouncing at the moment.
+`BOUNCING <dest>` - How many visitors are bouncing at the moment, read from a 16-bit tally and sign-extended.
+
+See [`BOUNCE`](#bounce) for the admission gate it serves.
 
 ### Operands
 
@@ -1068,7 +1109,7 @@ Takes 4 operands, those not named above being unknown. No script the game ships 
 
 `<band>` - **Not a visitor id**, which is what this entry used to call it. It selects one of four scream effects from the `kids` category: 0 screams not at all, 1 is effect `0x47`, 2-3 `0x48`, 4-7 `0x49`, and 8 or more `0x4a`. Always a variable in shipped scripts, and in practice it is **how many riders are aboard** - see below.
 
-`<level>` - Loudness, but not directly. The engine plays at `(level + speed) / 2`, clamped to 0..100, where `speed` is the script's own speed word - 50 unless a placed item overrides it. So `STARTSCREAM <band>, 20` is volume 35, and **a scream gets louder as the script runs faster**.
+`<level>` - Loudness, but not directly. The engine plays at `(level + speed) / 2`, clamped to 0..100, where `speed` is the script's own speed word - 50 unless a placed item overrides it, and 60 for a newly built ride (see [`WAIT`](#wait)). So `STARTSCREAM <band>, 20` is volume 35 at speed 50 and 40 at 60, and **a scream gets louder as the script runs faster**.
 
 The instruction **refuses if this script is already holding a scream**, logging its own `RSSE: Started screaming without s...` (the string is truncated in the binary). The sound is placed at the **ride's** position, never a rider's. 40 uses across 40 of the 308 shipped scripts.
 
@@ -1106,9 +1147,9 @@ It fades rather than cutting, and clears the handle whether or not anything was 
 
 `<level>` - **Its sign chooses between two different tables**, which is the part that was not known. Negative, and the band alone decides: 1 is effect `0x69`, 2-3 `0x6a`, 4-7 `0x6c`, 8 or more `0x6d`. **`0x6b` is skipped**, and that gap is the engine's own - the shipped `kids` category declares 105, 106, 108 and 109 with 107 absent, agreeing with it from the other direction. Zero or above, and the band is crossed with `(level + speed) / 50`, held at 3, giving a 4x4 grid of ids `0x4b` to `0x5a`.
 
-**Both branches are reached by shipped content**, so neither may be treated as dead: of the 46 uses across 44 scripts, 44 pass 65535 - which the operand fetch sign-extends to -1 - while `Monkey.rse` passes 90 and `Totem.RSE` passes 100, landing on grid steps 2 and 3.
+**Both branches are reached by shipped content**, so neither may be treated as dead: of the 46 uses across 44 scripts, 44 pass 65535 - which the operand fetch sign-extends to -1 - while `Monkey.rse` passes 90 and `Totem.RSE` passes 100, landing on grid steps 2 and 3 at speed 50, and both on step 3 at a newly built ride's 60.
 
-**The grid's first column cannot be reached at all**, and that is arithmetic rather than an oversight. The step is `(level + speed) / 50` with speed 50, so a step of 0 needs a level below 0 - and a level below 0 is exactly what takes the other branch. `0x4b`, `0x4f`, `0x53` and `0x57` are unreachable for any script that could be written.
+**The grid's first column cannot be reached at all**, and that is arithmetic rather than an oversight. The step is `(level + speed) / 50`, so at speed 50 or more a step of 0 needs a level below 0 - and a level below 0 is exactly what takes the other branch. `0x4b`, `0x4f`, `0x53` and `0x57` are unreachable for any script that could be written, so long as its speed is 50 or more. The ride window's speed control also sets the speed (see [`WAIT`](#wait)), and how low it goes is not established here, so whether a player can bring that column within reach is an open question.
 
 ## SCREAMLEVEL
 

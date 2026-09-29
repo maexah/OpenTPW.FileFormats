@@ -9,9 +9,9 @@ title: Texture (*.wct)
 | Size    | Description                              |
 | ------- | ---------------------------------------- |
 | 1 byte  | Compression type: 0x12: zlib, 0x13: lzss |
-| 1 byte  | version                                  |
+| 1 byte  | Has an alpha channel - 1 when the alpha chunk is non-empty |
 | 1 byte  | bit count                                |
-| 1 byte  | unknown                                  |
+| 1 byte  | version                                  |
 | 2 bytes | width                                    |
 | 2 bytes | height                                   |
 | 2 bytes | Y channel quantization scale             |

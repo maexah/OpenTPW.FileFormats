@@ -123,6 +123,7 @@ Seven fields of the struct are established:
 | `0x48` | 18    | The result register, which the conditional branches test                         |
 | `0x50` | 20    | The body length in words, which the counter is bounds-checked against            |
 | `0x54` | 21    | The stack size in dwords — block 1's length over four                             |
+| `0xe0` | 56    | A coaster script's ride handle, which its `COAST 8` stores; nought before that   |
 
 **How those were pinned rather than guessed.** Dword 20 equals the length of the body block that
 follows it for all fourteen scripts, which fixes the struct's alignment and with it every offset in the
@@ -211,5 +212,53 @@ Room nothing, the three Small Toilets role 5, Fountain role 5 (looping) and the 
 > decoded thing handle, and within one item id the choice is unobservable because those records are
 > identical.
 
-Everything here is measured from `Easymode.TPWI`, the one file of this shape that ships. No `.TPWS`
-written by the game has ever been read, so treat this as what that file proves and no more.
+Everything in this section is measured from `Easymode.TPWI`, the one file of this shape that ships, so
+treat it as what that file proves and no more.
+
+## The track-rides module (`KART`)
+
+Every ride whose item has a `Bumper.BumperType` - the karts, the water rides and the bumper arenas -
+and the track the player has laid for it. It begins right after the `SYSR` tag and ends at the `KART`
+tag, and it is a tree of chunks, each with a 12-byte header:
+
+| Size    | Description                                                            |
+| ------- | ---------------------------------------------------------------------- |
+| 4 bytes | Chunk type                                                             |
+| 4 bytes | The chunk's own size, the header included and its children not        |
+| 4 bytes | The whole chunk's size, its children included                          |
+
+Its children follow the chunk's own data. The module is one type-1 chunk of own size 12 whose whole size
+is the module's length, and every other chunk is its child:
+
+| Type | Size | Description                                                                         |
+| ---- | ---- | ----------------------------------------------------------------------------------- |
+| 2    | 32   | A stamp: the time and date of the build that wrote it                               |
+| 3    | 52   | One ride: after the header its handle, x, y, orientation flags and item id, then five more dwords |
+| 4    | 28   | One track section: after the header the ride's handle, the section type, x and y   |
+| 5    | 208  | One car                                                                             |
+| 9    | 24   | A record belonging to a car                                                         |
+| 6    | 16   | Closes a ride                                                                       |
+
+**A handle is the ride's slot in its low byte and the item's `BumperType` above it**, the same number the
+object record's `mTrackRideHandle` holds: `0xfffffc00` for a Dino Karts (`BumperType` -4) in slot 0.
+**Positions** are map cells times `0xc00`. **A section's type** is its low 16 bits - 5 to 8 a bend,
+9 and 10 a straight, 11 a crossing, 12 a straight with an add-on, by the collision the game builds for
+each - and bit 16 is set on the first two straights from the station. The sections are stored in
+circuit order from the station, mostly two cells (`0x1800`) apart.
+
+The shipped park's module is 44 bytes, the root and the stamp only (inflated 1,595,038 to the tag at
+1,595,082). In Alexah's played jungle park it is 1,964 bytes: one Dino Karts, its 33 sections
+(`9 9 9 12 12 9 5 10 10 8 11 9 7 10 6 9 5 10 10 8 9 12 9 9 7 10 6 8 5 9 7 10 6`), four cars and a close.
+The played fantasy park holds one bumper arena with no sections. Walked as a tree, the module lands
+exactly on its tag in all nine park files read (the shipped park and eight played ones).
+
+## The coasters module (`SAOC`)
+
+It begins right after the `EMAK` tag and ends at the `SAOC` tag, and opens with four dwords: the number
+of coasters, then three counts of the game's coaster handles. A park with no coaster reads `0 0 0 1`,
+which the shipped park does (inflated 1,606,446); Alexah's played jungle park, with one Temple Of Gloom,
+reads `1 1 0 2`. Each coaster then opens with a 32-byte header whose first dword is its flags (`0x101` for
+that coaster), with its model at `+0x08`, its model instance at `+0x0a` - the number its object record's
+`MeshInstanceID` holds, 330 - and its handle at `+0x0c`, 1, the number its script's `+0xe0` holds in the
+ride scripts module. What follows the header, the track and the trains, is not described here. The
+module holds no rating of the ride: the game works the ride's excitement out again after a load.

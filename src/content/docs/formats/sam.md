@@ -571,3 +571,29 @@ no writer the decompiler can see, so it is filled in from configuration at runti
 `DUCKINGLEVEL` the only candidate, and would mean the mix drops to 38% while the advisor speaks.
 But that reading contradicts the file's own header comment, under which `38` would instead be the
 detail level at which ducking switches on. Not yet resolved either way.
+
+## `data\_Resolution.sam`
+
+EA's resolution override, 424 bytes, CRLF line endings. It ships **inactive**: the game reads only
+`Resolution.sam`, and the file's own comment says to rename it to activate it (along with "Modifying this file
+is NOT recommended unless directed by an Electronic Arts Customer Service Representative"). It sets one key,
+tab-separated:
+
+```
+Res.RESOLUTION	5
+```
+
+| Value | Resolution |
+|---|---|
+| 0 | the options screen's setting |
+| 1 | 512 x 384 |
+| 2 | 640 x 480 |
+| 3 | 800 x 600 |
+| 4 | 1024 x 768 |
+| 5 | 1280 x 1024 (the shipped value) |
+| 6 | 1600 x 1200 |
+| 7 | 2048 x 1536 |
+
+The table is the file's own comment, which spells the key `RESOULTION`. Checked in the running original (under
+Proton): with the file shipped as it is, the game started at its default 640 x 480, not at 5; renamed to
+`Resolution.sam` with value 4, it ran at 1024 x 768. The other values have not been tried.

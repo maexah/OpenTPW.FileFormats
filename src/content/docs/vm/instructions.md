@@ -188,7 +188,7 @@ None
 
 `<animation>` - Which of the model's animations to start. **It names a role, and not one of the animation files an item happens to ship.** A model carries exactly twelve animation slots, and the id picks one of them: ids 0 to 11 are the letters `C`, `D`, `I`, `L`, `S`, `M`, `E`, `U`, `W`, `B`, `R` and `O`, taken from a twelve-entry table the model loader walks in step with the slots. Each letter names files sitting beside the model - `<name><letter>.md2`, or `<name><letter><n>.md2` for a role holding more than one. **12 is the sentinel for "no animation"**, and is what the engine writes into a slot it clears, so the usable range is 0 to 11.
 
-`<parameter>` - Which entry within that role to play. The engine tests it against the number of entries the slot holds and does nothing whatever when it is not less, so it indexes rather than flags.
+`<parameter>` - Which entry within that role to play, an index into the role's entries. The engine does not bound it: started on a channel, an entry past the count plays whatever lies past that role's clips, with the role standing, and answers 1000; queued, it answers the time still to run plus 1000. No shipped literal names one.
 
 `<dest>` - Where the length is written, in milliseconds: the result register first, then the variable. 64 of the 74 shipped uses write a literal here, so the length is kept only in the register, and no shipped script reads it there: every path from each overwrites the register before it reaches a branch.
 
@@ -212,9 +212,9 @@ The length is whatever the model reports, less 300, floored at 300 by a **signed
 
 `<parameter>` - Which entry within that role, as `TRIGANIM`'s second operand is.
 
-It waits on the same deadline as `WAIT`, not on the separate one `WAIT4ANIM` uses, and it gives up the rest of the turn on the visit that sets that deadline whether or not the deadline has already passed.
+It waits on the same deadline as `WAIT`, not on the separate one `WAIT4ANIM` uses, and it gives up the rest of the turn on the visit that sets that deadline whether or not the deadline has already passed. **That first visit also clears the deadline `WAIT4ANIM` waits on and forgets the key `LOOPANIM` remembers**, with a model or without; a later visit touches neither. So a `LOOPANIM` after it starts its loop again even when that loop was already running.
 
-Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer. The length-less-300 is stored as the low half of a qword whose high half is nought and read back with `FILD qword`, so a negative arrives as a number just under 2^32; and the 300 floor is then compared **unsigned**, which a negative passes. So where `TRIGANIM` floors at 300, `WAITANIM` does not: a model that reports nothing gives a deadline 300ms in the *past*, and the instruction costs one turn rather than any particular length of time.
+Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer. The length-less-300 is stored as the low half of a qword whose high half is nought and read back with `FILD qword`, so a negative arrives as a number just under 2^32; and the 300 floor is then compared **unsigned**, which a negative passes. So where `TRIGANIM` floors at 300, `WAITANIM` does not: a model that reports nothing gives a deadline 300ms in the *past*, and the instruction costs one turn rather than any particular length of time - at the divisor 1, below; with any other, the quotient of that near-2^32 number lands far from it, ahead or behind by hours to weeks.
 
 **With a model it does wait, and that is the largest difference a model makes anywhere in the family.** The unsigned floor only lets a negative slip through; a real clip length is positive and survives it, so the deadline lands the clip's own length less 300 in the future and the script sits on the instruction until it passes. `WAITANIM` is the most used animation instruction the game ships - 547 uses across 250 scripts - so where every one of those cost a single turn without a model, with one they cost anything up to the 19999 milliseconds a ferry's clip runs for - a millisecond under twenty seconds, for the reason `TRIGANIM` gives above.
 
@@ -230,7 +230,7 @@ Its arithmetic is `TRIGANIM`'s with two differences, and both change the answer.
 
 `<parameter>` - Which entry within that role.
 
-The two operands together make the key `(<parameter> << 16) + <type>`, which the script remembers. Asking again for the animation already looping does nothing at all - it is not restarted. Naming any other animation clears the deadline `TRIGANIM` and `TRIGWAITANIM` arm, because a loop never finishes and there would be nothing left for `WAIT4ANIM` to wait for.
+The two operands together make the key `(<parameter> << 16) + <type>`, which the script remembers until a `TRIGANIM`, `TRIGANIMSPEED`, `TRIGWAITANIM` or the first visit of a `WAITANIM` forgets it; the `_CH` forms leave it alone, and a new script starts with it forgotten. Asked again with none of those between, it does nothing at all - it is not restarted. Naming any other animation clears the deadline `TRIGANIM` and `TRIGWAITANIM` arm, because a loop never finishes and there would be nothing left for `WAIT4ANIM` to wait for.
 
 ## TRIGWAITANIM
 
@@ -246,7 +246,7 @@ The two operands together make the key `(<parameter> << 16) + <type>`, which the
 
 It arms the same deadline `TRIGANIM` arms, and then rewinds onto itself - so unlike `TRIGANIM` it does the waiting itself rather than leaving it to a later `WAIT4ANIM`.
 
-**It does not keep a cursor of its own, which this page used to say.** What it keeps is a mark: the animation id **plus one**, so that nought can mean "nothing armed". On each re-entry it asks the model which animation channel 0 is playing, and goes on only when that answer plus one equals the mark. What it calls to ask is a plain accessor into the model's own channel array - not a cursor stepping through anything.
+**It does not keep a cursor of its own, which this page used to say.** What it keeps is a mark: the animation id **plus one**, so that nought can mean "nothing armed". On each re-entry it asks the model which animation channel 0 is playing, and goes on only when that answer plus one equals the mark. **It reads the role alone**, not whether the clip has ended: a channel holding the last pose of the marked clip still answers it, where [`GETANIM_CH`](#getanim_ch) would answer `-1`. What it calls to ask is a plain accessor into the model's own channel array - not a cursor stepping through anything.
 
 **With no model it never finishes at all.** The query is skipped, and the comparison is made instead against the instruction's own third operand, which nothing can ever change - so the script parks for good unless that operand happens to equal the first. Across the 133 shipped uses it never does: 132 differ outright, and the last is a variable.
 
@@ -541,7 +541,7 @@ No script the game ships uses this, so nothing about how it was *meant* to be us
 
 None
 
-It waits on a single deadline - set by `TRIGANIM` or `TRIGWAITANIM`, cleared by `LOOPANIM` - and not on "everything currently playing". **With nothing triggered it does not wait at all:** its first test is whether that deadline is set, and it goes straight on when it is not.
+It waits on a single deadline - set by `TRIGANIM`, `TRIGANIM_CH`, `TRIGANIMSPEED`, `TRIGWAITANIM` and `TRIGWAITANIM_CH`, and cleared by a `LOOPANIM` that starts a loop, `LOOPANIM_CH`, the first visit of a `WAITANIM` or `WAITANIM_CH`, and its own passing - and not on "everything currently playing". **With nothing triggered it does not wait at all:** its first test is whether that deadline is set, and it goes straight on when it is not.
 
 ## ADD
 

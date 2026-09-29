@@ -257,8 +257,22 @@ exactly on its tag in all nine park files read (the shipped park and eight playe
 It begins right after the `EMAK` tag and ends at the `SAOC` tag, and opens with four dwords: the number
 of coasters, then three counts of the game's coaster handles. A park with no coaster reads `0 0 0 1`,
 which the shipped park does (inflated 1,606,446); Alexah's played jungle park, with one Temple Of Gloom,
-reads `1 1 0 2`. Each coaster then opens with a 32-byte header whose first dword is its flags (`0x101` for
-that coaster), with its model at `+0x08`, its model instance at `+0x0a` - the number its object record's
-`MeshInstanceID` holds, 330 - and its handle at `+0x0c`, 1, the number its script's `+0xe0` holds in the
-ride scripts module. What follows the header, the track and the trains, is not described here. The
-module holds no rating of the ride: the game works the ride's excitement out again after a load.
+reads `1 1 0 2`. Each coaster then opens with a 32-byte header, read from the game's own saver and loader and
+measured in that park:
+
+| Offset | Size    | Description                                                                              | Temple Of Gloom |
+| ------ | ------- | ---------------------------------------------------------------------------------------- | --------------- |
+| `0x00` | 4 bytes | Flags: bit 0 the circuit is closed, bit 1 a gap is open in it; bits 2 to 8 are the coaster's own flags | `0x101` |
+| `0x04` | 4 bytes | Not described                                                                            |                 |
+| `0x08` | 2 bytes | Its model, the coaster's type                                                          | 19              |
+| `0x0a` | 2 bytes | Its model instance - the number its object record's `MeshInstanceID` holds, and how the game finds the coaster of an object | 330 |
+| `0x0c` | 2 bytes | Its handle - the number its script's `+0xe0` holds in the ride scripts module             | 1               |
+| `0x0e` | 8 bytes | Not described                                                                            |                 |
+| `0x16` | 2 bytes | How many 34-byte (`0x22`) piece records follow the header                                 | 38              |
+| `0x18` | 4 bytes | Not described                                                                            |                 |
+| `0x1c` | 4 bytes | How many pairs of its sections intersect; the game offers no coaster with any            | 0               |
+
+The pieces follow, and then the track and the trains, which are not described here: 510 bytes of them after
+that coaster's pieces, so only the first coaster's header sits at a known place. A guest is offered a coaster
+only with bit 0 set, bit 1 clear and no clash. The module holds no rating of the ride: the game works the ride's
+excitement out again after a load.

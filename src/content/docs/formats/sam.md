@@ -99,6 +99,7 @@ suppress the category's.
 | `UsageInfo.EntryCellStandPosX`, `…PosY` | Where in its entry cell a guest stands to use it |
 | `UsageInfo.ExitCellAppearPosX`, `…PosY` | Where in its exit cell a guest reappears afterwards |
 | `UsageInfo.InitCostOfGoods` | What one use costs the park to provide - and a sideshow's prize |
+| `UsageInfo.InitPricePerUse` | What a go costs a guest on one just built; the player sets it from then on. `Shops.sam` declares `10` ("sale price") in all four themes and `SideShow.sam` `10` (`hallow`'s `20`), and every one of the 49 shops and sideshows sets its own: the jungle's Drinks Shop `30`, Jungle Spray `20`, Gift Shop `75`. No ride or feature, nor `Rides.sam` or `Features.sam`, declares it |
 | `UsageInfo.RipOffOK` | How far over what a thing is worth a guest will still pay, in per cent - see below |
 | `UsageInfo.SpecialIngredient` | A shop's goods: "0 = none, 1 = Fat, 2 = Salt, 3 = Ice, 4 = Sugar" |
 | `UsageInfo.AppearanceEffect` | What a shop changes about a guest's looks: "1 = Balloon, 2 = Costume" |
@@ -132,11 +133,17 @@ the Ice Cream `4`, while the Balloon sets appearance `1` and the Costume Shop `2
 beside a comment reading `FAT=1`, and the value is what is read. Nothing outside the `shops` folders declares
 either.
 
-**`MinCapacity` and `MaxCapacity` are enforced, not advisory.** When a ride is opened the engine takes the
-capacity it wants, clamps it between these two, writes it into the ride script's own capacity variable and
-stores the same number as the save's `mOperatingCapacity` - so the figure a saved park carries is already
-the clamped answer, and applying the bounds to it again would apply them twice. `MinDuration` and
-`MaxDuration` bound the duration the same way.
+**`MinCapacity` and `MaxCapacity` are enforced where they are set.** When a thing is built or opened the
+engine takes the capacity it wants, clamps it between these two when they sum above nought, writes it into
+the ride script's own capacity variable and stores the same number as the save's `mOperatingCapacity` - so
+the figure a saved park carries is already the answer, and applying the bounds to it again would apply them
+twice. Every `Shops.sam` declares both `0` ("Always zero for shops"), so a shop keeps its own
+`Upgrades[0].InitCapacity`, `1`, `5` or `10`. `MinDuration` and `MaxDuration` bound the duration always, so a
+duration with neither declared is held to nought. Eight items start away from their own values: four rides
+that inherit `Rides.sam`'s `InitDuration` `3` under a `MinDuration` of their own (`fantasy`'s Jelly Bounce and
+Bumper Bugs and `hallow`'s Brain Buster `10`, `space`'s Zero G `15`), and four sideshows whose capacity passes
+`MaxCapacity` (the Arcades of `fantasy`, `hallow` and `space`, `5` against `SideShow.sam`'s `3`, and `space`'s
+Giant Puzzle, the category's `3` against its own `1`).
 
 **The stand and appear positions are sub-cell offsets**, not cells. A catalogue object records which cell
 it is entered from and which it is left by; these four values say whereabouts *within* those cells a guest
@@ -145,4 +152,11 @@ fall outside what it expects.
 
 **An item can be overridden for easy mode too.** Beside `Bouncy.sam` sits `Easy_Bouncy.sam`, changing
 `Upgrades[i].WearRate` and `CostOfResearch` - the same `Easy_` prefix convention the theme-level
-`Easy_Standard.sam` uses.
+`Easy_Standard.sam` uses. Not every item carries one: 20 of the jungle's 70 item folders ship none (the Gift
+Shop, the Steak Restaurant, the Arcade, five rides, nine features and the three upgrades). Twelve rides' set
+only `Upgrades[i].WearRate`, `CostOfResearch` and minecart's `Research.Group`; the other 38, `Easy_mystery.sam`
+among them, are a comment line.
+
+**A file can declare a key twice.** The jungle's `Arc2x3.sam` gives `Upgrades[0].InitCapacity` as `6` and then
+`5`, and the later is the one the game keeps; four of its shops repeat `InitCapacity`, the Costume Shop
+`SpecialIngredient` and Jurassic Tours both duration bounds, each time with the same value.

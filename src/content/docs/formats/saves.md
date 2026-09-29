@@ -78,6 +78,21 @@ Each tag *follows* the module it belongs to. The World module does not begin at 
 stream either: an untagged action recording is written first, as a flag and then a length with its
 bytes, so where World starts is derived from that length rather than assumed.
 
+## The clock module (`KOLC`)
+
+Two dwords, between the message centre's `SSEM` tag and the clock's own `KOLC`, so the second tag sits exactly
+twelve bytes after the first:
+
+| Size    | Description                                                                                   |
+| ------- | --------------------------------------------------------------------------------------------- |
+| 4 bytes | The game clock's reading at the save, in milliseconds - the clock the ride scripts and the animation channels read |
+| 4 bytes | A second stopwatch's reading, which an animation channel carrying flag `0x40` reads instead    |
+
+The game makes both clocks read these values again when it loads a park, so every other reading of the clock in the
+file - a script's deadlines, a channel's time stamps - keeps its distance from the save's own moment. In
+`Easymode.TPWI` they are `0x06D13894` (114,374,804) and `0x06D8DF7E` (114,876,286); in a played jungle park,
+`0x00498D70` (4,820,336, about 80 minutes) and `0x0049A676` (4,826,742).
+
 ## The ride script module (`ESSR`)
 
 Every script that was running when the park was saved is stored here, program counter and all — which
@@ -88,10 +103,16 @@ closing the module before it, and unlike the tags its own magic is stored **forw
 | -------- | --------------------------------------------------------------- |
 | 4 bytes  | Magic — `RSSE` (`52 53 53 45`)                                  |
 | 4 bytes  | Header length                                                   |
-| n bytes  | Header — the subsystem's own globals, not per-script            |
+| n bytes  | Header — the subsystem's own globals, not per-script: see below |
 | 20 bytes | Five dwords the loader reads and discards                       |
 | 4 bytes  | Script count — **14** in the shipped park                       |
 | 4 bytes  | Bytes per script struct — **244** in the shipped park           |
+
+The header is the script subsystem's five global dwords, which the game reads straight back over its own: a flag that
+the subsystem is set up, the tick counter behind every script's one-in-eight turn, the handle the next new script will
+be given, the script count, and a list pointer from the saving session that means nothing on loading. The shipped
+park's read 1, 6,055, 16, 14 and a pointer. So a loaded park goes on counting ticks, and numbering new scripts, where
+the saved one left off.
 
 Then one record per script. Each is a struct followed by a run of length-prefixed blocks, and a record
 **must** end on the literal guard `OBJ ` — the game refuses the load without it, logging
@@ -112,7 +133,7 @@ Then one record per script. Each is a struct followed by a run of length-prefixe
 | 4 bytes  | Bytes per object                                                        |
 | n        | The script's own object list                                            |
 
-Thirteen fields of the struct are established:
+Fourteen fields of the struct are established:
 
 | Offset | Dword | Description                                                                     |
 | ------ | ----- | ------------------------------------------------------------------------------- |
@@ -124,9 +145,10 @@ Thirteen fields of the struct are established:
 | `0x50` | 20    | The body length in words, which the counter is bounds-checked against            |
 | `0x54` | 21    | The stack size in dwords — block 1's length over four                             |
 | `0xa0` | 40    | The deadline a `WAIT`, `WAITABS`, `WAITANIM` or `WAITANIM_CH` is sitting on, a clock reading; nought for none |
-| `0xa4` | 41    | The deadline the last trigger armed, a clock reading, which `WAIT4ANIM` waits on. It is not cleared when it passes, only by a passed `WAIT4ANIM`, a `WAITANIM` or a `LOOPANIM` that starts a loop, so a save can hold one long past; nought for none |
+| `0xa4` | 41    | The deadline the last trigger armed, a clock reading, which `WAIT4ANIM` waits on. It is not cleared when it passes, only by a passed `WAIT4ANIM`, a `WAITANIM`'s first visit (or a `WAITANIM_CH`'s), a `LOOPANIM` that starts a loop or a `LOOPANIM_CH`, so a save can hold one long past; nought for none |
 | `0xa8` | 42    | The looping key: `(entry << 16) + role` of the last `LOOPANIM`, or `0xffff` from creation, a `TRIGANIM`, `TRIGANIMSPEED`, `TRIGWAITANIM` or `WAITANIM`; the `_CH` forms leave it alone |
 | `0xbc` | 47    | `TRIGWAITANIM`'s mark (shared with `TRIGWAITANIM_CH`): the role it is waiting for, plus one; nought when not waiting |
+| `0xc4` | 49    | The deadline the last `SETTIMER` set, a clock reading, not scaled by the speed word; nought until one runs |
 | `0xe0` | 56    | A coaster script's ride handle, which its `COAST 8` stores; nought before that   |
 | `0xe4` | 57 (low word) | A 16-bit play rate in thousandths: 1000, or a `TRIGANIMSPEED`'s rate. The word above it, `0xe6`, is a separate field; it reads `0xffff` in every script of the shipped park |
 
@@ -150,11 +172,12 @@ the gate and 0 for the other twelve.
 
 **The animation fields.** The game reads the whole struct back, so these come back as they were saved. The
 shipped park holds `0xffff` at `0xa8` for ten of the fourteen, 5 for the fountain, the drinks kiosk and the traffic
-lights, and 2 for the ride; `0xbc` is nought for all fourteen and `0xe4` 1000. The deadlines are readings of the game
+lights, and 2 for the ride; `0xbc` and `0xc4` are nought for all fourteen and `0xe4` 1000. The deadlines are readings of the game
 clock, which the save keeps in the clock module (`KOLC`) as the first of its two dwords, `0x06D13894` here, and which
 the game puts back on loading, so a deadline less that reading is the time still to wait. `0xa4` is set only for the
 sideshow, 180,933 ms in the past; `0xa0` for the two security cameras, 2,341 and 2,329 ms ahead, and for the ride, 63 ms
-ahead.
+ahead. A played jungle park holds `0xc4` set in two scripts, 25,198 and 2,745 ms past, and in its autosave one of them
+284 ms ahead.
 
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
@@ -189,13 +212,25 @@ more slots than things stays small. A present record is:
 
 Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
 
-**A channel is 11 dwords**, of which three are established:
+**A channel is 11 dwords**, in the order the game copies them back onto the running channel:
 
 | Dword | Description                                                                        |
 | ----- | ----------------------------------------------------------------------------------- |
 | 0     | Flags — `0x1` loop, `0x4` hold the last frame rather than count as busy             |
 | 1     | The animation role, or **12** for "running nothing"                                 |
 | 2     | Which clip of that role                                                             |
+| 3     | Start stamp — a reading of the saved clock (`KOLC`): where the clip began           |
+| 4     | Clip time — the same clock's reading at the channel's last advance, or for a held channel its start plus a whole clip |
+| 5     | A third stamp on the same clock, which the shipped park saves equal to the clip time or the clock itself |
+| 6     | Speed, a float                                                                      |
+| 7     | The role queued to play next, or 12 for none                                        |
+| 8     | Its clip                                                                            |
+| 9     | The flags it was queued with — a caller's flags, and left behind when the queue empties |
+| 10    | Its speed, a float                                                                  |
+
+Dword 4 less dword 3 is how far into its clip the channel was: 1,376 ms for the Belly Bounce's saved loop, played at
+1.1. In the shipped park no channel has a clip queued, though three running channels keep the loop flag of a queue that
+has emptied; a played park saves some with a clip queued behind the running one.
 
 > **The flag word is the engine's own field, not the one a caller passes when starting a clip**, and
 > the two disagree where it matters. A caller's flags are `0x1` loop, `0x2` start at once, `0x4` do not

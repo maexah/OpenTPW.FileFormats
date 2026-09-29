@@ -372,7 +372,7 @@ All 15 uses the game ships write a **literal** where the destination goes, which
 
 `RAND <dest> <max value>` - Generate a random number.
 
-The range is **nought to the bound inclusive**: the engine halves a draw from its generator and takes it modulo the bound *plus one*, so the highest value really is reachable. The generator is a multiply-add followed by a thirteen-bit rotate, and the result is made positive twice over - once as it leaves the generator and again after the modulo.
+The range is **nought to the bound inclusive**: the engine halves a draw from its generator and takes it modulo the bound *plus one*, so the highest value really is reachable. The generator is a multiply-add followed by a thirteen-bit rotate, and the result is made positive twice over - once as it leaves the generator and again after the modulo. The one state with no positive twin, `0x80000000`, leaves the generator as it is, and the halving is unsigned, so it draws `0x40000000`: no draw is negative. [`FINDSCRIPTRAND`](#findscriptrand) halves its draw the same way.
 
 **The bound is not resolved the way other value operands are.** Every instruction that reads a value tests the operand's tag first and looks a variable up; this one does not - it takes the low sixteen bits of the operand word as a signed number whatever the tag says. A bound written as a variable would therefore be read as that variable's *index*. No shipped script does it: all 56 uses name a literal, with bounds of 1 to 10 apart from one 300 and one 5000.
 
@@ -1113,7 +1113,7 @@ Takes 4 operands, those not named above being unknown. No script the game ships 
 
 `<level>` - Loudness, but not directly. The engine plays at `(level + speed) / 2`, clamped to 0..100, where `speed` is the script's own speed word - 50 unless a placed item overrides it, and 60 for a newly built ride (see [`WAIT`](#wait)). So `STARTSCREAM <band>, 20` is volume 35 at speed 50 and 40 at 60, and **a scream gets louder as the script runs faster**.
 
-The instruction **refuses if this script is already holding a scream**, logging its own `RSSE: Started screaming without s...` (the string is truncated in the binary). The sound is placed at the **ride's** position, never a rider's. 40 uses across 40 of the 308 shipped scripts.
+The instruction **refuses if this script is already holding a scream**, logging its own `RSSE: Started screaming without stopping first.`, and the refusal's nought then replaces the held handle: the first scream plays on held by nothing. Neither this script's `STOPSCREAM` nor its removal reaches it, and it screams until something stops every voice - the park's end, or accepting the options after an audio-quality change. No shipped script does it: on every path through all 308, a `STOPSCREAM` stands between a `STARTSCREAM` and any earlier one. The sound is placed at the **ride's** position, never a rider's. 40 uses across 40 of the 308 shipped scripts.
 
 **The band is the rider count, and the pair is a restart idiom.** Every scream-capable ride calls a subroutine on *every pass* of its ride loop; `Bouncy.RSE`'s is at instruction 193:
 
@@ -1131,13 +1131,13 @@ So the scream is torn down and restarted whenever the rider count crosses one of
 
 ## STOPSCREAM
 
-`STOPSCREAM` - Fade out the scream this script is holding, and forget it.
+`STOPSCREAM` - Stop the scream this script is holding, and forget it.
 
 ### Operands
 
 None.
 
-It fades rather than cutting, and clears the handle whether or not anything was playing. **It outnumbers `STARTSCREAM` two to one** - 80 uses in 41 scripts against 40 in 40 - because of the restart idiom above rather than because rides stop screaming twice.
+It asks the engine for a fade, but a held scream has no sound channel of its own to fade, so its sounds are cut, not faded, whether or not fading is switched on. It clears the handle whether or not anything was playing. **It outnumbers `STARTSCREAM` two to one** - 80 uses in 41 scripts against 40 in 40 - because of the restart idiom above rather than because rides stop screaming twice.
 
 ## SINGLESCREAM
 
@@ -1163,7 +1163,7 @@ It fades rather than cutting, and clears the handle whether or not anything was 
 
 It does nothing at all when no scream is held. 81 uses across 36 scripts, which makes it the **third most used member of the family** - commoner than `STARTSCREAM` itself.
 
-> **One quirk to be careful about reproducing.** The handler writes the **return value of the volume call** back over the scream handle. What that value is cannot be determined from the executable, because the chain ends in a virtual call - so an implementation that copies this faithfully will have a later `STOPSCREAM` fade something that is not the voice.
+> **One quirk to be careful about reproducing.** The handler writes the **return value of the volume call** back over the scream handle. What that value is cannot be determined from the executable, because the chain ends in a virtual call - so an implementation that copies this faithfully will have a later `STOPSCREAM` stop something that is not the voice.
 
 ## FINDSCRIPTRAND
 

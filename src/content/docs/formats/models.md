@@ -244,6 +244,12 @@ subtree.
 > length. All ten are `wr_tunnel.md2`'s nodes 0-9, the older-version model noted above. They are
 > degenerate rather than skewed, and worth excluding from any shear count.
 
+**The root's own transform** (the node header `0x78` names) is not always identity. Of the 541 readable static
+meshes under `data/levels` (`wr_tunnel.md2` is truncated), it is identity in 305, a rigid turn or offset in 236, and
+scaled in none; Lost Kingdom's Jungle Spray and Laughing Hyenas stand theirs turned 90° about y, the Jungle Spray's
+also offset (−0.0735, 0, 0.0959). The engine keeps the root's turn when it places a thing and replaces its offset with
+where the thing stands (OpenTPW's `docs/exe/ride-operation.md`, "How long a leg lasts, and where its ends are").
+
 ### Node lookup ids
 
 Some nodes can also be found by number. The ushort at 0x48 is a record count, the uint at 0x7C the
@@ -262,7 +268,8 @@ belongs to. Record `r` names node `0x46 + r`.
 model's node count, and ids run from 0 to 99.
 
 The engine's lookup (engine-confirmed) walks the table for a record whose id matches and whose
-flag word shares a bit with a mask the caller passes, and returns the record's index. The caller
+flag word shares a bit with a mask the caller passes, and returns the first such record's index (how it treats an
+unknown mask is OpenTPW's `docs/exe/audio.md`, "Node lookup is by id AND a capability flag"). The caller
 adds `0x46` to get the node. The flag words vary widely across the game (`0xB1`, `0x111` and
 `0x811` are the most common), so the table is a general way of naming nodes. The masks callers pass
 are `0x200` for a sound emitter, `0x100` for a particle emitter, `0x400` for a costume piece, `0x800`

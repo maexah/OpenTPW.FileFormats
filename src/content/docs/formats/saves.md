@@ -1131,7 +1131,7 @@ Then one record per script. Each is a struct followed by a run of length-prefixe
 | 4 + n    | **Block 2 — the variables**, one dword per slot                         |
 | 4 + n    | **Block 3 — the string blob**, byte for byte the `.RSE` file's          |
 | 4 + n    | Blocks 4 and 5                                                          |
-| 4 + n×32 | A count, and that many 32-byte records                                  |
+| 4 + n×32 | **The walk slots** — a count, and that many 32-byte slots (below)       |
 | 4 + n    | Two further blocks                                                      |
 | 4 bytes  | Guard — `OBJ `                                                          |
 | 4 bytes  | Object count                                                            |
@@ -1184,6 +1184,30 @@ sideshow, 180,933 ms in the past; `0xa0` for the two security cameras, 2,341 and
 ahead. A played jungle park holds `0xc4` set in two scripts, 25,198 and 2,745 ms past, and in its autosave one of them
 284 ms ahead.
 
+**The walk slots** are the script's walk-on places (the `.RSE` header's walk count; the
+[Instruction Set](/vm/instructions/)'s `WALKON` and `WALKOFF`), copied raw, 32 bytes each:
+
+| Offset | Size | Description |
+| ------ | ---- | ----------- |
+| `0x00` | 2 | Walk node id |
+| `0x02` | 2 | Head node id |
+| `0x04` | 2 | Walk-off node id, from |
+| `0x06` | 2 | Walk-off node id, to |
+| `0x08` | 4 | Start, a reading of the game clock (`KOLC`) |
+| `0x0c` | 4 | Due, the same clock |
+| `0x10` | 4 | The walker's person handle |
+| `0x14` | 2 | Facing, an octant 0-7 |
+| `0x16` | 2 | Action |
+| `0x18` | 2 | State: 0 free, 1 walking on, 2 on the ride, 3 walking off, 4 off |
+| `0x1a` | 2 | Flags |
+| `0x1c` | 4 | Not decoded |
+
+A slot let go keeps everything but its state and handle, so due less start is the last leg walked, the walk off's (how
+long one lasts: OpenTPW's `docs/exe/ride-operation.md`, "How long a leg lasts, and where its ends are"). The shipped
+park's sideshow saves its three slots all nought. In Alexah's Lost Kingdom autosave the Jungle Spray's read 700 and
+1,100, the Steak Shop's 600, the Inca God's 800; a slot on the ride saves its start at or just past its due,
+restamped on arrival.
+
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
 > object's own operating speed over it — that ride's `mOperatingSpeed` is 60 in the same file.
@@ -1210,12 +1234,21 @@ more slots than things stays small. A present record is:
 | `0x00`   | 1 byte   | Tag — `01` for present                                          |
 | `0x01`   | 4 bytes  | The **item** id, not a thing id                                 |
 | `0x2b`   | 2 bytes  | Node flag-word count                                            |
-| `0x2d`   | 2 bytes  | Count of a block that precedes the flag words                   |
-| `0x37`   | n×8      | That block — two dwords per entry                               |
+| `0x2d`   | 2 bytes  | The model's node-lookup record count                            |
+| `0x2f`   | 4 bytes  | The lookup records' shared flags: `0x1` some record has a position, `0x4` something is attached, `0x8` some record's file flags carry `0x2` (walkable meshes); `0x2` is set by the routine that hides a model's head nodes. The Jungle Spray's reads `0x1`, a ridden Aztec Mayhem's `0x7` |
+| `0x33`   | 4 bytes  | How many things are attached                                    |
+| `0x37`   | n×8      | Per lookup record: its runtime flags, and the handle of what is attached to it (-1 for nothing; a record without a position starts at nought) |
 | —        | n×4      | One flag word per node; bit `0x10` is hidden                    |
 | —        | n×44     | The animation channels — see below                              |
 
 Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
+
+**A lookup record's runtime flags** say whether the game keeps its node's position
+([Models](/formats/models/#which-records-have-a-position)): `0x1` it has one, `0x20` its node has no children, `0x8`
+it is posed all the same, `0x2` something is attached to it, `0x4` the ride view is on it, `0x10` its node carries
+`0x400`. The shipped park's Jungle Spray saves `0x29` on eleven records and `0x21` on its `camera`, which is posed only
+while the ride view is on it; a played park's Aztec Mayhem saves `0x29` on 34 of its 39 records and `0x2b`, with a
+handle, on the five heads carrying a rider: all 39 carry `0x8`.
 
 **A channel is 11 dwords**, in the order the game copies them back onto the running channel:
 

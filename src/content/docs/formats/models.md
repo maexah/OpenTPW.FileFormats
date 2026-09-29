@@ -72,7 +72,7 @@ gap of unknown content, not a claim that nothing is there.
 | 0x6C   | 4 bytes  | **Heightfield block**. Set only in the five terrain models. See [Heightfield](#heightfield) (engine-confirmed pointer) |
 | 0x70   | 4 bytes  | Mesh table offset. **0 marks this file as animation data**, see **Animation** below  |
 | 0x74   | 4 bytes  | Transform-only node table: `(0x42 - 0x44)` records of 88 bytes. See **Node hierarchy** |
-| 0x78   | 4 bytes  | Pointer, purpose unknown (engine-confirmed pointer). Set in every version-`0xDD` static mesh |
+| 0x78   | 4 bytes  | **Root node**: the one node with no parent (engine-confirmed pointer). The engine's pose walk starts from it (`FUN_0044ab30`). In all 847 version-`0xDD` static meshes (the archives' 838 and 9 loose) it names the single parentless node, node 0 in all but 60; zero in all 1,278 version-`0xDD` animation files |
 | 0x7C   | 4 bytes  | Node-lookup table: 0x48 records, 20 bytes each (engine-confirmed)                     |
 | 0x80   | -        | Start of the model's overall bounding box (not yet parsed; see Open questions)       |
 | 0x98   | 4 bytes  | Animation data block offset. Animation files only, see **Animation** below           |
@@ -115,8 +115,7 @@ under **Node hierarchy** below.
 
 ### Open questions
 
-- The meaning of the 0x0C and 0x10 fields, and of the five pointers between 0x58 and 0x68 and the
-  one at 0x78.
+- The meaning of the 0x0C and 0x10 fields, and of the five pointers between 0x58 and 0x68.
 - The exact shape of the bounding box at 0x80 (min/max as two vectors, one vector plus extents,
   etc.). Its presence is inferred only from animation files never containing a float triple
   that reproduces it, not from having parsed it directly.
@@ -256,7 +255,7 @@ belongs to. Record `r` names node `0x46 + r`.
 | 0x00   | 4 bytes  | Flags                                                                      |
 | 0x04   | 4 bytes  | Id                                                                         |
 | 0x08   | 4 bytes  | Unknown. Non-zero in 128 of the game's 2,452 records                       |
-| 0x0C   | 4 bytes  | Pointer (engine-confirmed). Set on exactly the 248 records whose flag word carries `0x40`, zero on the rest. What it points at is not decoded |
+| 0x0C   | 4 bytes  | Pointer (engine-confirmed). Set on exactly the 248 records whose flag word carries `0x40`, zero on the rest. Its first ushort is a face of the parent mesh, which the engine reads for the record's position (see [Which records have a position](#which-records-have-a-position)); the rest is not decoded |
 | 0x10   | 4 bytes  | Pointer (engine-confirmed). Zero in every record                           |
 
 345 of the 838 version-`0xDD` models in the archives carry a table. Every record stays inside its
@@ -277,10 +276,33 @@ costumes hide. His right hand is 21, which costume 14 (his spatula) hides. His h
 are 5 to 13. None of those nodes is hidden in the file (the hidden bit is never set in any node the
 game ships), so which pieces show is entirely the code's decision.
 
+#### Which records have a position
+
+A ride script asks for a node's position by id and flag (a walk node `0x800`, a head `0x80`, a sound
+`0x200`, a particle emitter `0x100`) and gets that node's position as last posed, in the world
+(engine-confirmed). Only a record whose flags carry `0x10` or `0x20` has a position at all. A node
+with children is posed whenever its model is. A node with none, which every walk and head node in the
+game is, is posed only when:
+
+- its record's flags meet `0x580f00`, which takes in `0x100`, `0x200`, `0x400`, `0x800`, `0x80000`,
+  `0x100000` and `0x400000` but not `0x80`;
+- its item's description sets `Info.DoHeadProcessing` (see [the item descriptions](/formats/sam/));
+- the ride view is on it (a `0x1000` record);
+- or something is attached to it.
+
+Otherwise it keeps where it was last posed, the origin if it never was: the Jungle Spray's `camera`
+record (flags `0x1031`) read the origin in the running game, with no ride view on it. Every walk and
+head record the shipped scripts name is posed (OpenTPW's `docs/exe/ride-operation.md`, "How long a
+leg lasts, and where its ends are").
+
+The pointer at 0x0C is read only for a record whose flags meet `0x40040`, and only while its parent
+mesh carries runtime flag `0x200000`, which a vertex-morph clip sets on the mesh it animates: the
+position is then taken from a face of that mesh.
+
 #### Open questions
 
-- The word at 0x08, what the 0x0C pointer leads to, and what the flag bits outside the five masks
-  select.
+- The word at 0x08, the rest of what the 0x0C pointer leads to, and what the flag bits this page does
+  not name select.
 
 ### Paths
 

@@ -953,7 +953,7 @@ The counterpart to `GETVARINCHILD`, sharing its code and all of its behaviour, a
 
 `BOUNCESETNODE <node>` - Set the base that slot node numbers are counted from. A visitor placed by `BOUNCE` is given the node `<node> + slot index`.
 
-The two setters are named the opposite way round to what they do: this one sets the node base, and `BOUNCESETBASE` writes an unrelated field. A script that never runs it counts from nought: jungle's `Bouncy.RSE` never does, so its riders take nodes 0 to 9.
+The two setters are named the opposite way round to what they do: this one sets the node base, and `BOUNCESETBASE` writes an unrelated field. A script that never runs it counts from 1, which the script loader gives every script: jungle's `Bouncy.RSE` never runs it, so its riders take nodes 1 to 10, `body` to `body09` in its model.
 
 Its handler performs no variable-tag test, so the operand is stored **raw** - a variable operand would be stored as its tagged word rather than as its value. The one shipped use, fantasy's `Jelly.RSE` with `BOUNCESETNODE 3`, passes a literal, so the two readings cannot differ in practice.
 
@@ -1019,15 +1019,17 @@ See [`BOUNCE`](#bounce) for the admission gate it serves.
 
 ## WALKON
 
-`WALKON <visitor ID> <unknown1> <unknown2> <unknown3> <unknown4> <action> <unknown5>` - Unknown
+`WALKON <visitor ID> <walk node> <head node> <off-from node> <off-to node> <action> <flags>` - Put a visitor in the ride's first free walk slot and start them walking from the walk node to the head node; once there they count as on the ride until [`WALKOFF`](#walkoff). A slot is free when its state is nought, not when its visitor is, and the scan starts from the first slot every time; with none free the visitor is not taken. No operand is a duration: the walk takes 100 ms for every whole unit between the two nodes, and 100 ms when they are less than one apart.
 
 ### Operands
 
-Takes 7 operands, those not named above being unknown. Across the 308 shipped scripts the 47 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal or variable; 4 — literal or variable; 5 — literal; 6 — literal; 7 — literal.
+`<walk node>` - a node id on the ride's model, found with the walk flag `0x800` ([Models](/formats/models/#node-lookup-ids)). `<head node>` - where the walk ends: found with `0x800`, or with the head flag `0x80` when the action is 4. `<off-from node>`, `<off-to node>` - kept for `WALKOFF`, which finds the first with `0x80` when the action is 4, else `0x800`, and the second with `0x800`. `<action>` - 4 hangs the visitor on the head node when they arrive and takes them off it at `WALKOFF`; 2 starts particle effect `0x13` at the head node on arrival and at the off-from node on the walk off; any other than 1, 2 and 4 (Lost Kingdom's 5 and 6) turns an arrived visitor every frame to the head node's facing. `<flags>` - bit 0: the walker's height follows the line between the two nodes; every shipped use sets it.
+
+Takes 7 operands. Across the 308 shipped scripts the 47 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal or variable; 4 — literal or variable; 5 — literal; 6 — literal; 7 — literal.
 
 ## WALKOFF
 
-`WALKOFF <visitor ID>` - Unknown
+`WALKOFF <visitor ID>` - Start a visitor walking off, from the off-from node to the off-to node their `WALKON` named. It takes the first slot that is not free and holds that visitor, so one still walking on is cut short and one already off is sent round again; with none, nothing changes. The walk is timed as `WALKON`'s, from its own two nodes.
 
 ### Operands
 

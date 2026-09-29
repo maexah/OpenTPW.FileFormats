@@ -321,6 +321,17 @@ comment line, `# empty` or `# Empty`.
 `Coconut.sam` gives `1` twice, over `Shops.sam`'s `10` and its comment "Always one for shops"), the Costume
 Shop `SpecialIngredient` and Jurassic Tours both duration bounds, each time with the same value.
 
+### `Info.DoHeadProcessing`: every node the model's lookup table names is kept posed
+
+Set to `1` by six items, and by no category file: the five rides that carry their riders on the
+model's head nodes (`hallow`'s `firepit`, `jungle`'s `totem` and `tvsim`, `space`'s `hoverbot` and
+`tv_ride`) and `fantasy`'s `bugstv`. With it, the game keeps a position for every node its
+[`.md2`](/formats/models/#which-records-have-a-position)'s lookup table gives one (flag `0x10` or
+`0x20`, which every record of the six models carries), the heads included. Without it, a childless
+node keeps one only under the other conditions that section lists, and the mask `0x580f00` there does
+not take in the head flag `0x80` (engine-confirmed: the item loader passes the model loader
+`0x400000` for it, and the model loader then marks every record).
+
 ### Two of Lost Kingdom's items, key by key
 
 Verified against `coconut.wad`, `junspray.wad` and the Jungle's two category files.

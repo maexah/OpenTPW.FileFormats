@@ -15,18 +15,18 @@ The layout below was read out of the loader (`FUN_005587f0`) and the instruction
 | Offset | Size     | Description                                                                 |
 | ------ | -------- | --------------------------------------------------------------------------- |
 | `0x00` | 4 bytes  | Magic number — `RSSE` (`52 53 53 45`)                                       |
-| `0x04` | 4 bytes  | Version — `0x00010F51` (`51 0F 01 00`)                                      |
+| `0x04` | 4 bytes  | Version — `0x00010F51` (`51 0F 01 00`) in every shipped file                |
 | `0x08` | 4 bytes  | variable count (see **String / variable table** below)                      |
 | `0x0C` | 4 bytes  | stack size (defined by `#setstack`)                                         |
-| `0x10` | 4 bytes  | time slice — always `50` (`0x32`) in shipped files                          |
-| `0x14` | 4 bytes  | limbo size (defined by `#setlimbo`)                                         |
-| `0x18` | 4 bytes  | bounce size (defined by `#setbounce`)                                       |
-| `0x1C` | 4 bytes  | walk size (defined by `#setwalk`)                                           |
+| `0x10` | 4 bytes  | time slice — `50` (`0x32`) in all 308 shipped files, preprocessor directive unknown |
+| `0x14` | 4 bytes  | limbo size (defined by `#setlimbo`) — allocates that many 8-byte slots      |
+| `0x18` | 4 bytes  | bounce size (defined by `#setbounce`) — that many 16-byte slots             |
+| `0x1C` | 4 bytes  | walk size (defined by `#setwalk`) — that many 32-byte slots                 |
 | `0x20` | 16 bytes | Padding — `Pad Pad Pad Pad ` (includes a trailing space)                    |
 
-The magic is **four** bytes, not eight. It is followed immediately by a version field, and the loader compares that field against a constant of its own, logging `RSSE: Script - Script interpreter version` when it differs — then carrying on and loading the file anyway. Reading the two together as a five-character magic `RSSEQ` swallows the low byte of the version.
+The magic is **four** bytes, not eight. It is followed immediately by a version field, and the loader compares that field against a constant of its own, logging `RSSE: Script - Script interpreter version` when it differs — then carrying on and loading the file anyway. Reading the two together as a five-character magic `RSSEQ` swallows the low byte of the version, and treating all eight bytes as a magic number would reject a file the game itself accepts.
 
-The four size fields are used only for allocation: the loader reserves room from each and never reads any corresponding data out of the file, so nothing follows them but the padding.
+The four size fields are used only for allocation: the loader reserves room from each straight after reading it and never reads any corresponding data out of the file, so nothing follows them but the padding. The last three are counts of slots, and a script declares only what it uses: of the 308 scripts the game ships, the ones declaring a non-zero bounce size are exactly the ones using the `BOUNCE` instruction, and the same one-to-one relationship holds for limbo and for walk.
 
 The padding really is read — the loader consumes four dwords there and discards them — and every shipped file spells it `Pad Pad Pad Pad ` with a trailing space.
 

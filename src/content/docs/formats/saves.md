@@ -12,26 +12,28 @@ These extensions are:
 
 ## File format
 
-Offsets below are of an offline save; an online one carries extra data after the file info and is not
-covered here.
+Offsets below are of an offline save; an online one carries an author header after the flag at `0x609`
+and is not covered here.
 
 **Header**
 
-| Offset | Size | Description |
-| --- | --- | --- |
-| `0x000` | 4 bytes | Version. The park the game ships carries `400`; a saved park carries `500`. This is **not** a magic number - `F4 01 00 00` is simply `500` written little-endian |
-| `0x004` | 1 byte | Padding |
-| `0x005` | 824 bytes | Copyright notice, UTF-16 - so 412 characters, and reading it as single bytes gives every other byte as a NUL |
-| `0x33D` | 711 bytes | Zeros |
-
-**File info**
+The fields are the game's own reads, one after another: `FUN_00414d40` reads the version, and
+`FUN_00416240` everything after it up to `BILZ`.
 
 | Offset | Size | Description |
 | --- | --- | --- |
-| `0x604` | 4 bytes | File type - `00 01 22 19` |
-| `0x608` | 1 byte | File version - `85` |
-| `0x609` | 1 byte | Online flag - `00` for offline, `01` for online |
-| `0x60A` | 3 bytes | Padding |
+| `0x000` | 4 bytes | Version. The park the game ships carries `400` (`90 01 00 00`); a saved park carries `500`, as all eight park files the original wrote in play do. This is **not** a magic number - `F4 01 00 00` is simply `500` written little-endian, and a reader that requires it rejects the shipped park. Accept both. The game refuses a version above 500 when `FUN_00414d40` is called in its mode 2, as two of its three callers do: "Trying to load future version savegame into earlier game - get a patch" |
+| `0x004` | 1 byte | Read on its own and not checked; `0` in all nine park files |
+| `0x005` | `0x500` bytes | Legal text: a copyright notice in UTF-16, 824 bytes (412 characters, so reading it as single bytes gives every other byte as a NUL), then zeros to the end of the field. A load whose text fails `FUN_005f7e60`'s check stops with "The save game legal text has been jiggered with!" |
+| `0x505` | `0x100` bytes | Validated by `FUN_0051ab60`, and its first 32 bytes are copied to `0x802080`; zero in all nine park files. What it holds is not settled |
+| `0x605` | 4 bytes | Magic, read **big-endian** (through `ntohl`) and required to equal `0x01221985`, so stored `01 22 19 85` |
+| `0x609` | 4 bytes | Online-header flag: `1` when an author header follows it (read by `FUN_00418da0`: the author's name and e-mail, a park description and the date published), `0` when none does. `0` in all nine park files, and nothing pads it |
+
+These close exactly on the compressed block: `4 + 1 + 0x500 + 0x100 + 4 + 4` is `0x60D`, where `BILZ` sits in
+all nine park files. Bytes `0x600` to `0x60C` read `00 00 00 00 00 | 01 22 19 85 | 00 00 00 00`; a reading
+that takes a four-byte file type `00 01 22 19` at `0x604`, a one-byte file version `85` at `0x608` and a
+one-byte online flag at `0x609` covers the same bytes cut at different places, and the loader's reads are what
+place the cuts.
 
 **Data (compressed using ZLIB)**
 
@@ -40,67 +42,112 @@ covered here.
 | `0x60D` | 4 bytes | Tag - `BILZ` |
 | `0x611` | 4 bytes | The size the payload inflates to |
 | `0x615` | 4 bytes | The size of this whole block, its tag and header included - so `0x60D` plus this is the file's length |
-| `0x619` | 16 bytes | Not identified; `15, 9, 0, 0` then zeros in the shipped park |
+| `0x619` | 16 bytes | Not identified; four dwords, `15, 9, 0, 0`, in all nine park files read (the shipped park and eight played ones) |
 
 Neither of those two sizes is a compressed length. The ZLIB stream begins at `0x629` - the 28-byte
-header counts the tag - and continues to the end of the file.
+header counts the tag, which is an easy four bytes to lose - and continues to the end of the file. Both sizes
+are worth checking on load: one confirms the block reaches the end of the file, the other that the payload
+inflated to the size it claimed, 1,608,309 bytes in the shipped park.
 
 ## Inside the stream: a chain of modules
 
 The inflated payload is **not** one structure. It is a run of modules, each written by the subsystem
 that owns it and each followed by a **four-character tag** the game checks on the way back in — so a
-reader that lands exactly on the next tag has agreed with the game about every byte in between.
+reader that lands exactly on the next tag has agreed with the game about every byte in between. The
+check is how the game itself detects a module that did not load the same number of bytes it saved.
 
 > The tags are compared as **dwords**, not as text, so they are stored little-endian and read
 > **backwards** in a hex dump: `WRLD` appears as `DLRW`, `RSYS` as `SYSR`. Searching a dump for a tag
 > the right way round finds nothing at all, which reads exactly like proof the module is absent. The
-> one exception is the script module's own header magic below, which really is stored forwards.
+> magics that open two modules rather than close them - `TPCS` at the head of the sprite table and `RSSE`
+> at the head of the script module, both below - read in a dump exactly as printed here.
 
-The order is the game's own. The offsets are measured in `data/levels/jungle/Easymode.TPWI`, whose
-stream inflates to 1,608,309 bytes, and are that file's rather than a general layout.
+The payload is also a **serialised memory image, not a portable format**. Live heap pointers are written
+out verbatim - the sprite table's slot handles below are addresses from the session that saved it - so
+apart from the tags nothing in it can be found by searching for a value, and every offset is reached by
+walking from the start. Modules butt against one another with no padding: a reader finishes one module
+exactly on its tag and the next begins four bytes later, and being one byte out corrupts every module
+that follows. Only some modules carry a length of their own (the ride system and the track rides below),
+so in general the chain has to be walked module by module.
 
-| Tag (as stored) | Module                                                         | Tag at    |
-| --------------- | -------------------------------------------------------------- | --------- |
-| `DLRW`          | World — the map and everything standing in the park             | 1,495,462 |
-| `CSPS`          | Sprite scripts                                                 | 1,500,918 |
-| `TRAP`          | Particles                                                      | 1,577,174 |
-| `SSEM`          | Message centre                                                 | 1,577,444 |
-| `KOLC`          | Clock                                                          | 1,577,456 |
-| `TNAV`          | "Vanilla time"                                                 | 1,577,464 |
-| `SYSG`          | Game system                                                    | 1,577,504 |
-| `SYSR`          | Ride system                                                    | 1,595,034 |
-| `KART`          | Track rides                                                    | 1,595,082 |
-| `RYLF`          | Flying rides                                                   | 1,595,538 |
-| `ESSR`          | Ride scripts                                                   | 1,606,398 |
-| `EMAK`          | Camera                                                         | 1,606,442 |
-| `SAOC`          | Coasters                                                       | 1,606,462 |
-| `SVDA`          | Advisor                                                        | 1,606,838 |
-| `NUOS`          | Sound                                                          | 1,608,287 |
-| `STHC`          | Cheats                                                         | 1,608,293 |
-| `CSDA`          | Advisor scoring                                                | 1,608,301 |
+The order is the game's own, and it is the same in all nine park files. The offsets are measured in
+`data/levels/jungle/Easymode.TPWI` and are that file's rather than a general layout.
 
-Each tag *follows* the module it belongs to. The World module does not begin at the start of the
-stream either: an untagged action recording is written first, as a flag and then a length with its
-bytes, so where World starts is derived from that length rather than assumed.
+| Tag (as stored) | Read as | Module | Tag at | Bytes since the previous tag |
+| --- | --- | --- | --- | --- |
+| `DLRW` | `WRLD` | World — the map and everything standing in the park | 1,495,462 (`0x16D1A6`) | 1,494,283, from `0x49B` |
+| `CSPS` | `SPSC` | Sprite scripts | 1,500,918 (`0x16E6F6`) | 5,452 |
+| `TRAP` | `PART` | Particles | 1,577,174 (`0x1810D6`) | 76,252 |
+| `SSEM` | `MESS` | Message centre | 1,577,444 (`0x1811E4`) | 266 |
+| `KOLC` | `CLOK` | Clock | 1,577,456 (`0x1811F0`) | 8 |
+| `TNAV` | `VANT` | "Vanilla time" | 1,577,464 (`0x1811F8`) | 4 |
+| `SYSG` | `GSYS` | Game system | 1,577,504 (`0x181220`) | 36 |
+| `SYSR` | `RSYS` | Ride system | 1,595,034 (`0x18569A`) | 17,526 |
+| `KART` | `TRAK` | Track rides | 1,595,082 (`0x1856CA`) | 44 |
+| `RYLF` | `FLYR` | Flying rides | 1,595,538 (`0x185892`) | 452 |
+| `ESSR` | `RSSE` | Ride scripts | 1,606,398 (`0x1882FE`) | 10,856 |
+| `EMAK` | `KAME` | Camera | 1,606,442 (`0x18832A`) | 40 |
+| `SAOC` | `COAS` | Coasters | 1,606,462 (`0x18833E`) | 16 |
+| `SVDA` | `ADVS` | Advisor | 1,606,838 (`0x1884B6`) | 372 |
+| `NUOS` | `SOUN` | Sound | 1,608,287 (`0x188A5F`) | 1,445 |
+| `STHC` | `CHTS` | Cheats | 1,608,293 (`0x188A65`) | 2 |
+| `CSDA` | `ADSC` | Advisor scoring | 1,608,301 (`0x188A6D`) | 4 |
+
+Each tag *follows* the module it belongs to. The World module does not begin at the start of the stream
+either: an untagged **action recording** (`GActionRec` in the game's save log) is written first, and its
+serialiser (`FUN_00403780`) names its two dwords:
+
+```text
+u32  mLoadedPublishedPark
+u32  recording_size
+byte[recording_size]  recording      -> the block is 8 + recording_size bytes
+```
+
+In the shipped park those read `0` and `1171`, so the recording occupies bytes 0 to 1,178 and the World
+module begins at **`0x49B`**; where World starts is always derived from that length rather than assumed.
+
+After the last tag comes an untagged UI block. It is four bytes, nought, in seven of the nine park files -
+in the shipped park it ends the stream on 1,608,309. In the two saves of Alexah's played jungle park its
+first dword is `1` and 540 more bytes follow, among them the UTF-16 text of an advisor line about the
+ticket price; that longer form is not decoded.
 
 ## The world block (`WRLD`)
 
-The first block in the payload is the park itself, closed by the `DLRW` trailer. It opens with an
-untagged recording - a flag, then a length, then that many bytes - so where the block's own header begins
-is derived from that length rather than fixed. In the shipped park the length reads 1171, which puts the
-header at `0x49B`.
+The first block in the payload is the park itself, closed by the `DLRW` trailer. Its header begins after
+the action recording, and the block runs, with every boundary closing exactly on the next:
 
-The header is 26 fields written back to back with no padding. **The names below are the game's own.**
-Each field is announced to a logging call that the release build compiles away, so the names never reach
-the file - but they survive in the executable beside the address each one is read into, which is what
-makes this list checkable rather than inferred.
+```text
+0x00049B  26 header fields (below), 64 bytes                       ->  0x0004DB
+0x0004DB  mObjectControls[150], 32 bytes each                      ->  0x00179B
+0x00179B  mNumObjectControls u32, mPreviousSearchKey u16           ->  0x0017A1
+0x0017A1  the staff pool's 32 records of 20 bytes                  ->  0x001A21
+          mType 4, mName 4, mPayGrade 1, mSubType 1, mValid 1,
+          mOnPointer 1, mTimeSig 4, mTimeoutTime 4
+0x001A21  arrival and clock fields, 76 bytes                       ->  0x001A6D
+          the last 18 of them the arrival block (below), from 0x001A5B
+0x001A6D  16,384 map cells (below)                                 ->  0x152431
+0x152431  u32 Used Thing Head                                      ->  0x152435
+0x152435  the thing list (below)                                   ->  0x16D1A6
+0x16D1A6  the trailer, stored as DLRW
+```
+
+The offsets are the shipped park's. The recording's length varies from file to file - the eight played ones
+start their header at `0x8F`, `0x6F4` or `0x1C73` - so a reader takes the rest relative to the header. The writer (`FUN_00516c80`) logs the size of each part under its own name, which
+is what groups them: "World vars" is the header, `mControlManager` the object controls with their count and
+key, `mMacroAI` the staff pool, the park clock and the arrival timer, `mMap` the cells, and "Thing Array"
+the list.
+
+The header is 26 fields written back to back with no padding, 64 bytes in all. **The names below are the
+game's own.** Each field is announced to a logging call that the release build compiles away, so the names
+never reach the file and cannot be searched for - but they survive in the executable beside the address each
+one is read into, which is what makes this list checkable rather than inferred.
 
 | # | Size | Name | Notes |
 | --- | --- | --- | --- |
-| 0 | 4 bytes | *(version)* | The one field the logging call does not name |
-| 1-3 | 2 bytes each | `mArrivalVehicle_Size1..3` | |
+| 0 | 4 bytes | `version` | The writer always writes `2`, and all nine park files hold it |
+| 1-3 | 2 bytes each | `mArrivalVehicle_Size1..3` | Handles - see below |
 | 4 | 2 bytes | `mBankAccount` | A **handle**, not an amount - see below |
-| 5 | 2 bytes | `mCurrentArrivalVehicle` | The bus; zero when none is due |
+| 5 | 2 bytes | `mCurrentArrivalVehicle` | Handle - see below |
 | 6 | 4 bytes | `mGameTick` | The park's own tick counter - `755` in the shipped park |
 | 7 | 2 bytes | `mMechanicHQ` | Handle |
 | 8 | 2 bytes | `mParkAnalyser` | Handle |
@@ -118,13 +165,21 @@ makes this list checkable rather than inferred.
 | 20-24 | 2 bytes each | `mFirstHandyman`, `mFirstMechanic`, `mFirstEntertainer`, `mFirstGuard`, `mFirstResearcher` | Heads of the per-trade staff lists. **Guard comes before Researcher** |
 | 25 | 2 bytes | `mFirstObject` | Head of the object list - thing `15` |
 
+**The order in the file is not the order in memory**, and this is the trap to know about. The writer pairs
+each name with the struct offset it is read into, and those offsets run `mRandomSeed` `+0x1da708`,
+`mGameTick` `+0x1da70c`, `mParkClosed` `+0x1da710`, `mNumberOfVisitorsToDate` `+0x1da714`, `mWeather`
+`+0x1da724`, `mBankAccount` `+0x1da726`, `mParkGates` `+0x1da732`, `mWorldState` `+0x1da738` — a different
+order from the one written, down to the last pair: `mFirstResearcher` sits at `+0x1da742`, before
+`mFirstGuard` at `+0x1da744`. Read the file by the list above; do not sort by offset.
+
 A handle is a thing id, compared against a thing's own id with `==`: `11` means "the thing whose id is
 11", not "the eleventh thing".
 
 `mParkClosed` is `1` while the park is shut and `0` while it is open. The command that opens and shuts a park writes `0` on
 one branch and `1` on the other, then picks the word for its own message with
 `mParkClosed == 0 ? "opened" : "closed"`. The world constructor writes `1` before anything is loaded, so
-a park is born shut and a save holding `0` is one that was opened while it was being played.
+a park is born shut and a save holding `0` is one that was opened while it was being played. The played
+files agree: the three `restart.INTS` files and an autosave taken four ticks in hold `1`.
 
 `mBankAccount` is the field whose name misleads. It is two bytes, and the shipped park holds `8` in it -
 no sort of balance. The executable reads it in exactly one place, and that reader is the weather thing's
@@ -135,11 +190,84 @@ the park's money through this very accessor.
 
 `mWorldState` really is a value. The executable writes `1`, `2` and `4` into it and compares it against
 `4` in six places, among them the game's own state machine and the build-a-park menu. The shipped park
-holds `0`, which is not in that set - so either zero is a state nothing writes while a park is being
-played, or it is what a park carries before it is first entered. Naming it either way would be a guess.
+holds `0`, which is not in that set - and so does every one of the eight played park files, the two saves
+of a jungle park played to `mGameTick` 19,004 and 19,007 among them. So zero is what a park carries while
+it is played, at least as saved, and not only before it is first entered. What it means is not settled,
+and naming it would be a guess.
 
-After the header come 150 object-control records, the staff pool, the park clock and the arrival timer, the 128x128 map, and then the thing
-list.
+### The arrival vehicles
+
+The four arrival fields are worth calling out because their names encode behaviour. **Each slot belongs to
+one kind of vehicle**: `mArrivalVehicle_Size1` the bus, `_Size2` the seaplane and `_Size3` the ferry
+(`FUN_0051a2f0` caches them at `+0x1da72c`, `+0x1da72e` and `+0x1da730`). The size in the names is how the game
+picks a kind when it is told the size of the arriving crowd: fewer than 36 people force the bus, 36 to 60 the
+seaplane and more than 60 the ferry (OpenTPW's `docs/exe/park.md`, "Arrivals"). A call made with no size, which
+the arrival timer makes when no vehicle is current, picks one of the three at random from `mRandomSeed`, and a
+kind whose feature cannot be found falls back to the others; both cache by kind as well. However it was picked,
+the engine creates the vehicle thing the first time that kind is sent for, then caches its id in that kind's
+slot. `mCurrentArrivalVehicle` holds whichever is on its way, or nought when none is.
+
+So the slots say what a park has *done*, not what it owns: an empty slot means that kind has never been sent
+for, whatever the size of the crowds. The shipped Lost Kingdom park holds the bus, thing `15`, in
+`mArrivalVehicle_Size1` and nought in the other two, which is why its thing list contains a bus and neither a
+ferry nor a seaplane: only the bus has ever been sent for there. Alexah's played jungle park holds all three -
+the bus (item 1600) as thing 38, the seaplane (1602) as 60 and the ferry (1604) as 73 - with the ferry
+current; the played fantasy park holds the first two, the second current.
+
+### The object controls
+
+`mObjectControls` holds one 32-byte record per kind of item, keyed by the item's id, filling the first slots;
+the rest of the 150 are zero. `mNumObjectControls` after the array counts the used ones - 50 in Lost Kingdom's
+save, among them the eleven kinds of its fourteen objects (the eight kinds it has placed, plus the bus, the
+gates and the traffic lights), so it is not a list of what stands in the park. `mPreviousSearchKey` reads 1100
+there; the loader zeroes it after reading it. Three fields are settled, each checked against the item files
+for all 50 records with no mismatch:
+
+| Offset | Type | Holds |
+| --- | --- | --- |
+| `0x00` | u16 | The item's `Info.Id` |
+| `0x04` | i32 | What buying one costs, the item's `Upgrades[0].CostOfUpgrade` - Belly Bounce 500, Drinks Shop 650 |
+| `0x0C` | i32 | The item's `UsageInfo.RipOffOK` - 100 for the six shops, 250 for the four sideshows (each from its folder's `Shops.sam` or `SideShow.sam`), 0 for the rest |
+
+The other fields (`0x08`, a byte at `0x10`, and `0x14`, `0x18`, `0x1C`) are not settled here. The game fills a
+record from the item's own description, so a save carries whatever the item files said when the record was made.
+
+### The arrival and clock fields
+
+The 76 bytes after the staff pool's records are three blocks the game reads one after another: the end of
+the staff pool (30 bytes, read by `0x00507850` after its records), the park clock (28 bytes, `0x004f7f30`)
+and the arrival timer (18 bytes, `0x004cf050`). The names are the game's own, passed to its logging call as
+each field is read:
+
+| Offset | Size | Field | Lost Kingdom |
+| --- | --- | --- | --- |
+| `0x001A21` | 4, 1 | `mPeopleInCat[0]`, `mStopProducing[0]`, and so on for five pairs | 1, 0 in each pair |
+| `0x001A3A` | 4 | `mTimeSig` - the staff pool's own, not the arrival timer's | 722 |
+| `0x001A3E` | 1 | `mOpeningStaffPoolGenerated` | 1 |
+| `0x001A3F` | 8 | `mFunnyTimeStart`, a Windows FILETIME | 2000-01-01 00:00:00 |
+| `0x001A47` | 8 | `mSessionStart`, a Windows FILETIME | 1999-10-21 20:54:53.29 |
+| `0x001A4F` | 4 | `mMonthAtLastUpdate` | 1 |
+| `0x001A53` | 4 | `mDayAtLastUpdate` | 2 |
+| `0x001A57` | 4 | `mFunnySecsPerRealSec` | 15000 |
+
+#### The arrival block
+
+The last 18 bytes are the state of the game's arrival timer:
+
+| Offset | Size | Field | Lost Kingdom | Holds |
+| --- | --- | --- | --- | --- |
+| `0x001A5B` | 4 | `mArrivalRate` | 0 | Not settled; 0 in all nine park files |
+| `0x001A5F` | 4 | `mTimeSig` | 661 | The `mGameTick` of the turn that found the last load of visitors all off |
+| `0x001A63` | 4 | `mTargetVehicleCapacity` | 5 | Not settled; 5 in all nine park files, and 5 is also what a park starts with before any save is read |
+| `0x001A67` | 4 | `mPeopleOnBus` | 0 | How many of the load in progress are still to get off |
+| `0x001A6B` | 1 | `mOffloading` | 0 | 1 while a load is in progress |
+| `0x001A6C` | 1 | `mGatesOpen` | 1 | Not settled; 1 in all nine park files, and 1 is also what a park starts with |
+
+`mTimeSig` is measured against the header's `mGameTick` (755 in Lost Kingdom), and both are in the same unit, one
+count per turn of the game's things. The game calls the next load once `mGameTick / 4` has passed `mTimeSig / 4`
+(each rounded down) by more than `Arrival.TimeBetweenArrivals`. Both fields are saved, so a park loaded from this file
+is 94 counts into its wait already (23 in the fours the comparison uses). The executable's side is in OpenTPW's
+`docs/exe/park.md`, "Arrivals".
 
 ### The map
 
@@ -156,10 +284,17 @@ which of three optional sub-records follow it**, one bit each:
 A cell that is entirely default writes its status byte and nothing else, which is where the block's
 variable length comes from. Only two combinations occur in the shipped park - `3` on 16,134 cells and `7`
 on the other 250, coming to 84 and 94 bytes - but the bits add independently, so a walk that sums them
-reads the combinations no shipped park happens to contain.
+reads the combinations no shipped park happens to contain. The shipped park's cells total 1,378,756 bytes,
+exactly the region from `0x1A6D` to `0x152431`, and an implementation that only needs what is *in* the park
+can measure each cell and skip it.
+
+> **Check the stride cell by cell, not just in total.** Measured this way, all 16,384 cells land on the
+> next cell's status byte every single time. That is a sharper check than the block's own `DLRW` trailer,
+> which a pair of compensating errors would still reach.
 
 The map sub-record is a **29-byte tile base** followed by a **23-byte litter block**. The track
-sub-record repeats the same tile base field for field.
+sub-record repeats the same tile base field for field and adds `mSegmentNumber`, two bytes, for its 31 -
+`0xffff` on every cell of the shipped park. The effects sub-record's ten bytes are not described here.
 
 | Offset | Size | Name |
 | --- | --- | --- |
@@ -186,6 +321,11 @@ is what says so rather than the reading: `4+2+4+4+2+1+4+2` is exactly 23, and `2
 that the cell walk measures from the other direction. Written once, every field after it would shift by
 four and the record would close four bytes short of the next cell's status byte.
 
+> **Cells are indexed `y * 128 + x`** — the opposite way round from the attribute map in `base.map`,
+> which is `x * 128 + y`. Getting it backwards still produces something that looks like a map, so it is
+> worth pinning: only the y-major reading reproduces `base.map`'s own bus road, ticket booths and
+> entrance column.
+
 **`mStatusFlags` is the attribute map.** The byte at offset 45 holds the same value `base.map` carries
 for that cell - checked across all 16,384 cells of the shipped park against a separate file, with its own
 header, parsed by different code, and indexed `x * 128 + y` where the save's cells run `y * 128 + x`.
@@ -193,7 +333,7 @@ Every cell agrees. Agreement in aggregate would prove little; agreement cell by 
 indexing is not something a misaligned or transposed reading can produce. 1,495 cells are non-zero, over
 exactly the eight values the attribute map uses: 0, 1, 3, 8, 17, 128, 144 and 148.
 
-**The unnamed short at 50 is occupancy** - the id of the thing standing on the cell. Twenty-four cells of
+**`mWho` at 50 is occupancy** - the id of the thing standing on the cell. Twenty-four cells of
 the shipped park carry a value, and eleven of them are exactly its eleven placed catalogue objects, each
 naming *itself* on the cell it stands on: the cell at (55,15) holds `23`, and object `23` stands at
 (55,15), and so for all eleven. Twelve more hold person ids, gathered on the approach to the
@@ -207,36 +347,213 @@ Nothing has been dropped in the shipped park: `mLitter`, `mLitterCollector`,
 `mTimeMarkedForLitterCollection` and `mPylonIndex` are nought on every one of the 16,384 cells. That is a
 fact about a save nobody has played rather than a gap in the reading.
 
+`mNeighbours` and `mDirection` are **stored, not computed**, so a renderer does not have to derive a
+neighbour mask from the cells around it. They share one compass: over the shipped park's path cells
+`mDirection` only ever reads 0, 1, 4, 16 or 64 — the four cardinals of an
+`N NE E SE S SW W NW` layout, and nothing between them.
+
+The two are nevertheless **read in completely different ways**, and a reader that treats them alike will
+be wrong about one of them. `mNeighbours` is **bit-tested**; `mDirection` is compared for **equality**
+against a single value and is never masked. The park bears that out: across all 16,384 cells
+`mNeighbours` takes **38 distinct values with 82 cells carrying more than one bit**, while `mDirection`
+takes **five and never carries two**. Because those five are `0`, `1`, `4`, `16` and `64`, a single value
+and a one-bit mask are indistinguishable over exactly the data you have — so the difference has to come
+from the code, not from the corpus.
+
+Which bit is which side can be settled from the file alone, without trusting either reading. For every
+path or queue cell, whether the neighbour on a given side is *also* a path or queue cell is knowable by
+walking the map, so a candidate pairing can be scored against reality. Over the shipped park's 82 such
+cells, pairing `0x01` with `-y`, `0x04` with `+x`, `0x10` with `+y` and `0x40` with `-x` reproduces real
+adjacency **94.8%** of the time; the opposite pairing manages 75.3%, and loses on all four sides taken
+separately.
+
+:::note[The bit is read from the cell being entered]
+The executable's step check numbers its directions by axis, fixed absolutely by its own boundary guards —
+it refuses `x == 0` going 3, `y == 0` going 0, `x == 0x7f` going 1 and `y == 0x7f` going 2, so **0 is
+`-y`, 1 is `+x`, 2 is `+y`, 3 is `-x`**. Asked about direction 0, which is `-y`, it consults bit `0x10` —
+the `+y` bit. Read as a question about the cell being *left*, that is its far side, and that reading is
+wrong: the disassembly loads the **destination** cell into `ECX` before the call, and the destination's
+`+y` side is precisely the side facing the cell being left. The predicate reads the **near side of the
+cell being stepped into**.
+
+No measurement on this park can tell those two readings apart. The side bits of `mNeighbours` are
+**symmetric across every pair of side-by-side cells** - all 32,512 pairs, 65,024 tests counted from each
+cell - so scoring "the destination's facing bit" against "the source's facing bit" returns 100% either
+way; the disassembly is what settles it, which is why the `this` pointer the decompiler drops matters so
+much here. It also reports "blocked" when the bit is **clear**, so the byte says where a cell *connects*,
+not where it is walled.
+:::
+
+`mOverlapCounter` is **how many more times a cell has been built over** — the engine bumps it when a
+path is laid on a cell that is already path, and deleting the cell takes one off, removing it only once
+the count falls below nought (a forced clear, or one with no step, removes it at once). In the shipped park
+14 path cells carry it: eleven at 1 — (39,21), (39,28), (43,29), (44,28), (47,28), (48,20), (56,15),
+(56,16), (56,17), (56,21) and (56,28) — and three at 2 — (47,21), (48,21) and (48,28). By their side bits
+every one is a corner or a junction except (43,29), which is a straight from north to south. The queue cell
+at (52,22) reads 1.
+
+`mFlags` bit `0x40` **marks land outside the park**. It is set on 13,878 of the shipped park's 16,384
+cells, all of `mType` 7, 0, 2 or 30, and every path, queue and footprint cell is among the 2,506 without
+it. The meaning is read from that split; nothing in the file names it. Bit `0x20` is the engine's
+NOMODIFY, set on 18 of the 78 path cells.
+
+In the **track** sub-record, `mNeighbours` is 0 on all 16,384 cells of the shipped park.
+
+`mTileData` is **three dwords**, not one opaque run:
+
+| Dword | Meaning | Values in the shipped park |
+| ----- | ------- | ------------------------- |
+| 0 | Tile set | `1` on all 78 path cells, `2` on all 4 queue cells, `0` on the other 16,302 |
+| 1 | Tile index within that set | 2–20 on path cells, addressing the theme's [`PathTex` table](/formats/tct/) |
+| 2 | Rotation, degrees | `0`, `90`, `180` or `270` — on every one of the 16,384 cells |
+
+The index really does address the theme's `.tct`, confirmed by cross-referencing every index the shipped
+park uses against the shape that cell's neighbours make: straights come out degree 2 and collinear,
+corners degree 2 and bent, T-junctions degree 3, and the park's one crossroads degree 4 with a mask of
+exactly N+E+S+W. The [Texture Correspondence Table](/formats/tct/) page carries that table in full,
+including the two edge tiles whose masks show this to be an **area** tile set rather than one-cell-wide
+lines — a walkway can be more than one cell across, and Lost Kingdom's entrance avenue is two.
+
+> Two independent things support that split, and a wrong one would have to produce both by accident: the
+> first dword divides the map exactly along the boundary the theme's `.tct` draws between its `PathTex`
+> and `QueueTex` sections, and the third is a quarter turn everywhere and never an arbitrary angle. **So a
+> park's paths carry the tile they draw and the turn it takes** — neither has to be inferred from
+> neighbours.
+
+`mType` says what a cell is. Counts across the shipped park:
+
+| `mType` | Cells | What |
+| ------- | ----- | ---- |
+| 7 | 9,077 | |
+| 0 | 6,875 | |
+| 2 | 240 | |
+| 1 | **78** | **path** — drawing them gives a connected loop with an avenue down to the park entrance |
+| 30 | 66 | exactly the 66 cells whose `mStatusFlags` - and so `base.map` - carry `0x80`: the fixed approach every park inherits |
+| 4 | **35** | **the body of a built thing's footprint** |
+| 9 | **8** | **a footprint cell the thing is used from** |
+| 3 | **4** | **queue** |
+| 10 | **1** | **the far end of a footprint** |
+
+Types 7, 0 and 2 are still recorded as observed rather than named.
+
+### 4, 9 and 10 are one thing: a built thing's footprint
+
+Together those three are **44 cells, and that is exactly the footprints of the park's eleven placed
+objects** — nothing left over and nothing missing. Grouping the 44 into connected components gives seven
+groups whose bounding boxes are the items' own sizes:
+
+| Group | Cells | What stands there |
+| ----- | ----- | ----------------- |
+| (57,15) 3×5 | 13 | the 2×2 staff room at (58,15) and the 3×3 fountain at (57,17) |
+| (51,23) 3×4 | 12 | the Belly Bounce |
+| (51,30) 3×3 | 9 | the Jungle Spray |
+| (43,29) 2×3 | 5 | the 1×1 litter bin and the 2×2 drinks shop |
+| (55,15) 1×3 | 3 | the three 1×1 toilets, stacked |
+| (40,29), (55,29) | 1 each | the two security cameras |
+
+`9` sits where a thing is used: it is exactly the `mEntryPos` cell (see the catalogue object below) of the
+eight objects somebody is sent to — the single cell of each toilet, the drinks shop's counter, the litter
+bin, the staff room's door, the Jungle Spray, and the end of the Belly Bounce its queue arrives at. `10`
+appears once, on that ride's far end, which is its `mExitPos`. The fountain and the two cameras, which
+nobody is sent to, carry neither. Nothing in the file names the two types; what is *measured* is that all
+three belong to a footprint rather than to the ground, and that `9` and `10` fall on exactly those cells.
+
+> **This matters to anyone drawing a park.** Every one of the 44 carries a real ground texture index in
+> `base.MD2` — not one is the "something covers this" index 0 — and yet each is already covered, because
+> every item this park is built with opens its model with a flat floor plate exactly as wide as its
+> footprint: `J_WC` under a toilet, `wf_floor` under the fountain, `js_base` under the staff room,
+> `cn_floor01` under the drinks shop, `jb_floor` under the Belly Bounce, `jc_base` under a camera. Draw
+> the ground there as well and the two fight for the same depth. The same goes for the four queue cells,
+> where every piece of queue brings its own base.
+
+### Where a built thing stands on its cells
+
+An object's record gives an anchor cell and an angle (see the catalogue object below). Its footprint is
+placed by turning it about the **middle of that anchor cell** — not about the middle of the footprint — and
+the stored angle turns the *opposite* way to a positive rotation about the up axis.
+
+Both halves are forced by the shipped park, because the map cells state the answer independently of the
+object records. The staff room is anchored at (58,16) at 90° and its footprint is marked (58,15)–(59,16);
+the fountain is anchored at (57,19) at 90° and marked (57,17)–(59,19). Turning about the footprint's
+middle, or turning the other way, puts each somewhere the save does not mark — a positive turn lands the
+fountain on (55,19)–(57,21).
+
+> **Do not read the executable's `0x168 - angle` as confirming this.** That constant is at the *queue's*
+> call site (`FUN_005229e0`), and what it says is that a piece of queue turns the **opposite** way to a
+> built object — it is the difference between the two, not a convention they share. The marked footprint
+> cells are the evidence for an object's turn; the queue's is the art on `queend`, described in the
+> [Texture Correspondence Table](/formats/tct/) page.
+
+Those two are the only rotated items in the park whose footprint is bigger than one cell, so 180° and
+270° follow the rule the two 90s establish rather than being measured in their own right.
+
 ### Thing records
 
-The thing list is a **linked list, not an array**. Each record opens with the id of the *next* thing and
-then its model number, four bytes each, and a next of zero ends the list. The ids are not in order - the
-shipped park runs 41, 40 … 29, then 15, then 28 - which is what a list with something spliced into it
-looks like, and what a counter cannot be.
+The thing list is a **linked list, not an array**, of everything in the park - people, objects and the
+park's singleton managers. `Used Thing Head`, the dword before it, gives the first thing's id. Each record
+opens with the id of the *next* thing and then its model number, four bytes each, and a next of zero ends
+the list:
 
-Every thing that has a place in the world then writes the same four 2-byte fields in this order: `mX`,
-`mY`, `mMapChild`, `mMapParent`. So a thing's *own* fields begin **16 bytes into its record** - eight of
-list head and eight of map base. `mX` and `mY` are in 256ths of a cell, and their high bytes are the
-cell the thing stands on, which is how the engine reaches a cell without dividing.
+```text
++0   u32  Used Thing Next     the NEXT thing's id
++4   u32  thingmodel
++8   u16  mX
++10  u16  mY
++12  u16  mMapChild
++14  u16  mMapParent
+```
+
+That leading dword is the trap in this block: read as the thing's own id it is off by one everywhere and
+still looks plausible. The ids are not in order - the shipped park runs 41, 40 … 29, then 15, then 28 -
+which is what a list with something spliced into it looks like, and what a counter cannot be; and the last
+record's is `0`, a terminator no thing could have as an id. Read correctly, the shipped park's chain starts
+at 42 and is an exact permutation of 1 to 42.
+
+**Every thing opens with the same 16 bytes**: the list head, then the same four 2-byte map fields in the order
+above (`FUN_0050b090`). The singleton managers write them too, and models 12 and 17 write nothing else. So a
+thing's *own* fields begin **16 bytes into its record** - eight of list head and eight of map base. `mX` and
+`mY` are in 256ths of a cell, and their high bytes are the cell the thing stands on, which is how the engine
+reaches a cell without dividing. A thing with no place on the map stores `128` in both, which is *half a cell*
+rather than an obvious sentinel - anything treating it as a position puts it at the origin, as the map itself
+does. In the shipped park thirteen things are stored that way: things 1 to 10 (models 9 to 19) and the gates,
+traffic lights and bus (11, 12 and 15), whose positions live in their models rather than in the save. All
+thirteen hang off cell (0,0) through `mMapChild`: that cell's `mWho` holds 15, and the chain runs 15, 12, 11,
+10 and on down to 1, whose `mMapChild` is 0. The same holds in all nine park files, the head of the chain
+being whichever unplaced thing is in `mWho` at (0,0).
+
+After that the models diverge completely and the sizes are wildly uneven, so the stream cannot be strided
+- each model has to be recognised, and each has one fixed size: **1** a guest (533 bytes), **3** a
+placeable catalogue object (1,099), **4 to 8** the five kinds of staff (511, 513, 509, 511 and 509), **9**
+the strike system (103), **10** a bare map object (18), and **11 to 19** the singleton managers, from 16
+to 73,544 (11: 5,846; 12: 16; 13: 73,544; 14: 4,190; 15: 99; 16: 300; 17: 16; 19: 937). The header's handles
+name the managers, and name the same things in all nine park files: `mStaffHQ` thing 1 (model 9),
+`mMechanicHQ` 2 (model 10), `mTagSystem` 4 (12), `mParkAnalyser` 5 (13), `mResearchLab` 6 (14), `mWeather`
+7 (15), `mBankAccount` 8 (16) and `mUIMsgReceiver` 9 (17); things 3 (model 11) and 10 (model 19) are named
+by no header field. There is no model 18 in a park file: the writer refuses it, "Should not be able to save
+online persons". With those sizes, the walk closes exactly on `DLRW` in all nine park files.
 
 **The offsets below are file offsets, and they are not the offsets a decompiler shows.** A thing is
 written field by field in the order its reader asks for them, so a field's place in the record is the sum
 of the sizes before it and bears no relation to where it sits in memory: `mAdmissionFee` is at `+0x118`
-in the running game and at `+16` in the record. Taking the memory offsets and using them as file offsets
-produces something that parses and is wrong.
+in the running game and at `+16` in the record, and a guest's `mState` is at `+0x220` and at `+505`. Taking
+the memory offsets and using them as file offsets produces something that parses and is wrong.
+
+> **Make the trailer an assertion.** Every record length in the block feeds one running offset, so a
+> reader that ends exactly on `DLRW` had all of them right, and one that is a single byte out cannot. It
+> is the same end-to-end check the container already allows: the block length reaching the end of the
+> file, and the payload inflating to its declared size.
 
 ### A catalogue object (model 3)
 
 Model 3 is everything a player buys and places - shops, rides, sideshows and scenery. The shipped park
 holds **fourteen** of them: eleven placed, and three carrying the unplaced sentinel `128` in both
-coordinates, because their positions live in their models rather than in the save. Its record is
-**1,099 bytes**.
+coordinates. Its record is **1,099 bytes**.
 
 | Offset | Size | Name | Notes |
 | --- | --- | --- | --- |
-| 8 | 2 bytes | `mX` | 256ths of a cell, from the shared map base |
+| 8 | 2 bytes | `mX` | from the shared map base |
 | 10 | 2 bytes | `mY` | |
-| 16 | 4 bytes | `mAngle` | `0`, `90` or `270` in the shipped park |
+| 16 | 4 bytes | `mAngle` | degrees - `0`, `90` or `270` in the shipped park |
 | 20 | 2 bytes | `mId` | the item's `Info.Id`, from its own `.sam` |
 | 22 | 32 bytes | eight `tv[`*t*`]` dwords | when the object was built: year, month, day, day of the week, hour, minute, second, millisecond - not `SYSTEMTIME`'s order, which puts the day of the week third. It is a date on the **park's own calendar**, not the real one; the game writes it with `FileTimeToSystemTime` and reads it back with `SystemTimeToFileTime`, ignoring the day of the week; a stamp that will not convert loads as nought. The shipped park: the Belly Bounce and ten more read 2000-01-01 15:37:30, the bus 2000-01-27 05:10:00, the gates and the lights 2000-01-01 00:00:00 |
 | 54 | 4 bytes | `MeshInstanceID` | the object's model instance; a coaster's record in the coasters module carries the same number (Temple Of Gloom in Alexah's played jungle park: 330) |
@@ -417,7 +734,7 @@ map base come first, as for every placed thing.
 | 36 | 1 byte | `mCount` |
 | 37 | 4 bytes | `mESPSprite` |
 | 41 | 2 bytes | `mLastRecordedMapId` |
-| 43 | 177 bytes | the navigator |
+| 43 | 177 bytes | the navigator - see below |
 | 220 | 4 bytes | `mPreviousSpeed` |
 | 224 | 4 bytes | `mPreviousX` |
 | 228 | 4 bytes | `mPreviousY` |
@@ -427,16 +744,78 @@ map base come first, as for every placed thing.
 | 242 | 4 bytes | `mSpriteAngle` |
 | 246 | 4 bytes | `mSpriteID` |
 | 250 | 4 bytes | `mSpriteUnderRideCtrl` |
-| 254 | 144 bytes | the event ring: a count, 32 entries of 4, and three dwords |
+| 254 | 144 bytes | the event ring: `mActionHistIndex`, 32 `mEventHistory[`*i*`]` of 4, then `mLastThought`, `mThoughtScript` and `mTimeBubbleShown` |
 
 It closes on 398, where each model's own block begins, and it lands on the two places read independently of
 it: the navigator at 43 and `mSpriteAngle` at 242.
+
+Two parts of it are worth knowing about before the models' own fields. The navigator is the person's
+**entire navigation state** - 177 bytes of steering and path data - so a person resumes the route they were
+walking rather than re-planning on load. The event ring is a 32-entry ring of `[u16 type][u16 param]` with
+its index, which the played parks bear out: the low word a small event number, the high word a thing id
+where one applies. The ring is read only by a debug dump whose logger is an empty function in the release
+build, so nothing a player sees comes from it (OpenTPW's `docs/exe/park-engine.md`).
+
+Two fields are useful on their own. **`mSpriteScript` at +16** is the person's slot in the park's table of
+sprites (`TPCS`, below): the shipped park's eighteen people hold exactly its eighteen live slots. **`mSpriteAngle`
+at +242** (`0xf2`) is an 11-bit heading, `0` to `0x7ff`.
 
 **`mCount` is a guest's walking-turn count**: the walk to a chosen thing adds one each turn and, on the
 twelfth, zeroes it and makes its minor decision. In the shipped park it is 0 on all eighteen people. In
 Alexah's played parks it spans exactly 0 to 11 - a count reset at twelve never shows 12 - on every guest:
 339 in each of two jungle saves (264 and 262 of them non-zero) and 53 in each of two fantasy saves (39
 non-zero); the jungle saves' staff all hold 0.
+
+#### The navigator - 177 bytes at +43
+
+Every person carries one, staff included, because the person base reads it for all six models. Its fields
+are written **alphabetically by name**, like the rest of the save, so each offset is the sum of the sizes
+before it — and they close on exactly 177:
+
+```text
++43  i32×2 force              +51  i32×2 formation_pos    +59  i32×2 local_xaxis
++67  i32×2 local_yaxis        +75  i32   mass             +79  i32   max_force
++83  i32   max_speed          +87  i32   mCantReachDest   +91  i32   nav_mode
++95  i32   path_buffer_count  +99  i32   path_count       +103 u8    path_finished
++104 i32   path_last_progress +108 i32   path_stuck_buffer
++112 i32   path_subpath_dist  +116 i32   path_tail_dist   +120 i32×2 path_target_pos
++128 i32   path_timestamp     +132 i32   path_total_count +136 i32   path_total_dist
++140 i32×2 position           +148 i32   radius
++152 5 × (i32×2 subpath_buffer[i] + i32 subpath_dist[i]) = 60 bytes
++212 i32×2 velocity                                              = 177
+```
+
+Three of those carry **no name in the binary** — `mass`, `position` and `velocity` above. Each is named
+by four things agreeing: the alphabetical slot it has to occupy, how the steering loop uses it, the
+Reynolds-steering vocabulary the block's other names come from, and the constructor, which writes `1.0`,
+`0.2`, `0.4` and `0.2` to mass, radius, max force and max speed at exactly those places.
+
+**Everything here is 16.16 fixed point**, where `65536` is one map cell. A position is therefore in
+65536ths of a cell — 256 times finer than the `mX`/`mY` every thing carries — and the engine reaches
+`mX`/`mY` from it by shifting right by eight.
+
+> **How to check a reader of this block**, and it is a strong check: `position >> 8` must equal the `mX`
+> and `mY` stored separately at `+8` and `+10`. Those were not used to place this block, so agreement is
+> real evidence. Across the shipped park all eighteen people match, at eighteen distinct positions, and
+> none matches at a base shifted by −8, −4, +4 or +8.
+
+Some of it is measurable rather than merely readable. `max_force` is **twice `max_speed`** on all eighteen
+people - exactly twice on nine, and one unit (a 65536th of a cell) more on the other nine - and `max_speed` is seeded from `mBaseSpeed × 65536 / 500`, but four of the eighteen have drifted off
+that seed, so it is live state and must be read rather than recomputed. `mass` is `1.0` and `radius` `0.2`
+of a cell on every one of them.
+
+:::caution[`subpath_dist` is only partly meaningful]
+When a route is set, only **`path_buffer_count − 1`** of the five distances are written — a one-waypoint
+route writes none at all — so an unused slot keeps whatever the previous route left in it. In the shipped
+park sixteen of the eighteen people are on one-waypoint routes: nine hold `0xCDCDCDCD`, uninitialised fill
+saved verbatim, in the first distance slot, and seven a stale real distance. Only
+`i < path_buffer_count − 1` means anything.
+:::
+
+Two details make the rest of the block legible. Waypoints are whole cells walked to at their **centre**,
+stored as `cell × 65536 + 32768`. And every distance in it — the legs, the totals, the arrival tests — is
+an **octagonal approximation**, `ax + ay − min(ax, ay) / 2` with the halving truncated, never a real
+square root; the three legs the shipped park holds come back at exactly the distances it saved.
 
 ### A guest (model 1)
 
@@ -450,13 +829,13 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 402 | 4 bytes | `mArrivalIndex` | |
 | 406 | 4 bytes | `mBalloonScript` | |
 | 410 | 4 bytes | `mBeenAdmitted` | |
-| 414 | 4 bytes | `mCash` | `684`, `510`, `654`, ... eleven different amounts across thirteen guests |
+| 414 | 4 bytes | `mCash` | `684`, `510`, `654`, ... twelve different amounts across thirteen guests |
 | 418 | 4 bytes | `mExitLevel` | `142`, `98`, `57`, ... |
-| 422 | 4 bytes | *unnamed float* - happiness | |
+| 422 | 4 bytes | *unnamed float* - happiness | `50` on all thirteen, what a new guest is constructed with |
 | 426 | 4 bytes | *unnamed float* - hunger | `18`, `25`, `61`, ... |
 | 430 | 4 bytes | `mLastPosX` | |
 | 434 | 4 bytes | `mLastPosY` | |
-| 438 | 4 bytes | *unnamed float* - litter | |
+| 438 | 4 bytes | *unnamed float* - litter carried | |
 | 442 | 2 bytes | `mMajorDest` | thing handle - what they have chosen, or none |
 | 444 | 4 bytes | `mNumRides` | |
 | 448 | 4 bytes | `mNumShops` | |
@@ -480,7 +859,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 517 | 4 bytes | `mTimeStartedIdling` | |
 | 521 | 4 bytes | *unnamed float* - `mTiredness` | `0` throughout |
 | 525 | 4 bytes | *unnamed float* - toilet | `13`, `15`, `24`, ... |
-| 529 | 4 bytes | *unnamed float* - vomit | |
+| 529 | 4 bytes | *unnamed float* - vomit, the meter the game's own log calls illness | |
 
 **The block closes on 533 exactly**, and that is what makes the offsets above worth trusting. They are not
 measured one at a time: they are produced by walking the serialiser's own declared field sizes from +398,
@@ -508,7 +887,33 @@ is a **packed cell id**: they are adjacent and they are not the same kind of num
 The unnamed floats are placed the way the staff block's are - this block is written in alphabetical order,
 so an unnamed field's name is pinned by where it sorts. That is also what names the one at 521: it falls
 between `mTimeStartedIdling` and `mToilet`, which leaves `mTiredness`. Unlike the staff block, whose order
-transposes one pair, the guest block's alphabetical order holds throughout.
+transposes one pair, the guest block's alphabetical order holds throughout. It is also why the last float
+is vomit and cannot be a field called illness: `mIllness` would sort between `mHunger` at 426 and
+`mLastPosX` at 430, which are adjacent, and 529 sorts after `mToilet`. Illness is the log's and the balance
+file's word for what that meter measures (`PeepInfo.DecisionVarIllnessWeight`, `RegionFX[i].Illness`), while
+each item's `UsageInfo.VomitEffect` - "How much vomit to add" - names it the other way.
+
+The six needs - happiness, hunger, litter, thirst, toilet and vomit - are floats the engine clamps to
+`0..100`. Five are named by the engine's own logging: it prints `thirst`, `hunger`, `toilet` and `illness`
+while scoring which ride a guest will choose, and prints `Litter gone up by %d, is now %d` over the litter
+field.
+
+> **A corroboration worth repeating, because it is the reason to trust the naming.** The balance file
+> `data/levels/Standard.sam` has `PeepInfo.DecisionVar…Weight` keys that run **Dist, Queue, Excitement,
+> Thirst, Hunger, Toilet, Illness** — the same seven terms in the same order that the scoring code
+> multiplies. A text file written by the developers agrees with the disassembly about which float is which.
+
+`mState` is one of 22 behaviour states, and `mSavedState` is the one to return to after a one-off
+animation. In the shipped park every guest's `mState` reads 2, 3 or 5, and that matches where the same
+guests stand on the map.
+
+> **How to check a reader of this block.** Four things in the shipped park are specific rather than
+> merely in range, and a map that is even one byte out fails all of them: happiness and `mSavedState` each
+> hold the single value the table gives on every guest, every need is a whole number, and each
+> guest's `mCash` falls within `PeepInfo.StartingCashVarPc` (15%) of `PeepTypes[mPersonType].StartingCash`
+> from the balance file. Note that a plain range test on the floats is nearly useless here: a small
+> integer read as a float is a denormal of about `1e-43`, which passes any `0..100` check, so shifting
+> the base by a few bytes still appears to work.
 
 ### A member of staff (models 4 to 8)
 
@@ -791,7 +1196,7 @@ and this one stops everything standing frozen once it is.
 
 | Size    | Description                                                      |
 | ------- | ---------------------------------------------------------------- |
-| 4 bytes | Module length in bytes                                           |
+| 4 bytes | Module length in bytes, counting what follows this dword - **17,522** in the shipped park, which ends exactly on the `SYSR` tag |
 | 4 bytes | Present record count — **161** in the shipped park                |
 | 4 bytes | Free record count                                                |
 | 4 bytes | High-water mark                                                  |

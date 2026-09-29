@@ -207,11 +207,11 @@ coordinates, because their positions live in their models rather than in the sav
 | 16 | 4 bytes | `mAngle` | `0`, `90` or `270` in the shipped park |
 | 20 | 2 bytes | `mId` | the item's `Info.Id`, from its own `.sam` |
 | 22 | 32 bytes | eight `tv[`*t*`]` dwords | when the object was built: year, month, day, day of the week, hour, minute, second, millisecond - not `SYSTEMTIME`'s order, which puts the day of the week third. It is a date on the **park's own calendar**, not the real one; the game writes it with `FileTimeToSystemTime` and reads it back with `SystemTimeToFileTime`, ignoring the day of the week; a stamp that will not convert loads as nought. The shipped park: the Belly Bounce and ten more read 2000-01-01 15:37:30, the bus 2000-01-27 05:10:00, the gates and the lights 2000-01-01 00:00:00 |
-| 54 | 4 bytes | `MeshInstanceID` | |
+| 54 | 4 bytes | `MeshInstanceID` | the object's model instance; a coaster's record in the coasters module carries the same number (Temple Of Gloom in Alexah's played jungle park: 330) |
 | 58 | 2 bytes | `mFlags` | see below |
 | 60 | 132 bytes | 33 pairs of `mNameA[`*i*`]`, `mNameB[`*i*`]` | 2 bytes each |
-| 192 | 4 bytes | `mRideScriptHandle` | |
-| 196 | 4 bytes | `mTrackRideHandle` | |
+| 192 | 4 bytes | `mRideScriptHandle` | the id of the object's running script in the ride scripts module |
+| 196 | 4 bytes | `mTrackRideHandle` | nought, or for an item whose `Bumper.BumperType` is set, its slot in the track-rides module in the low byte and the `BumperType` above: `0xfffffc00` for a Dino Karts in slot 0. In all nine park files (the shipped park and eight played ones), non-zero on exactly the objects whose item has a `BumperType` |
 | 200 | 4 bytes | `mState` | |
 | 204 | 2 bytes | `mTopLeft` | |
 | 206 | 2 bytes | `mEntryPos` | the cell a visitor is sent to |
@@ -221,7 +221,7 @@ coordinates, because their positions live in their models rather than in the sav
 | 214 | 4 bytes | `mCanLoad` | non-zero when the object will take anyone aboard |
 | 218 | 2 bytes | `mExitPos` | packed like `mEntryPos` - the cell a guest is put down on when they leave |
 | 220 | 2 bytes | `mFirstInQ` | |
-| 222 | 4 bytes | `mIsTrackRideValid` | |
+| 222 | 4 bytes | `mIsTrackRideValid` | 1 on every object in the shipped park; 0 on Alexah's saved Temple Of Gloom, the one object in nine park files that reads 0 |
 | 226 | 2 bytes | `mUpgradeParent` | |
 
 After that come several ring buffers - each a `mCurrentEntry`, an `mNumEntries`, an `mWrappedAround` flag,
@@ -243,7 +243,8 @@ That puts `mOperatingCapacity` at 1034, `mOperatingDuration` at 1035, `mOperatin
 `mPersonBeingLoaded` at 1040, `mCostOfGoods` at 1042, `mQualityOfGoods` at 1046, `mChanceOfWinning` at 1050,
 **`mPricePerUse` at 1054**, `mAmountOfSpecialIngredient` at 1058, **`mQueueSizeInCells` at 1062**,
 `mRequestedService` at 1078, `mTimeMarkedForMaintenance` at 1082, `mTotalCosts` at 1086, **`mTotalTakings`
-at 1090**, `mUpgradeBalloonSprite` at 1094 and `mUpgradeLevel` at 1098.
+at 1090**, `mUpgradeBalloonSprite` at 1094 and `mUpgradeLevel` at 1098, a byte: 0 on every object in the shipped park, and non-zero only
+on the Belly Bounce in Alexah's played jungle park, at 1, beside speed 75, duration 30 and capacity 7, that level's starting values.
 
 **A distinction worth keeping.** Those offsets all follow the *last* ring, so they hold for **any** split of
 the 180 entries across the six rings - only the even split is a guess, and it is not one they depend on. The

@@ -103,7 +103,7 @@ suppress the category's.
 | `UsageInfo.RipOffOK` | How far over what a thing is worth a guest will still pay, in per cent - see below |
 | `UsageInfo.SpecialIngredient` | A shop's goods: "0 = none, 1 = Fat, 2 = Salt, 3 = Ice, 4 = Sugar" |
 | `UsageInfo.AppearanceEffect` | What a shop changes about a guest's looks: "1 = Balloon, 2 = Costume" |
-| `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings: `Rides.sam`'s `InitSpeed` is 60, 75 and 90 for the three levels, its `InitDuration` 3 at each |
+| `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings: every theme's `Rides.sam` gives `InitSpeed` 60, 75 and 90 for the three levels and `InitDuration` 3 at each. Of the 76 rides in the four themes none sets its own `InitSpeed` at any level, and nine set `InitDuration`, one value at all three levels: the Belly Bounce and Bounce On Iggy `30`, The Hot Pot, Pumpkin Castle and Uforia `25`, Jurassic Tours, Tweety Tours, Flightmare Tours and Star Tours `40`; none of the jungle's 50 `Easy_` files sets either |
 
 **Two of these are the text-file side of bits the saved park carries.** `Info.IsChoosable` matches the
 catalogue object's `mFlags` bit `0x4`, and `UsageInfo.ProvidesRelief` matches bit `0x1` - checked object

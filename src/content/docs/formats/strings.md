@@ -7,6 +7,22 @@ title: Strings (*.dat, *.str)
 Strings are converted from Unicode to Bullfrog Multibyte format using two files: `MBtoUNI.dat` (converting from Multibyte to Unicode) and `UNItoMB.dat` (converting from Unicode to Multibyte).
 The contents of this file may differ depending on the language that is being used and depending on which characters are required.  The offset of each of these characters is then specified within a BFST file.
 
+The index stored in the BFST file is **one-based**: a stored byte of `n` means `MBToUni` entry
+`n - 1`. Getting this wrong shifts every character by one and still produces plausible-looking
+letters, so it is easy to miss. Decoding `data\Language\English\TAG_SYSTEM.str` zero-based turns
+
+```
+Hi there! Welcome to Theme Park :)
+```
+
+into
+
+```
+Gh<TAB>sgdqd<TAB>Vdkbnld<TAB>sn<TAB>Sgdld<TAB>O`qj<TAB>/(
+```
+
+- every letter shifted down one, and the space (index `0x0C`) landing on tab.
+
 ### File Format
 
 **Header**

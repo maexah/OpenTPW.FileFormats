@@ -99,12 +99,38 @@ Both record kinds begin with the same header, which is what makes that work:
 | 0x08   | 4 bytes  | **Next sibling** node                                                  |
 | 0x0C   | 4 bytes  | **First child** node                                                   |
 | 0x10   | 64 bytes | This node's transform, relative to its parent                          |
-| 0x54   | 4 bytes  | Offset of the node's null-terminated ASCII name                        |
+| 0x50   | 2 bytes  | This record's **own index** in the combined node list (0-based)        |
+| 0x52   | 2 bytes  | Unknown - zero in all but 3 of the game's 7,530 records                |
+| 0x54   | 4 bytes  | Offset of the node's null-terminated ASCII name (engine-confirmed)     |
 
 The three links are stored as file offsets into whichever of the two tables the target lives in,
 so a reader converts an offset back to a node index by testing which table's range it falls in.
 Bit `0x200` is how the engine tells the kinds apart - it skips material processing for any node
-that has it set.
+that has it set. It is exact: all 2,606 transform-only nodes in the game's 839 models have it
+set, and no mesh does.
+
+**Every node carries a name**, mesh or transform-only, through the same 0x54 field. The names live in
+one blob of null-terminated ASCII strings packed end to end in node order, and **no header field
+points at that blob** - the per-record offset is the only way into it. The engine relocates exactly
+four words per 88-byte node record - 0x04, 0x08, 0x0C and 0x54 (engine-confirmed) - and 0x54 is the
+same field it relocates as the mesh name when it walks the 160-byte records.
+
+The name is the only place the file says what a node is *for*; the lookup table below gives a node a
+number and a capability flag, but never a meaning. A park's gate marks where its sound belongs with a
+node called `sound node`, and the Space lobby island's antenna carries `ant_emitter`.
+
+Across the game's 839 static models, 7,520 of the 7,530 node records resolve 0x54 to a terminated
+ASCII string, and the index word at 0x50 equals the record's own position in 7,521 of them. Every
+exception is in the one malformed model below. Six names are legitimately **empty** - a zero-length
+name is not a parse failure - the longest is 25 characters (`StackedTrackOutgoingDummy`), none
+contains a non-ASCII byte, and five end in a trailing space, so compare names trimmed and without
+regard to case.
+
+> **One model is malformed and will defeat a trusting reader.** `wr_tunnel.md2`, in
+> `levels\jungle\rides\wateride.wad`, has `0x42 == 0x44 == 10` with its mesh and node tables at the
+> *same* offset, and its 0x50/0x54 words read as float bit patterns rather than an index and a
+> pointer - one name offset is 0 and another is `0x3F800000`. Bounds-check the record and the name
+> offset instead of trusting them. It is the only file in the game that needs it.
 
 `Jun_isle.MD2` shows why this matters. Its three palm trees hang off two dummy nodes plus the
 island mesh:
@@ -127,11 +153,52 @@ Animation targets index this same node list, which is why a target can legitimat
 the mesh count: it is naming a transform-only node. Rotating such a node should carry its whole
 subtree.
 
-> **Don't decompose these transforms into translation/rotation/scale.** About 1.7% of nodes in
-> the game (130 of 7533) are *sheared* - their axes are not perpendicular - and a TRS cannot
-> represent that, so the shear is silently dropped. `Jun_isle`'s tallest palm trunk is one of
-> them, and decomposing skewed it more than 5 units out of place, into the dinosaur that stands
-> next to it. Keep the 4x4 and multiply it.
+> **Don't decompose these transforms into translation/rotation/scale.** Some nodes are *sheared* -
+> their axes are not perpendicular - and a TRS cannot represent that, so the shear is silently
+> dropped. How many there are depends entirely on how square you insist they be, so each count
+> below comes with its test; "out of square" is the largest `|cos|` between any two of a node's
+> three basis axes. Of the game's 7,530 node transforms, **172 are more than 1e-4 out of square**
+> and 120 are more than 0.01; **45 are skewed far enough that .NET's `Matrix4x4.Decompose` gives
+> up on them outright**, the mildest of those being 0.11 out of square. `Jun_isle`'s tallest palm
+> trunk is one of the 45 - its axes are 0.43 out of square - and decomposing skewed it more than 5
+> units out of place, into the dinosaur that stands next to it. Keep the 4x4 and multiply it.
+>
+> Ten further records have a *collapsed* axis rather than a sheared one - a basis vector of zero
+> length - and all ten are `wr_tunnel.md2`'s nodes 0-9, the malformed model noted above. They are
+> degenerate rather than skewed, and worth excluding from any shear count.
+
+### Node lookup ids
+
+Some nodes can also be found by number. The ushort at 0x48 is a record count, the uint at 0x7C the
+offset of a table of that many 20-byte records, and the ushort at 0x46 the node the first record
+belongs to - record `r` names node `0x46 + r`.
+
+| Offset | Size     | Description                                                              |
+| ------ | -------- | -------------------------------------------------------------------------- |
+| 0x00   | 4 bytes  | Flags                                                                      |
+| 0x04   | 4 bytes  | Id                                                                         |
+| 0x08   | 12 bytes | Unknown - zero in most records, but not in 376 of the game's 2,452         |
+
+346 of the game's 839 models carry a table. In all but one, its records stay inside the model's
+node count, and ids run from 0 to 99.
+
+The engine's lookup (engine-confirmed) walks the table for a record whose id matches and whose
+flag word shares a bit with a mask the caller passes, and returns the record's index; the caller
+adds `0x46` to get the node. The flag words vary widely across the game - `0xB1`, `0x111` and
+`0x811` are the most common - so the table is a general way of naming nodes. The costume code is
+one user: it asks for bit `0x400`, and dresses a character by setting and clearing a node's hidden
+flag, bit `0x10` of the node's own flag word.
+
+The advisor (`Advisor.MD2` in `data\global\advisor.wad`) shows it best. Every one of his 14
+records has `0x400`, and the ids are costume pieces: his antennae are 19 and 20, which most
+costumes hide; his right hand is 21, which costume 14 - his spatula - hides; and his hats and bow tie
+are 5 to 13. None of those nodes is hidden in the file - the hidden bit is never
+set in any node the game ships - so which pieces show is entirely the code's decision.
+
+#### Open questions
+
+- The 12 bytes after the id, and what the flag bits other than `0x400` select.
+- The one model whose table runs past its node count.
 
 ### Textures
 
@@ -191,8 +258,9 @@ one per mesh:
 | 0x00   | 4 bytes  | **Flags** - the engine tests `0x200` and sets `0x20`/`0x80000010` (engine-confirmed) |
 | 0x04   | 12 bytes | Three pointers, purposes unknown (engine-confirmed pointers)              |
 | 0x10   | 64 bytes | 4x4 transform matrix (16 floats, row-major) - this mesh's placement       |
-| 0x50   | 4 bytes  | Unknown                                                                    |
-| 0x54   | 4 bytes  | Offset of this mesh's null-terminated ASCII name                          |
+| 0x50   | 2 bytes  | This record's **own index** in the combined node list (0-based)            |
+| 0x52   | 2 bytes  | Unknown - zero in all but 3 of the game's 7,530 records                    |
+| 0x54   | 4 bytes  | Offset of this mesh's null-terminated ASCII name - see **Node hierarchy**  |
 | 0x58   | 2 bytes  | Vertex count                                                               |
 | 0x5A   | 2 bytes  | Material count                                                             |
 | 0x5C   | 2 bytes  | Face count                                                                 |
@@ -209,8 +277,9 @@ one per mesh:
 | 0x94   | 4 bytes  | Vertex order table offset (see **Vertex order**, below)                   |
 | 0x98   | 8 bytes  | Unknown                                                                    |
 
-This mesh's bounding box (0x78/0x84) matters beyond just culling: it's also the box that
-animation files quantise vertex positions into - see **Animation** below.
+This mesh's bounding box (0x78/0x84) is the mesh's alone. It is **not** the box animation files
+quantise vertex positions into: each morph track carries a box of its own - see **Vertex morph**
+below.
 
 A node index below the model's mesh count selects one of these 160-byte records; a higher index
 selects an 88-byte record from the table at header 0x74 instead (engine-confirmed) - see
@@ -218,7 +287,7 @@ selects an 88-byte record from the table at header 0x74 instead (engine-confirme
 
 #### Open questions
 
-- The remaining unknown fields (0x50, 0x74, 0x90, 0x98) and the three pointers at 0x04-0x0C -
+- The remaining unknown fields (0x52, 0x74, 0x90, 0x98) and the three pointers at 0x04-0x0C -
   none have been narrowed down beyond "not used by anything this project's renderer needs".
 - Which bits of the flags word at 0x00 mean what; only `0x200`, `0x20` and `0x80000010` are
   observed being tested or set.
@@ -398,6 +467,10 @@ The remaining 90 contain no animation at all - 89 declare a track count of zero 
 animation block. **The track table identity never fails on any file in the game**, so nothing is
 rejected for being unreadable.
 
+Counting by flag bits instead - which channels a track declares, rather than which read cleanly -
+**1,183 of the 1,189 files with a valid track table** have at least one track carrying a rotation,
+morph, UV, position or visibility channel, and only 6 carry none of those five.
+
 ### Locating the tracks
 
 The uint at 0x98 points at a 72-byte **animation block**. That pointer is valid in 1278 of the
@@ -427,14 +500,14 @@ Each track is a 64-byte descriptor:
 | 0x0C                               | 4 bytes | A frame value, close to but not always the track's last keyframe |
 | 0x10                               | 2 bytes | Rotation keyframe count (channel `0x8` only)          |
 | 0x14                               | 2 bytes | **Target node** - see **Target resolution** below      |
-| 0x16                               | 2 bytes | Unknown, but **not** part of the target                |
-| 0x18                               | 4 bytes | Data pointer for channel `0x1` (undecoded)             |
+| 0x16                               | 2 bytes | Entry count for channel `0x20000`; otherwise unknown, and **not** part of the target |
+| 0x18                               | 4 bytes | Position record (channel `0x1`)                        |
 | 0x1C                               | 4 bytes | Rotation keyframes (channel `0x8`)                     |
 | 0x20                               | 4 bytes | Pointer, channel unidentified (engine-confirmed)       |
 | 0x24                               | 4 bytes | Pointer, channel unidentified (engine-confirmed)       |
 | 0x28                               | 4 bytes | Vertex morph descriptor (channel `0x1000`)             |
 | 0x2C                               | 4 bytes | UV animation descriptor (channel `0x10000`)            |
-| 0x30                               | 4 bytes | Data pointer for channel `0x20000` (undecoded)         |
+| 0x30                               | 4 bytes | Visibility entries (channel `0x20000`)                 |
 | 0x34                               | 4 bytes | Easing curve table (rotation only, engine-confirmed)   |
 
 The flag word at 0x04 says which channels the track carries, and every bit owns exactly one
@@ -445,8 +518,8 @@ slot. Counted across every track in every animation file in the game:
 | `0x00008`   | count at +0x10, data at +0x1C | Rotation     | 3039   | Yes      |
 | `0x01000`   | +0x28                         | Vertex morph | 1766   | Yes      |
 | `0x10000`   | +0x2C                         | UV animation | 690    | Yes      |
-| `0x20000`   | +0x30                         | Unidentified | 2536   | No       |
-| `0x00001`   | +0x18                         | Unidentified | 1216   | No       |
+| `0x20000`   | count at +0x16, data at +0x30 | Visibility   | 2536   | Yes      |
+| `0x00001`   | +0x18                         | Position     | 1216   | Yes      |
 | `0x80`+`0x100` | +0x20                      | Unidentified | 644    | No       |
 | `0x00200`   | +0x24                         | Unidentified | 71     | No       |
 
@@ -593,12 +666,15 @@ producing plausible-looking output:
 
 ### Vertex morph (bit 0x1000)
 
-Reshapes a mesh vertex by vertex. The slot at descriptor 0x28 points at a 16-byte descriptor:
+Reshapes a mesh vertex by vertex. The slot at descriptor 0x28 points at a morph descriptor:
 
-| Offset  | Size    | Description          |
-| ------- | ------- | ---------------------- |
-| 0x02    | 2 bytes | Record count           |
-| 0x0C    | 4 bytes | Record table offset    |
+| Offset  | Size     | Description                                                          |
+| ------- | -------- | ---------------------------------------------------------------------- |
+| 0x00    | 1 byte   | Flags - `0x01` in 1,338 of the game's 1,736 readable descriptors, `0x03` in the other 398 |
+| 0x02    | 2 bytes  | Record count                                                           |
+| 0x0C    | 4 bytes  | Record table offset                                                    |
+| 0x14    | 12 bytes | Centre of this track's quantisation box (3 floats) - see **Value decoding** |
+| 0x20    | 12 bytes | Step of this track's quantisation box (3 floats) - see **Value decoding**   |
 
 Each track has its **own** descriptor and its own channel space, so one animation morphs as many
 meshes as it has morph tracks. 752 animation files carry readable morph tracks, 360 of them
@@ -635,24 +711,38 @@ exactly, and the 7 that don't are the mistargeted ones described under **Target 
 which makes `channelCount == targetMesh.vertexCount + 2` a good validity test as well as a
 description.
 
+The two trailing channels are the **corners of the box the vertices span** at each keyframe,
+minimum then maximum, in the same packed form as the vertices. The engine reads them as the
+animation's bounding box (engine-confirmed), and in all 464 tracks whose base model resolves they
+sit on the corners of the first keyframe's vertices to within three quantisation steps.
+
 Channels the animation doesn't actually move are still present, in a record holding a single
 keyframe of that channel's rest value, so a full mesh pose is always reconstructible by sampling
 every channel.
 
 **Value decoding.** Each 4-byte value is a vertex position quantised into three signed 10-bit
 fields - X in bits 0-9, Y in 10-19, Z in 20-29 (bits 30-31 unused). Each field is a signed value
-from -512 to 511 mapped linearly onto the *target mesh's* bounding box (from its mesh table
-record): -512 is that axis's box minimum, +511 its maximum.
+from -512 to 511, multiplied by that axis of the descriptor's **step** and added to that axis of
+its **centre** (engine-confirmed):
 
 ```
-component(raw, shift, min, max):
+component(raw, shift, centre, step):
     field = signed_10_bit((raw >> shift) & 0x3FF)
-    centre = (min + max) / 2
-    return centre + field * (max - min) / 1023
+    return centre + field * step
 ```
 
-Verified to R² >= 0.999997 per axis (max error ~0.028 units, exactly the quantisation step) by
-decoding every channel's rest keyframe and comparing against a known mesh's actual vertices.
+> **The box is the track's own, not the target mesh's.** It is usually close to the mesh's
+> bounding box, which makes decoding into the mesh's box look almost right - but in none of the
+> 464 tracks whose base model resolves is it the same box. Compared against the mesh's rest
+> vertices, a track's first keyframe lands on them to within one and a half quantisation steps
+> in 346 tracks when decoded with the track's own centre and step, and in 63 when decoded into
+> the mesh's bounding box: 57 both ways, 289 only with the track's box, and 6 only with the
+> mesh's. (Plenty of animations don't start at the rest pose, so neither count reaches 464.)
+>
+> It shows most in the advisor's `Advisorm14`, where he rises onto the screen: its antennae are
+> quantised into a box nearly twice as tall as in his other clips, so read into the mesh's
+> bounding box they come out at a little over half their height and jump back when his next
+> clip begins.
 
 ### UV animation (bit 0x10000)
 
@@ -698,6 +788,65 @@ nothing else; work an animation's length out from its rotation and morph keyfram
 those files span zero frames, so their water never moves. 98 of the game's 1151 animation files
 are in that position.
 
+### Position (bit 0x1)
+
+The slot at +0x18 points at a 16-byte record:
+
+| Offset | Size    | Description                                           |
+| ------ | ------- | ------------------------------------------------------- |
+| 0x00   | 4 bytes | Type - which curve joins the points, see below          |
+| 0x04   | 2 bytes | Point count                                             |
+| 0x06   | 2 bytes | Key count                                               |
+| 0x08   | 4 bytes | Offset of the points: point count x 3 floats            |
+| 0x0C   | 4 bytes | Offset of the keys: key count x 4 bytes                 |
+
+A key is a ushort frame followed by a ushort that is zero in all 8,703 keys in the game. A point
+is a position **relative to the node's parent**, and replaces the node's authored position, the
+same way a rotation keyframe replaces its orientation.
+
+The type's bits choose the curve, and the engine picks its sampler on exactly these bits
+(engine-confirmed):
+
+| Type   | Bit     | Tracks | Points per track     | Curve                                               |
+| ------ | ------- | ------ | -------------------- | ----------------------------------------------------- |
+| `0x12` | `0x2`   | 785    | 3 x (keys - 1) + 1   | Cubic Bezier, four points per segment               |
+| `0x18` | `0x8`   | 431    | one per key          | Straight lines between keys                          |
+
+Every one of the game's 1,216 position records has exactly the point count its type calls for.
+The engine also has a sampler for a type with neither bit - a Catmull-Rom spline - but no file in
+the game uses it.
+
+For a Bezier track, segment `s` runs from key `s` to key `s + 1` using points `3s` to `3s + 3`, the
+last point of one segment being the first of the next. With `t` the fraction of the way between
+the two keys' frames:
+
+```
+p = (1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t) t^2 P2 + t^3 P3
+```
+
+The engine evaluates the same polynomial in power-basis form, with the constants 1, 3, -3 and -6.
+
+Key frames never go backwards, though 4 tracks repeat a frame - a zero-length segment.
+
+The advisor is the clearest example. In `Advisorm14` his body's track (type `0x12`, keys at frames
+0, 10, 20 and 30) raises it from (0, 0.21, -73.2) to its resting (0, 0.21, -21.2), and `Advisorm15` drops it back to -74.4. His head does the same. That is him
+popping up from below the bottom of the screen at the start of a line and ducking back out of
+view at the end.
+
+### Visibility (bit 0x20000)
+
+The ushort at +0x16 is this channel's entry count, and the slot at +0x30 points at that many
+**signed 16-bit** entries. Each is a frame number whose sign says what happens from that frame on:
+greater than zero shows the node, zero or less hides it. The engine takes the last entry whose
+absolute value is at or before the current frame, and sets or clears the node's hidden flag (bit
+`0x10`) from it; before the first entry the node is left as it was (engine-confirmed).
+
+All 2,536 visibility tracks in the game list their entries in order of frame.
+
+This is how the advisor blinks. In `Advisorm10` his eyes carry `-40, 44, -180, 184, ...` and his
+closed eyelids `0, 40, -44, 180, -184, ...` - the eyelids start hidden, and for four frames at 40,
+and again at 180, his eyes are swapped for them.
+
 ### Which animation file a model takes
 
 The letter before the number is an **animation role**, not part of the model's name. The engine
@@ -738,19 +887,19 @@ indistinguishable by anything in the `.md2` data. In the original game this is d
 by a `TRIGANIM` instruction in that ride's [compiled script](/formats/rsse) - see the gate
 example on the [RSS](/formats/rss) page.
 
+Keyframe numbers are frames at **30 per second**. The engine advances a playing animation by the
+elapsed milliseconds times 0.03, and works out a clip's length as `frames * 1000 / 30`
+(engine-confirmed).
+
 ### Open questions
 
-- The channel at flag `0x1` (pointer at descriptor +0x18). Partially characterised: it leads to
-  a repeating record of `u32 tag, u16 a, u16 b, ptr, ptr`, where the second pointer is clearly a
-  frame index array (`0, 10, 20, 30` in `Advisorm14`) and the first is an `a * 12`-byte payload.
-  The record shape only holds for about 58% of instances, so there are variants and this is not
-  decoded.
-- The channel at flag `0x20000` (pointer at descriptor +0x30) - location known, contents not.
-- The two further pointer slots at +0x20 and +0x24, and which flag bits own them. (+0x34 no longer
-  belongs on this list: it is the easing curve table, owned by no flag bit at all - see
-  [The easing curve](#the-easing-curve).)
+- What the engine does with a zero-length position segment, which 4 tracks have.
+- The two further pointer slots at +0x20 and +0x24, and which flag bits own them. (+0x34 is the easing curve table,
+  owned by no flag bit at all - see [The easing curve](#the-easing-curve).)
 - The frame-ish value at descriptor +0x0C, and the unknown 4 bytes ending each morph record.
-- What the two extra channels beyond a morph track's vertex count represent.
+- What bit `0x02` of a morph descriptor's flag byte selects.
+- Why 6 morph tracks' first keyframes land on their mesh's rest vertices when decoded into the
+  mesh's bounding box, but not when decoded into their own box.
 - Why a few models' target indices don't land on the mesh the data clearly belongs to - i.e.
   what the node list actually contains for models that have more nodes than meshes.
 - The 90 animation files that fail the track table identity, and the 25 that pass it but carry

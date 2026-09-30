@@ -615,8 +615,10 @@ each counts, and how the game rolls them, is OpenTPW's `docs/exe/ride-operation.
 bookkeeping". Read this way, Alexah's two played jungle files agree with themselves on every object: each of the 46
 rides, shops and toilets with customers has served equal to customers, today and over the thirty days, and a
 sideshow has fewer (its winners: the Jungle Spray 30 of 43). In the shipped park every ring entry a reader reaches is
-zero; thing 15 (item 1600, unplaced) has not wrapped (`mCurrentEntry` 5), and its unreached entries 6 to 29 hold
-`0xCDCDCDCD`, the build's fill for memory never written.
+zero, as are both counts; every ring's `mNumEntries` is 30; most objects' rings have `mCurrentEntry` 1 and are wrapped,
+things 11 and 12 are on 2, and thing 15 (item 1600, unplaced) has not wrapped (`mCurrentEntry` 5), its unreached
+entries 6 to 29 holding `0xCDCDCDCD`, the build's fill for memory never written. All nine park files to hand (the
+shipped one and Alexah's eight) hold 30 in every ring.
 
 **Two of these offsets check all the others.** `mAngle` at 16 and `mId` at 20 fall out of laying the
 serialiser's write order against the record - eight bytes of list head, then the map base's four shorts -
@@ -868,10 +870,10 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 434 | 4 bytes | `mLastPosY` | |
 | 438 | 4 bytes | *unnamed float* - litter carried | |
 | 442 | 2 bytes | `mMajorDest` | thing handle - what they have chosen, or none |
-| 444 | 4 bytes | `mNumRides` | |
-| 448 | 4 bytes | `mNumShops` | |
-| 452 | 4 bytes | `mNumSideshows` | |
-| 456 | 4 bytes | `mNumSideshowsWon` | |
+| 444 | 4 bytes | `mNumRides` | `0` on all thirteen shipped guests; 287 of the 339 in Alexah's played jungle file hold some of these four |
+| 448 | 4 bytes | `mNumShops` | `0` on all thirteen |
+| 452 | 4 bytes | `mNumSideshows` | `0` on all thirteen |
+| 456 | 4 bytes | `mNumSideshowsWon` | `0` on all thirteen; never above `mNumSideshows` in any file to hand |
 | 460 | 4 bytes | `mPaidAdmission` | |
 | 464 | 4 bytes | `mParkOpeningWaitingTime` | |
 | 468 | 1 byte | `mPersonType` | `5`, `7`, `2`, ... an index into `PeepTypes[0..7]` |

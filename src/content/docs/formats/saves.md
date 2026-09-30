@@ -695,6 +695,25 @@ the open check refuses the object, though leaving the track editor opens it anyw
 chain that closes on `mTotalTakings` at 1090 rather than on a value, since nought is also what its
 neighbour after it holds.
 
+### The staff HQ (model 9): strikes and training budgets
+
+Thing 1 in every park file, the one the header's `mStaffHQ` names, **103 bytes**. Its serialiser writes the
+strike fields first and then hands a second writer the training block, which names its own two fields:
+
+| Offset | Size | Name | Shipped park |
+| --- | --- | --- | --- |
+| 16 | 4 bytes | `mForceStrike` | `0` |
+| 20 | 2 bytes | `mStaffMemberPickedUp` | `0` |
+| 22 + 12*i* | 12 bytes each, *i* 0 to 4 | `mStrikeLevel[`*i*`]` | three dwords, `0`, `0`, `715`, on all five |
+| 82 + 4*i* | 4 bytes each, *i* 0 to 4 | `mBudget[`*i*`]`, the monthly training budgets | `0` on all five |
+| 102 | 1 byte | `mHaveEverTrained` | `0` |
+
+`16 + 4 + 2 + 5 × 12 + 5 × 4 + 1` is `103`, and in the shipped park the record ends exactly on the World
+module's `DLRW`. The five budgets are, in order, the handymen's, the mechanics', the entertainers', the
+guards' and the researchers' - models 5, 4, 6, 7 and 8, which is the order of the rows on the game's Staff
+Training Budgets screen. What the game does with them each month is OpenTPW's `docs/exe/ride-operation.md`,
+"The month's change".
+
 ### The park analyser (model 13)
 
 Thing 5 in every park file, 73,544 bytes, named by the header's `mParkAnalyser`. Most of it is not decoded. Near
@@ -752,7 +771,8 @@ One reading falls out of that. Every saved `APR_in_percent` is **nought**, which
 20, 23, 22, 18 and 21 - nowhere. The shipped park is an Instant Action park, and its own loans say so.
 
 `mBalance` is the money and `mBatchBalance` is not a second copy of it: taking an admission fee adds it
-to `mBalance` and to `mProfitThisYear`, and touches neither of the others.
+to `mBalance` and to `mProfitThisYear`, and touches neither of the others. `mBatchBalance` is `0`, and
+every `loan_bought` is `0`, in all nine park files.
 
 ### The person base
 
@@ -1156,6 +1176,26 @@ interval alone rather than setting it to zero.
 The ceiling of 250 that the same code applies cannot be reached from a walk at all: the distance is
 squared as a 32-bit integer, and a step large enough to want an interval past 250 would overflow that
 thousands of times over before the ceiling could apply.
+
+## The message centre module (`SSEM`)
+
+Which things hear which message: one listener set for each of the game's 29 message types, between the
+particles' `TRAP` and the message centre's own `SSEM`.
+
+```text
+u32  set count                 29
+per message type, 0 to 28:
+  u32  count
+  u16  thing id  x count       ascending
+```
+
+In the shipped park that is 266 bytes: `4 + 29 × 4` for the counts and 73 ids. Each set is written in
+ascending id, and a load replaces whatever the running park's constructors had registered with these sets
+as they stand, so a set is the file's word on who is told, and in what order. Set `0xc`, the month's change,
+is things 1, 4, 5 and 8 and then every member of staff in all nine park files: `1, 4, 5, 8, 25, 26, 27, 28,
+30` in the shipped park, and `1, 4, 5, 8` in the four park files with no staff. Set `0xb`, the day's change, is
+the fourteen catalogue objects and thing 10; set `0xd`, the year's change, is thing 8, the economy thing,
+alone. What each message does is OpenTPW's `docs/exe/ride-operation.md`, "The month's change".
 
 ## The clock module (`KOLC`)
 

@@ -595,10 +595,28 @@ That puts `mOperatingCapacity` at 1034, `mOperatingDuration` at 1035, `mOperatin
 at 1090**, `mUpgradeBalloonSprite` at 1094 and `mUpgradeLevel` at 1098, a byte: 0 on every object in the shipped park, and non-zero only
 on the Belly Bounce in Alexah's played jungle park, at 1, beside speed 75, duration 30 and capacity 7, that level's starting values.
 
-**A distinction worth keeping.** Those offsets all follow the *last* ring, so they hold for **any** split of
-the 180 entries across the six rings - only the even split is a guess, and it is not one they depend on. The
-two fields that sit *between* rings, `mNumCustomers` and `mNumWalkAways`, do depend on it, and are therefore
-not safe to read on this evidence alone.
+**The split is even, and the serialiser's order places every ring.** The writer (`FUN_004db7d0`) walks six
+thirty-entry rings and the two counts in this order, each ring `mCurrentEntry` (4), `mNumEntries` (4, 30),
+`mWrappedAround` (1), `mTemp` (4) and 30 `mData` (4 each), 133 bytes:
+
+| File offset | Field | In the running game |
+|---|---|---|
+| 228 | a ring | today's costs, `+0xf8` |
+| 361 | a ring | today's takings, `+0x70` |
+| 494 | 4 bytes, `mNumCustomers` | every visit |
+| 498 | a ring | today's customers, `+0x1a8` |
+| 631 | 4 bytes, `mNumWalkAways` | |
+| 635 | a ring | today's walk-aways, `+0x230` |
+| 768 | a ring | today's served, `+0x2b8` |
+| 901 | a ring | today's satisfaction, `+0x340` |
+
+and 901 + 133 closes on `mOperatingCapacity` at 1034. The rings are the object's last thirty game days: what
+each counts, and how the game rolls them, is OpenTPW's `docs/exe/ride-operation.md`, "The settle-up's
+bookkeeping". Read this way, Alexah's two played jungle files agree with themselves on every object: each of the 46
+rides, shops and toilets with customers has served equal to customers, today and over the thirty days, and a
+sideshow has fewer (its winners: the Jungle Spray 30 of 43). In the shipped park every ring entry a reader reaches is
+zero; thing 15 (item 1600, unplaced) has not wrapped (`mCurrentEntry` 5), and its unreached entries 6 to 29 hold
+`0xCDCDCDCD`, the build's fill for memory never written.
 
 **Two of these offsets check all the others.** `mAngle` at 16 and `mId` at 20 fall out of laying the
 serialiser's write order against the record - eight bytes of list head, then the map base's four shorts -
@@ -665,6 +683,19 @@ Calling one closes the object and writes `1`; a repair or a cancelled call write
 the open check refuses the object, though leaving the track editor opens it anyway. It is `0` on all fourteen objects in the shipped park. Its offset rests on the
 chain that closes on `mTotalTakings` at 1090 rather than on a value, since nought is also what its
 neighbour after it holds.
+
+### The park analyser (model 13)
+
+Thing 5 in every park file, 73,544 bytes, named by the header's `mParkAnalyser`. Most of it is not decoded. Near
+its end are **twenty rings of bytes, one per kind of opinion**, each 60 bytes: `mCurrentEntry` (4, from −1),
+`mNumEntries` (4, 50), `mWrappedAround` (1), `mTemp` (1) and 50 `mData` (1 each), kind 0 first; after them the
+record's last 76 bytes hold `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver`,
+`mLifetimeVisitors`, `mLastStrike`, `mLastPuke`, `mLastPrank`, `mParkLastOpened`, `mLastObjectBuilt`,
+`mLastStaffHired`, `mMostPaidForTicket`, `mLargestBusLoad` and `mLongestStay`, not measured one by one. In
+`Easymode.TPWI` the rings start 72,268 bytes into the record (the only run of twenty such rings in the whole
+stream): kind 0 holds eight samples of 50, the rest are empty, and `mLifetimeVisitors` reads 8. A played park
+fills kinds 1 to 4, 6, 7, 9 to 13, 15, 16 and 18 too. What each kind is, and that only kind 0 is ever read back,
+is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 
 ### The economy thing (model 16)
 

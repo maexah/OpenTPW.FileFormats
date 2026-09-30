@@ -881,14 +881,14 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | --- | --- | --- | --- |
 | 398 | 4 bytes | `mArrivalDate` | |
 | 402 | 4 bytes | `mArrivalIndex` | |
-| 406 | 4 bytes | `mBalloonScript` | |
+| 406 | 4 bytes | `mBalloonScript` | `0` on all thirteen: the one-based slot of the guest's balloon in the `TPCS` sprite table, or none (below) |
 | 410 | 4 bytes | `mBeenAdmitted` | |
 | 414 | 4 bytes | `mCash` | `684`, `510`, `654`, ... twelve different amounts across thirteen guests |
 | 418 | 4 bytes | `mExitLevel` | `142`, `98`, `57`, ... |
 | 422 | 4 bytes | *unnamed float* - happiness | `50` on all thirteen, what a new guest is constructed with |
 | 426 | 4 bytes | *unnamed float* - hunger | `18`, `25`, `61`, ... |
-| 430 | 4 bytes | `mLastPosX` | |
-| 434 | 4 bytes | `mLastPosY` | |
+| 430 | 4 bytes | `mLastPosX` | a float in world units, ten to a cell: where the held balloon goes next frame, across |
+| 434 | 4 bytes | `mLastPosY` | the same, down |
 | 438 | 4 bytes | *unnamed float* - litter carried | |
 | 442 | 2 bytes | `mMajorDest` | thing handle - what they have chosen, or none |
 | 444 | 4 bytes | `mNumRides` | `0` on all thirteen shipped guests; 287 of the 339 in Alexah's played jungle file hold some of these four |
@@ -904,7 +904,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 488 | 2 bytes | `mQPrev` | `0` on all thirteen |
 | 490 | 4 bytes | `mQueueMoveDelay` | |
 | 494 | 1 byte | `mQueuePos` | `0` on all thirteen |
-| 495 | 4 bytes | `mRemainingBalloonLife` | |
+| 495 | 4 bytes | `mRemainingBalloonLife` | `0` on all thirteen: the needs turns the balloon has left, kept while it is not showing |
 | 499 | 2 bytes | `mSavedMajorDest` | thing handle - where they were going when something on the way took them, to go on to after it, or none; `0` on all thirteen |
 | 501 | 4 bytes | `mSavedState` | `6` on all thirteen - a new guest is constructed deciding |
 | 505 | 4 bytes | `mState` | `2`, `5`, `3` - heading for the gate, entering, waiting outside |
@@ -927,6 +927,16 @@ one jungle park played in the original to `mGameTick` 19,004 and 19,007 - not fi
 none follows a nought, which is what a newest-first list of four looks like. The same saves hold a non-zero
 `mSavedMajorDest` on 51 and 50 of the 339 guests, 31 of them a toilet in each, and two fantasy saves on 6 of
 53; every one names an object in its own save.
+
+**The balloon is its own sprite, joined by the slot.** `mBalloonScript` is not a handle into anything else: it names
+a slot of the same `TPCS` table the guest's own `mSpriteScript` names, one-based, `0` for none. The shipped park has no
+balloons. The two played jungle saves hold 29 and 28, and two fantasy saves 11 each, every one a kind-10 record (`balloons`) of bank 0, frame 0, alpha
+255, state 2, on script word 1650 at 1652, its set 0 to 3 (the colour, see [sprites](../sprites/)) and its position
+equal to its guest's `mLastPosX` and `mLastPosY`; its height above the ground runs 1.00 to 1.30 for a guest standing
+still and lower, down to -1.2, for one walking. `mRemainingBalloonLife` is non-zero on 35 guests of each: the six and seven more
+are guests riding (state 16), whose balloon is not showing, and the six lowest lives (2, 10, 11, 18, 21, 22) are one
+lower in the later of the two saves. `mLastPosX` and `mLastPosY` sit between hunger and litter by the same alphabetical
+rule as everything else here.
 
 The two queue links deserve a note, because finding them turned entirely on the **name**. Sweeping the
 executable's serialised field names for `InQ`, `mNext`, `Queue` and `mPrev` finds no per-person queue link

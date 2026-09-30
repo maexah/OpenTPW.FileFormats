@@ -116,8 +116,8 @@ order:
 | 6 | `mechanics` | 13 | `particles` |
 
 Each entry records where that kind's banks start and how many there are. When something in the park
-needs a sprite, the game picks a bank from its kind **at random**, and then a variant within the bank
-the same way; the choice is stored on the thing rather than made again, so a park reloaded from a save
+needs a sprite, the game picks a bank from its kind **at random**, and a balloon its set too (see
+[Balloons](#balloons)); the choice is stored on the thing rather than made again, so a park reloaded from a save
 keeps the guests it had.
 
 ## How a folder is swept
@@ -128,29 +128,55 @@ eleven kinds that are not costumes, costume heads or entertainers, and each of t
 only those three. So exactly one of the two sweeps ever finds anything, and a park never numbers another
 theme's banks.
 
-Within a folder the order is **not** simply the order the files are listed, for `kids` and `kidsheads`.
-The loader first matches a table of four names, in this order, and loads whichever of them it finds:
+The loader gathers both roots' files into one list and **sorts it by name**, ignoring case, before it loads
+anything; every one of the archive's 21 sprite folders is already listed in that order, so for the shipped
+files the two agree. For `kids` and `kidsheads` the order is then **not** simply name order: the loader
+first matches a table of four names, in this order, and loads whichever of them it finds:
 
 | | | | |
 | --- | --- | --- | --- |
 | `SPR_BI` | `SPR_KI` | `SPR_TA` | `SPR_SU` |
 
-Only then does it sweep up whatever is left, in the order the archive lists it. `Generic\Kids` is listed
-as BE, BI, CH, FR, KI, SA, SU, TA, so its banks come out in a different order entirely:
+Only then does it sweep up whatever is left, in name order. `Generic\Kids` is listed, and sorts, as BE,
+BI, CH, FR, KI, SA, SU, TA, so its banks come out in a different order entirely:
 
 | Bank | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Loaded | `SPR_BI` | `SPR_KI` | `SPR_TA` | `SPR_SU` | `SPR_BE` | `SPR_CH` | `SPR_FR` | `SPR_SA` |
 | Listed | `SPR_BE` | `SPR_BI` | `SPR_CH` | `SPR_FR` | `SPR_KI` | `SPR_SA` | `SPR_SU` | `SPR_TA` |
 
-An earlier version of this page said banks were numbered in the order a folder's files are found. That
-holds for the other twelve kinds and is wrong for these two, and it matters: the shipped Jungle park's
-thirteen guests wear kids banks 0, 2, 4, 5, 6 and 7, so reading them in listed order dresses every one
+The other twelve kinds are numbered in name order. For kids it matters: the shipped Jungle park's
+thirteen guests wear kids banks 0, 2, 4, 5, 6 and 7, so reading them in name order alone dresses every one
 of them as the wrong child while every count and every trailer still agrees.
 
 How many banks a sweep loads is also capped by the detail setting, so a folder is not always read to the
 end - `kids` stops at two, four, six or eight of its eight, and the staff kinds at one or two. The
-shipped Jungle park's guests reach bank 7, so that park was saved with all eight loaded.
+shipped Jungle park's guests reach bank 7, so that park was saved with all eight loaded. The detail files
+`med.sam` and `high.sam` set the kids' `NUMKIDS` to 2 and `low.sam` to 0, which the executable reads as six
+and two, not as the files' own comment says (`0->4, 1->6, 2->8`); parks the original saved at those settings
+bear it out, their guests' kids banks all 0 to 5.
+
+## Balloons
+
+There is one balloon bank in the archive, `Generic\Balloons\SPR_BL` - a 350-byte `.esp` and a 4,546-byte `.tpc` of
+eight pictures - and every theme uses it. Four sets have frames, two each, facing nowhere:
+
+| Set | First picture | Colour |
+| --- | --- | --- |
+| 0 | 4 | red |
+| 1 | 2 | green |
+| 2 | 0 | blue |
+| 3 | 6 | yellow |
+
+Frame 0 is the whole balloon, 16 x 19 or 16 x 20 pixels; frame 1 is the same balloon burst, 24 x 27 to 26 x 30.
+Every picture's origin down is -73 to -79, so its top is 73 to 79 pixels above the point it is drawn at: a balloon
+floats above its guest's head. **The palette's alpha is meant**: the whole balloon's body is palette alpha 218 of 255
+with softer edges, and the bursts' spray is near-black at alpha 8 to 80 - about two-thirds of the non-clear pixels in
+the blue, green and red bursts, two-fifths in the yellow - so drawing every non-clear pixel opaque turns a burst into a
+dark blob.
+
+A balloon's set is a draw below the count of sets with frames, `(r >> 2) % 4`, used as the set number itself; it
+lands on a set with frames because `SPR_BL`'s four are sets 0 to 3.
 
 ## Pictures (*.tpc)
 

@@ -694,7 +694,9 @@ The `<command>` is fetched **without being resolved**, so it has to be a literal
 
 Command `15` is not merely unused by the shipped scripts - **its table entry is the error path itself**, so the engine treats it exactly as it treats 0 or 18.
 
-One structural note that the numbering alone does not show: commands `13` and `14` call the **same** engine function, `13` multiplying its operand by 30 first and `14` negating it. Whatever they are named, they are two directions of one quantity.
+One structural note that the numbering alone does not show: commands `13` and `14` call the **same** engine function, `13` multiplying its operand by 30 first and `14` negating it. It is the ride's duration: `13` sets a length in units of 30 park ticks of 31 ms (about 0.93 s, not a second), and `14` sets a number of laps, kept negative.
+
+The ride's cars count that duration down themselves, once a park tick while the ride runs and is not broken, and a car whose count reaches nought puts its riders on the ride's leaving list, where `2` takes them off one at a time. A duration of 0 never runs out; only closing the ride (`6`) unloads its cars. The whole chain, and the ride record these commands work on, is in OpenTPW's `docs/exe/park.md`, "How a bumper ride ends a go". Aluzed's OpenTPW-decomp fork pointed at these commands first.
 
 The ride this reaches is not the one [`COAST`](#coast) reaches, although the two dispatchers begin identically: both look an object up from the script before reading the command. What differs is what the commands then act on. `BUMP`'s act on the object that lookup found; `COAST`'s act on the handle `COAST_INITIALISE` stored on the script, which is a separate table entirely, and the two sets of engine functions do not overlap.
 
@@ -706,39 +708,39 @@ The ride this reaches is not the one [`COAST`](#coast) reaches, although the two
 
 #### Commands
 
-- `1` (`BUMP_PEEPON`): Add the visitor named by the parameter's variable; the answer, 1 or 0, goes to the result register, and a literal does nothing.
+- `1` (`BUMP_PEEPON`): Add the visitor named by the parameter's variable to the ride's boarding list (refused while the ride is closed); the answer, 1 or 0, goes to the result register, and a literal does nothing.
 
-- `2` (`BUMP_PEEPOFF`): Get visitor from ride. The visitor is written into the parameter, which must be a variable: the engine tests it first, and with a literal takes nobody off and writes nothing.
+- `2` (`BUMP_PEEPOFF`): Take the next visitor off the ride's leaving list, or 0 when it is empty. The visitor is written into the parameter, which must be a variable: the engine tests it first, and with a literal takes nobody off and writes nothing.
 
-- `3` (`BUMP_STARTRACE`): Start the race
+- `3` (`BUMP_STARTRACE`): Start the ride, only from loading: every car is given the duration to count down.
 
-- `4` (`BUMP_LAUNCHCAR`): Launch car
+- `4` (`BUMP_LAUNCHCAR`): Launch a car, up to the ride's most; it takes the whole boarding list. The car, or 0, goes to the result register.
 
 - `5` (`BUMP_ISTRACKVALID`): Get whether the track is valid; the answer goes to the result register.
 
-- `6` (`BUMP_CLOSERIDE`): Close the ride
+- `6` (`BUMP_CLOSERIDE`): Close the ride: the boarding list joins the leaving list, and a bumper ride's cars all unload, after which the ride reads as loading again.
 
 - `7` (`BUMP_OPENRIDE`): Open the ride
 
 - `8` (`BUMP_SETBROKEN`): Set whether the ride is broken (0/1)
 
-- `9` (Unnamed?): Set whether the ride is worn or not
+- `9`: Set the ride worn (non-zero). Zero clears worn and broken alike, as `8 0` does.
 
-- `10` (`BUMP_HALTRIDE`): Eject all visitors from the ride
+- `10` (`BUMP_HALTRIDE`): Remove every car, its riders going to the leaving list, then close the ride.
 
 - `11` (`BUMP_CARSONRIDE`): Answer a word of the ride's own record (its `+0x5c`), into the result register first and then the parameter; it is not 0 or 1, since the water rides compare it with 64. Each theme's water ride uses it three times: into `VAR_RUNNING`, into `VAR_TEMP` to compare, and as `BUMP 11 0`, which keeps the answer in the register for the `BRANCH_NZ` that follows.
 
-- `12`: Unknown
+- `12`: The first car of the ride with nobody in it takes the whole boarding list; refused while the ride is closed. The answer, 1 or 0, goes to the result register.
 
-- `13`: Unknown
+- `13`: Set the ride's length to the parameter times 30 park ticks. The parameter, unscaled, goes to the result register.
 
-- `14` (`BUMP_SETLAPS`): Set the number of laps
+- `14` (`BUMP_SETLAPS`): Set the number of laps. The parameter goes to the result register.
 
 - `15`: Unused ("Unknown bumper ride command")
 
-- `16`: Unknown
+- `16`: The parameter is ignored. Remove the first empty car and answer 1; with none empty, remove the first car whatever it carries (its riders going to the leaving list) and still answer 0.
 
-- `17` (`BUMP_WATERCLOSED`): Set whether water is flowing (0 - flowing / 1 - not flowing)
+- `17` (`BUMP_WATERCLOSED`): Set whether water is flowing (0 - flowing / 1 - not flowing). It acts only when the value changes, and sets the ride's track pieces to one animation or the other.
 
 ## COAST
 

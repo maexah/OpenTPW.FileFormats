@@ -595,6 +595,15 @@ That puts `mOperatingCapacity` at 1034, `mOperatingDuration` at 1035, `mOperatin
 at 1090**, `mUpgradeBalloonSprite` at 1094 and `mUpgradeLevel` at 1098, a byte: 0 on every object in the shipped park, and non-zero only
 on the Belly Bounce in Alexah's played jungle park, at 1, beside speed 75, duration 30 and capacity 7, that level's starting values.
 
+**The shop fields, measured across all nine park files** (the shipped Lost Kingdom and Alexah's eight):
+`mQualityOfGoods` and `mAmountOfSpecialIngredient` hold 50 on every object in the shipped park and 0, 50 or 100 in
+the played ones; `mCostOfGoods` is 20 on the Drinks Shop, 50 on the Jungle Spray and nought on every other shipped
+object, and `mChanceOfWinning` 25 on the Jungle Spray and 100 on the rest; `mTotalCosts` is nought on every shipped
+object. In the played parks every one of the seven sideshows holds a `mChanceOfWinning` of 55 to 58 (the Jungle
+Spray 58). In a played park each shop's `mTotalCosts` is a whole number of its per-sale cost (the executable's
+`FUN_004e1b40`, which reads the low byte of the two shop fields): a Drinks Shop at quality 0 and amount 100 books
+10 a sale, 5,240 over 524 sales.
+
 **The split is even, and the serialiser's order places every ring.** The writer (`FUN_004db7d0`) walks six
 thirty-entry rings and the two counts in this order, each ring `mCurrentEntry` (4), `mNumEntries` (4, 30),
 `mWrappedAround` (1), `mTemp` (4) and 30 `mData` (4 each), 133 bytes:

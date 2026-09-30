@@ -229,6 +229,17 @@ sets reads nought, or its lower bound where the executable bounds it, so `Info.N
 `1` and `UsageInfo.ExciteFactor` `50` where no file names them (OpenTPW's `docs/exe/park-engine.md`, "How a
 key finds its global").
 
+**A line the executable cannot take is not read past: the game quits naming the file.** Every key must be one the
+executable's table names, spelt in its case. A whole number is an optional `-` and digits, a float digits with at most
+one `.`. A bounded key must lie in `[lo, hi)` - the flags `[0, 2)`, `Info.WhichUIType` `[0, 5)`,
+`Info.NewAttractionDecayTime` `[1, 1000)`, `UsageInfo.ExcitementLevel` `[0, 101)`, `UsageInfo.ExciteFactor`
+`[50, 200)`, `Research.Group` `[0, 255)` and the rest in that table - and a key that takes nought and up (`Info.Id`,
+the costs, prices, capacities, speeds and durations, `Upgrades[i].WearRate`) must not be negative. The effects
+(`UsageInfo.ThirstEffect` and its four siblings) and `Bumper.BumperType` may be. None of the Jungle's 128 item
+descriptions breaks a rule. The `Coaster.sam` beside three coasters' own file is not an item description: it names
+the track's textures, `asTextureData[i].pcTextureFilename` (OpenTPW's `docs/exe/park-engine.md`, "How a key finds
+its global").
+
 ### The keys a guest's decision is made of
 
 | Key | Meaning |

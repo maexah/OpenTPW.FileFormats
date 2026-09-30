@@ -774,7 +774,7 @@ map base come first, as for every placed thing.
 | 32 | 2 bytes | `mAdjustorSpeed` |
 | 34 | 2 bytes | `mBaseSpeed` |
 | 36 | 1 byte | `mCount` |
-| 37 | 4 bytes | `mESPSprite` |
+| 37 | 4 bytes | `mESPSprite` - the sprite kind worn: 0 a child, 2 a costume, a member of staff their own |
 | 41 | 2 bytes | `mLastRecordedMapId` |
 | 43 | 177 bytes | the navigator - see below |
 | 220 | 4 bytes | `mPreviousSpeed` |
@@ -784,12 +784,22 @@ map base come first, as for every placed thing.
 | 236 | 2 bytes | `mPurposeSpeed` |
 | 238 | 4 bytes | `mSetDestSuccessfully` |
 | 242 | 4 bytes | `mSpriteAngle` |
-| 246 | 4 bytes | `mSpriteID` |
+| 246 | 4 bytes | `mSpriteID` - the bank of that kind |
 | 250 | 4 bytes | `mSpriteUnderRideCtrl` |
 | 254 | 144 bytes | the event ring: `mActionHistIndex`, 32 `mEventHistory[`*i*`]` of 4, then `mLastThought`, `mThoughtScript` and `mTimeBubbleShown` |
 
 It closes on 398, where each model's own block begins, and it lands on the two places read independently of
 it: the navigator at 43 and `mSpriteAngle` at 242.
+
+**`mESPSprite` and `mSpriteID` are what the person's sprite is built again from**, and they equal that sprite's own kind
+and bank (the `TPCS` record's `+0xac` and `+0xb0`) on all 18 people of the shipped park and every person holding a
+sprite in Alexah's played parks; the rest hold no sprite (59 riding guests and 5 staff in the jungle park, 7 riding
+guests in the fantasy park). A child's bank is fixed by the guest's
+id: the game's generator seeded with the id word, one draw, `(r >> 2) %` the kid banks loaded - all 13 shipped children
+over eight, and all 296 jungle and 53 fantasy children of the played parks over six, the count at medium and high detail
+(see [sprites](../sprites/)). So a park saved with eight kid banks holds children on banks 6 and 7 (the shipped park's
+guests 33, 35 and 29) that a game loading six brings down to 0 and 1. Alexah's jungle park has 43 guests in costume,
+`mESPSprite` 2, bank 0, the theme's one costume.
 
 Two parts of it are worth knowing about before the models' own fields. The navigator is the person's
 **entire navigation state** - 177 bytes of steering and path data - so a person resumes the route they were

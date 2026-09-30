@@ -802,6 +802,17 @@ Two fields are useful on their own. **`mSpriteScript` at +16** is the person's s
 sprites (`TPCS`, below): the shipped park's eighteen people hold exactly its eighteen live slots. **`mSpriteAngle`
 at +242** (`0xf2`) is an 11-bit heading, `0` to `0x7ff`.
 
+**The four speed fields are a person's walking speed** (OpenTPW's `docs/exe/ride-operation.md`, "Where a
+WALKING peep is drawn"). `mBaseSpeed` (+34) is one of 60, 80, 100, 120 and 140; `mPurposeSpeed` (+236) is a hurry
+of 0, 25 or 50; `mAdjustorSpeed` (+32) is an ice cream's few; and `mPreviousSpeed` (+220), a float, is the speed
+the three sum to over a hundred, eased a quarter of the way each turn, which the navigator's `max_speed` is made
+from (below). A person who has walked at one pace long enough holds the three summed over a hundred: fourteen of the
+shipped park's eighteen, and 320 and 317 of the played saves' 392 (304 and 300 hold their base alone over a hundred,
+the rest hurrying at 25). In the shipped park the hurry and the
+ice cream are 0 on everyone; its guests' bases are 60 (four), 100 (four), 120 (three) and 140 (two), and three
+guests at base 100 hold 1.0105584 and the guard at base 120 holds 1.2047515. The played saves' guests spread
+74, 56, 70, 62 and 77 over the five bases.
+
 **`mCount` is a guest's walking-turn count**: the walk to a chosen thing adds one each turn and, on the
 twelfth, zeroes it and makes its minor decision. In the shipped park it is 0 on all eighteen people. In
 Alexah's played parks it spans exactly 0 to 11 - a count reset at twelve never shows 12 - on every guest:
@@ -841,10 +852,11 @@ Reynolds-steering vocabulary the block's other names come from, and the construc
 > real evidence. Across the shipped park all eighteen people match, at eighteen distinct positions, and
 > none matches at a base shifted by −8, −4, +4 or +8.
 
-Some of it is measurable rather than merely readable. `max_force` is **twice `max_speed`** on all eighteen
-people - exactly twice on nine, and one unit (a 65536th of a cell) more on the other nine - and `max_speed` is seeded from `mBaseSpeed × 65536 / 500`, but four of the eighteen have drifted off
-that seed, so it is live state and must be read rather than recomputed. `mass` is `1.0` and `radius` `0.2`
-of a cell on every one of them.
+Some of it is measurable rather than merely readable. **`max_speed` and `max_force` are made from the person
+base's `mPreviousSpeed` (+220)**: held to at most 2.0, times 13107.2 and 26214.4, each truncated and at least 655.
+That is exact on all eighteen people of the shipped park and on all 392 of each of Alexah's two played Lost
+Kingdom saves, so `max_force` is twice `max_speed` or one unit (a 65536th of a cell) more: exactly twice on nine
+of the eighteen, one more on the other nine. `mass` is `1.0` and `radius` `0.2` of a cell on every one of them.
 
 :::caution[`subpath_dist` is only partly meaningful]
 When a route is set, only **`path_buffer_count − 1`** of the five distances are written — a one-waypoint

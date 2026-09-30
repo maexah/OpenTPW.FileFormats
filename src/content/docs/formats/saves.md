@@ -228,8 +228,10 @@ for all 50 records with no mismatch:
 | `0x00` | u16 | The item's `Info.Id` |
 | `0x04` | i32 | What buying one costs, the item's `Upgrades[0].CostOfUpgrade` - Belly Bounce 500, Drinks Shop 650 |
 | `0x0C` | i32 | The item's `UsageInfo.RipOffOK` - 100 for the six shops, 250 for the four sideshows (each from its folder's `Shops.sam` or `SideShow.sam`), 0 for the rest |
+| `0x10` | u8 | Researched: 1 on 26 records, exactly the 26 whose item's file (with its `Easy_` layer) sets `Upgrades[0].CostOfResearch` 0. Among them the rides Belly Bounce, Crazy Ape, Rocky Racers and Aztec Mayhem, the shops Balloon, Burger and Drinks, and the sideshows Jungle Spray and Strength Bird; the other 24 read 0 |
+| `0x14` | i32 | The upgrade tier researched, 0 to 2: 2 on 17 of the 26 researched records, 0 on every other record |
 
-The other fields (`0x08`, a byte at `0x10`, and `0x14`, `0x18`, `0x1C`) are not settled here. The game fills a
+The other fields (`0x08`, `0x18`, `0x1C`, and the three bytes after `0x10`, all nought here) are not settled here. The game fills a
 record from the item's own description, so a save carries whatever the item files said when the record was made.
 
 ### The arrival and clock fields

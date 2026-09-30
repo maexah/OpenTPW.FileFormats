@@ -85,6 +85,14 @@ worth to a guest").
 That is 56 loose files and 344 inside WADs: 274 item descriptions, 50 `Easy_` files, 8 `Online_` files and
 12 `coaster.sam`.
 
+The 50 `Easy_` files are all the Jungle's, one in each of 50 of its 70 item WADs. Twelve rides' set
+`Upgrades[0..2].WearRate` (3, 2, 1; 1, 1, 1 for `minecart` and `wateride`) and `Upgrades[1..2].CostOfResearch`
+`0`, and `minecart`'s also `Research.Group` `2`; the other 38 hold comments only. The 20 WADs without one are
+`coaster1`, `coaster3`, `incagod`, `tourride`, `volcano`, `giftshop`, `steak`, `arc2x3`, `5x5rck`, `5x5rck2`,
+`lavspurt`, `lure`, `mamfount`, `speaker2`-`4`, `statue2` and the three upgrades. Their absence matters: in Instant
+Action the game catalogues no item whose WAD lacks one (OpenTPW's `docs/exe/park-engine.md`, "How a key finds its
+global").
+
 ## The theme balance file is layered, not replaced
 
 `data/levels/Standard.sam` is read first and the theme's own `data/levels/<theme>/Standard.sam` is read

@@ -211,8 +211,8 @@ Each picture:
 | `0x00` | 4 bytes | Size of the picture data |
 | `0x04` | 2 bytes | Width |
 | `0x06` | 2 bytes | Height |
-| `0x08` | 2 bytes | Reference width the engine divides by - `128` in every picture checked |
-| `0x0A` | 2 bytes | Reference height the engine divides by - `128` in every picture checked |
+| `0x08` | 2 bytes | Reference width the engine divides by - `128` in all 10,223 pictures |
+| `0x0A` | 2 bytes | Reference height the engine divides by - `128` in all 10,223 pictures |
 | `0x0C` | 4 bytes | Origin across, negated: `-8` for a 15-pixel-wide picture |
 | `0x10` | 4 bytes | Origin down, negated |
 | `0x14` | | Picture data |
@@ -222,12 +222,20 @@ bytes follow for that row. Then come codes, each a signed byte:
 
 - **Below zero:** repeat the next byte, a palette index, *-n* times.
 - **Above zero:** copy the next *n* bytes as palette indices.
+- **Zero:** the engine treats it as a repeat, so it reads one more byte and draws nothing. No shipped picture
+  has one.
+
+A row ends when it reaches the picture's width; the engine steps over a row by its length byte only to skip it
+while scaling.
 
 For example `07 F1 00 02 F6 8F F1 00` is fifteen of index `00`, then `F6` and `8F`, then fifteen more of
 `00` - a 32-pixel row.
 
-Every picture in `SPR_PA.TPC` and `SPR_PB.TPC` decodes to exactly its width and height and uses exactly
-its data size this way.
+This is the engine's own decoder (`0x00564790`, reached through slot `+8` of the vtable at `0x00701168`, with a
+16-bit path at `0x005648c0` and a 32-bit one at `0x0056492c`). It decodes every picture the game ships exactly:
+the 75 packs in `esprites.wad` (46 `.tpc`, 29 `.fpc`, the only ones in any of the 312 wads), 10,223 pictures and
+500,222 rows. Every row reaches its width exactly and ends exactly on its length byte, and every picture ends
+exactly on its data size. All 75 packs are version 3. The longest copy is 55, the longest repeat 85.
 
 ## How big a sprite is in the world
 

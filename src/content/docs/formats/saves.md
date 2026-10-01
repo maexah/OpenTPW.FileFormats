@@ -59,8 +59,9 @@ check is how the game itself detects a module that did not load the same number 
 > The tags are compared as **dwords**, not as text, so they are stored little-endian and read
 > **backwards** in a hex dump: `WRLD` appears as `DLRW`, `RSYS` as `SYSR`. Searching a dump for a tag
 > the right way round finds nothing at all, which reads exactly like proof the module is absent. The
-> magics that open two modules rather than close them - `TPCS` at the head of the sprite table and `RSSE`
-> at the head of the script module, both below - read in a dump exactly as printed here.
+> magics that open three modules rather than close them - `TPCS` at the head of the sprite table, `LCTP` at
+> the head of the particles and `RSSE` at the head of the script module, all below - read in a dump exactly
+> as printed here.
 
 The payload is also a **serialised memory image, not a portable format**. Live heap pointers are written
 out verbatim - the sprite table's slot handles below are addresses from the session that saved it - so
@@ -73,25 +74,29 @@ so in general the chain has to be walked module by module.
 The order is the game's own, and it is the same in all nine park files. The offsets are measured in
 `data/levels/jungle/Easymode.TPWI` and are that file's rather than a general layout.
 
-| Tag (as stored) | Read as | Module | Tag at | Bytes since the previous tag |
-| --- | --- | --- | --- | --- |
-| `DLRW` | `WRLD` | World — the map and everything standing in the park | 1,495,462 (`0x16D1A6`) | 1,494,283, from `0x49B` |
-| `CSPS` | `SPSC` | Sprite scripts | 1,500,918 (`0x16E6F6`) | 5,452 |
-| `TRAP` | `PART` | Particles | 1,577,174 (`0x1810D6`) | 76,252 |
-| `SSEM` | `MESS` | Message centre | 1,577,444 (`0x1811E4`) | 266 |
-| `KOLC` | `CLOK` | Clock | 1,577,456 (`0x1811F0`) | 8 |
-| `TNAV` | `VANT` | "Vanilla time" | 1,577,464 (`0x1811F8`) | 4 |
-| `SYSG` | `GSYS` | Game system | 1,577,504 (`0x181220`) | 36 |
-| `SYSR` | `RSYS` | Ride system | 1,595,034 (`0x18569A`) | 17,526 |
-| `KART` | `TRAK` | Track rides | 1,595,082 (`0x1856CA`) | 44 |
-| `RYLF` | `FLYR` | Flying rides | 1,595,538 (`0x185892`) | 452 |
-| `ESSR` | `RSSE` | Ride scripts | 1,606,398 (`0x1882FE`) | 10,856 |
-| `EMAK` | `KAME` | Camera | 1,606,442 (`0x18832A`) | 40 |
-| `SAOC` | `COAS` | Coasters | 1,606,462 (`0x18833E`) | 16 |
-| `SVDA` | `ADVS` | Advisor | 1,606,838 (`0x1884B6`) | 372 |
-| `NUOS` | `SOUN` | Sound | 1,608,287 (`0x188A5F`) | 1,445 |
-| `STHC` | `CHTS` | Cheats | 1,608,293 (`0x188A65`) | 2 |
-| `CSDA` | `ADSC` | Advisor scoring | 1,608,301 (`0x188A6D`) | 4 |
+| Tag (as stored) | Read as | Module | The game's names | Tag at | Bytes since the previous tag |
+| --- | --- | --- | --- | --- | --- |
+| `DLRW` | `WRLD` | World — the map and everything standing in the park | `SAD_AI`, World | 1,495,462 (`0x16D1A6`) | 1,494,283, from `0x49B` |
+| `CSPS` | `SPSC` | Sprite scripts | `SAD_SPRITE_SCRIPTS`, Scripts | 1,500,918 (`0x16E6F6`) | 5,452 |
+| `TRAP` | `PART` | Particles | `SAD_PARTICLES`, Particles | 1,577,174 (`0x1810D6`) | 76,252 |
+| `SSEM` | `MESS` | Message centre | `SAD_MESSAGE`, MsgCntr | 1,577,444 (`0x1811E4`) | 266 |
+| `KOLC` | `CLOK` | Clock | `SAD_CLOCK`, Clock | 1,577,456 (`0x1811F0`) | 8 |
+| `TNAV` | `VANT` | "Vanilla time" | `SAD_VANILLA_TIME`, VanillaTime | 1,577,464 (`0x1811F8`) | 4 |
+| `SYSG` | `GSYS` | Game system | `SAD_GAMESYS`, GameSystem | 1,577,504 (`0x181220`) | 36 |
+| `SYSR` | `RSYS` | Ride system | `SAD_RIDESYS`, Ridesystem | 1,595,034 (`0x18569A`) | 17,526 |
+| `KART` | `TRAK` | Track rides | `SAD_TRACK`, TrackRides | 1,595,082 (`0x1856CA`) | 44 |
+| `RYLF` | `FLYR` | Flying rides | `SAD_FLYERS`, FlyingRides | 1,595,538 (`0x185892`) | 452 |
+| `ESSR` | `RSSE` | Ride scripts | `SAD_RSSE`, RSSE | 1,606,398 (`0x1882FE`) | 10,856 |
+| `EMAK` | `KAME` | Camera | `SAD_CAMERA`, Camera | 1,606,442 (`0x18832A`) | 40 |
+| `SAOC` | `COAS` | Coasters | `SAD_COASTERS`, Coasters | 1,606,462 (`0x18833E`) | 16 |
+| `SVDA` | `ADVS` | Advisor | `SAD_ADV`, Advisor | 1,606,838 (`0x1884B6`) | 372 |
+| `NUOS` | `SOUN` | Sound | `SAD_SOUND`, Sound | 1,608,287 (`0x188A5F`) | 1,445 |
+| `STHC` | `CHTS` | Cheats | `SAD_CHEAT`, Cheat | 1,608,293 (`0x188A65`) | 2 |
+| `CSDA` | `ADSC` | Advisor scoring | `SAD_ADV_SCORING`, AdvisorScoring | 1,608,301 (`0x188A6D`) | 4 |
+
+The game's names are the two the loader (`FUN_00415270`) gives each module: the `SAD_` string its tag check
+reports, and the name it logs as `<name>: loaded %d bytes`. The World module's check names `SAD_AI`. The
+untagged UI block at the end is logged as `UI`.
 
 Each tag *follows* the module it belongs to. The World module does not begin at the start of the stream
 either: an untagged **action recording** (`GActionRec` in the game's save log) is written first, and its
@@ -1179,6 +1184,39 @@ The ceiling of 250 that the same code applies cannot be reached from a walk at a
 squared as a 32-bit integer, and a step large enough to want an interval past 250 would overflow that
 thousands of times over before the ceiling could apply.
 
+## The particles module (`TRAP`)
+
+The particle system as two memory images, between the sprite scripts' `CSPS` tag and the particles' own `TRAP`.
+Its magic reads `LCTP` in a dump: it is the game's `PTCL`, stored little-endian like the tags. Written by `FUN_0051f680`, which logs its failure as
+`PAR_SaveStatus`.
+
+```text
+char[4]  magic              "LCTP"
+u32      enabled            1: particles were on, and the rest follows
+u32      size               0x9e68
+byte[0x9e68]  live system
+u32      size               0x8b60
+byte[0x8b60]  templates
+u32      pool size          0: the pool is always written empty
+```
+
+That is 76,252 bytes, and it is so in all nine park files: each reads `LCTP`, 1, `0x9e68`, `0x8b60` and 0.
+
+The **live system** is a `0x2c`-byte header, 120 emitters of `0x140` bytes, 20 effectors of `0x68` bytes and
+`0x1c` bytes more. Of those last, the first five words are list heads: the used emitters, the used effectors,
+the free emitters, the free effectors and the free particles. A sixth word and the 16 bytes after it are nought
+in all nine files. The header's `+0x0c` is the particle count, 2048 in all nine. The used emitters are a chain through
+each emitter's `+0xd0`: four in `Easymode.TPWI` (two `Button`, `Bubbles` in emitter slot 20, `WaterFall` in emitter slot 0).
+
+The **templates** are the effect library: 105 effects of `0x140` bytes and 20 effectors of `0x68`, the
+[particle library](../particles/)'s records. In all nine files the 105 effects equal `data/Particle/Tp2.plb`
+byte for byte, but for slots 101 and 102 in the four jungle files, which hold the jungle's two `.emt` effects,
+`Smoke` and `BeamUp`. The 20 effectors equal the library's apart from their first dword, which is nought in every
+saved one.
+
+The particles themselves (`0x34` bytes each) are never saved: the pool size is always 0, and a load starts
+each emitter with no particles.
+
 ## The message centre module (`SSEM`)
 
 Which things hear which message: one listener set for each of the game's 29 message types, between the
@@ -1213,6 +1251,19 @@ The game makes both clocks read these values again when it loads a park, so ever
 file - a script's deadlines, a channel's time stamps - keeps its distance from the save's own moment. In
 `Easymode.TPWI` they are `0x06D13894` (114,374,804) and `0x06D8DF7E` (114,876,286); in a played jungle park,
 `0x00498D70` (4,820,336, about 80 minutes) and `0x0049A676` (4,826,742).
+
+## The game system module (`SYSG`)
+
+Nine dwords, between the "vanilla time" `TNAV` tag and the game system's own `SYSG`, so the module is 36 bytes in
+all nine park files.
+
+| Dword | Description |
+| ----- | ----------- |
+| 0 to 4 | Five values of the game system. A load reads all five; it then overwrites the first three from dwords 6 to 8 |
+| 5 | Not a value: the writer fills it from a stack slot it never sets. It reads 2 in all eight played files, and `0x0075DBC8` in `Easymode.TPWI`. A load skips it |
+| 6 to 8 | The first three values again, each written less a clock reading the game keeps (equal to the clock module's first dword in both files compared); a load adds its own reading back |
+
+In `Easymode.TPWI` dwords 6 to 8 are 2, -29 and -215; in a played jungle park, 20, -11 and -11.
 
 ## The ride script module (`ESSR`)
 
@@ -1489,3 +1540,15 @@ The pieces follow, and then the track and the trains, which are not described he
 that coaster's pieces, so only the first coaster's header sits at a known place. A guest is offered a coaster
 only with bit 0 set, bit 1 clear and no clash. The module holds no rating of the ride: the game works the ride's
 excitement out again after a load.
+
+## The cheats module (`STHC`)
+
+Two bytes, between the sound's `NUOS` tag and the cheats' own `STHC`.
+
+| Offset | Size   | Description | In `Easymode.TPWI` |
+| ------ | ------ | ----------- | ------------------ |
+| `0x00` | 1 byte | The cheats flag: 1 lets the park's cheat keys work | 1 |
+| `0x01` | 1 byte | Not described: nothing but the reader, the writer and the constructor touches it | 1 |
+
+The eight played park files carry `00 00`, the five Full Simulation saves among them. So a park loaded from
+`Easymode.TPWI` starts with the cheat keys on.

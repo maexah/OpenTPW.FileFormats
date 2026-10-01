@@ -26,6 +26,17 @@ away, for a while.
 
 All values are little-endian. The game refuses records of any other size.
 
+The game reads at most 105 effects and 20 effectors. Slots 101 to 104 of the shipped library have no name; a
+level fills them from its `.emt` files.
+
+## A level's own effect (*.emt)
+
+An `.emt` file is one 320-byte [effect record](#effect-record), with no header and no count. The game puts it in
+the first library slot whose name (`0x118`) is empty, and reads it without checking its size. Two ship, both in
+`data/levels/jungle/features/speaker1.wad`: `Ptcl1.emt`, named `Smoke`, and `Ptcl2.emt`, named `BeamUp`. Both
+carry 1000 at `0xA2`. `Ptcl1` is the library's `Smoke` (slot 2) but for byte `0xC1`, 0 where the library has 1;
+`Ptcl2` differs from the library's `BeamUp` (slot 19) in 16 bytes.
+
 ## Units
 
 Everything is a whole number.
@@ -80,7 +91,7 @@ were not identified.
 | `0x98` | 4 bytes | Effect started wherever a particle dies, `-1` for none |
 | `0x9C` | 4 bytes | Effectors that act on every group leave these particles alone |
 | `0xA0` | 2 bytes | Particles appear only above the emitter within the spawn area |
-| `0xA2` | 2 bytes | Drawing scale about the emitter, in 1000ths |
+| `0xA2` | 2 bytes | Drawing scale about the emitter, in 1000ths. The game reads 0 here as 1000 in this file, but not in an `.emt` |
 | `0xA6` | 2 bytes | Particle size at death; the size changes steadily between the two |
 | `0xA8` | 2 bytes | Particles appear on the edge of the spawn area rather than inside it |
 | `0xAA` | 1 byte | Particles end when the emitter does |

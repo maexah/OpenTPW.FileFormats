@@ -84,6 +84,9 @@ channel — between 0.59 and 2.58 frames, or 25 to 83 ms at 22,050 Hz and 14 to 
 entries at 44,100 — so the end of every stream is never heard. The stream's own length, its size
 in bytes × 8 over the bitrate in its first frame header, is the longer figure.
 
+Those figures are measured against the length the frame headers give (frames × samples a frame), so they
+hold for all 3,739 entries, the 80 below among them.
+
 **Sound types**
 
 * 0: None
@@ -114,6 +117,26 @@ three takes the class `0x006ba610` falls through to, `0x006c6e70` or its subclas
 `0x006c6e70` is also the base that `0x006c82c0` and `0x006c7b20` construct first. Type 2 reaches
 that class with one channel, and 0 and 3 would reach it too. How that class plays its audio has
 not been read, so that the game plays type 2 as raw PCM rests on the data, not on the executable.
+
+## Decoding
+
+NLayer 3.0.0 decodes 3,659 of the 3,739 loose entries, and on every one it gives the same number of samples
+as ffmpeg's fixed-point decoder and the frame headers, and the same samples to within one 16-bit step
+(at most 3.3e-5 where the signal stays under full scale).
+
+The other 80 are one placeholder, all in `global/Speech/speechHD.SDT`: 315 bytes of audio with the same MD5
+(`0265e9b21f573eca2f7309d1713bf441`), and a play length of 816 bytes, 408 samples or 18.5 ms. That is one
+314-byte frame (MPEG-2 Layer II, 48 kbit/s mono, 22,050 Hz, padded) and a zero byte. They are the only
+one-frame entries in the 47 banks, and the only entries 315 bytes long. NLayer refuses all 80 (`Not a valid
+MPEG file!`); ffmpeg's demuxer gives up on them too, wanting two frames in a row. Decoded from a repeated
+frame, the first 408 samples are a short blip, not silence (peak 0.18). The entries are `sp_019`, 195, 240,
+241, 246 to 281, 300, 301, 314 to 323, 367, 374, 378, 379, 382, 386, 411 to 413, 447, 448, 451, 455, 456, 458,
+472, 474, 475, 477, 480, 496 to 498, 503, 567, 568, 570 and 577.
+
+336 of the 3,659 decode past full scale in a floating-point decoder (NLayer); the loudest,
+`levels/space/Sound/RideHD.sdt`'s `sevo002b2B.mp2`, reaches 1.4032. The game clamps each voice to 16 bits as
+it decodes it, as ffmpeg does, so those peaks are clipped rather than wrapped. Where the game does that is
+OpenTPW's `docs/exe/audio.md`, "How a voice is decoded".
 
 ## How banks are addressed
 

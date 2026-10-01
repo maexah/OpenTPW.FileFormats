@@ -548,13 +548,13 @@ The operand *is* scaled by the script's own speed first - the engine divides it 
 
 ## WAITABS
 
-`WAITABS <time>` - Wait until the clock reaches a given reading.
+`WAITABS <time>` - Wait for a period of time before continuing, without the script's speed.
 
-No script the game ships uses this, so nothing about how it was *meant* to be used can be recovered - but what it does is plain from the handler, which shares most of its code with `WAIT`. The difference is the one the name suggests: `WAIT` adds its operand to the clock to make a deadline, while this one takes the operand **as** the deadline, already on the clock's own scale. It is not speed-scaled, and it rewinds onto itself and ends the slice exactly as `WAIT` does.
+No script the game ships uses this, so nothing about how it was *meant* to be used can be recovered - but what it does is plain from the handler, which shares most of its code with `WAIT`. Despite its name it does not take the operand as a clock reading: like `WAIT` it adds the operand to the clock to make a deadline. The one difference is that it adds it **unscaled**, where `WAIT` first divides by the script's speed factor. It rewinds onto itself and ends the slice exactly as `WAIT` does.
 
 ### Operands
 
-`<time>` - The clock reading to wait for, in milliseconds.
+`<time>` - How long to wait, in milliseconds, whatever the script's speed.
 
 ## WAIT4ANIM
 

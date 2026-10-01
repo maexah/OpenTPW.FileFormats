@@ -27,7 +27,7 @@ The fields are the game's own reads, one after another: `FUN_00414d40` reads the
 | `0x005` | `0x500` bytes | Legal text: a copyright notice in UTF-16, 824 bytes (412 characters, so reading it as single bytes gives every other byte as a NUL), then zeros to the end of the field. A load whose text fails `FUN_005f7e60`'s check stops with "The save game legal text has been jiggered with!" |
 | `0x505` | `0x100` bytes | Validated by `FUN_0051ab60`, and its first 32 bytes are copied to `0x802080`; zero in all nine park files. What it holds is not settled |
 | `0x605` | 4 bytes | Magic, read **big-endian** (through `ntohl`) and required to equal `0x01221985`, so stored `01 22 19 85` |
-| `0x609` | 4 bytes | Online-header flag: `1` when an author header follows it (read by `FUN_00418da0`: the author's name and e-mail, a park description and the date published), `0` when none does. `0` in all nine park files, and nothing pads it |
+| `0x609` | 4 bytes | Online-header flag: any value but `0` means an author header follows it (read by `FUN_00418da0`: the author's name and e-mail, a park description and the date published); `0` means none does. `0` in all nine park files, and nothing pads it |
 
 These close exactly on the compressed block: `4 + 1 + 0x500 + 0x100 + 4 + 4` is `0x60D`, where `BILZ` sits in
 all nine park files. Bytes `0x600` to `0x60C` read `00 00 00 00 00 | 01 22 19 85 | 00 00 00 00`; a reading

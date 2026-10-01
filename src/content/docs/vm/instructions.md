@@ -86,6 +86,8 @@ None
 
 The clock counts **milliseconds**.
 
+**Every reading a shipped script keeps is a deadline.** Across the 197 distinct script bodies, `GETTIME` writes only four variables. `VAR_STARTNOW` is followed at once by `ADD VAR_STARTNOW, 10000` (5000 once, in jungle `Monkey`), `VAR_TIMER1` by `ADD 4000` or `6000` (jungle `giftshop`, fantasy `Purse`; a 1-in-10 arm of each stores the bare reading, due at once), and `VAR_ENDTIME` by `ADD VAR_ENDTIME, VAR_TEMP` with 10000 copied in (`End.RSE`, all four themes). Nothing else writes those three. Each is read only as `GETTIME VAR_TEMP` then `SUB VAR_TEMP, <deadline>, VAR_TEMP` and a sign branch: `BRANCH_NV` for `VAR_STARTNOW` (passed: start the ride, 10 s after the last boarder), `BRANCH_PV` for the other two. So `VAR_STARTNOW` is a deadline, not a start time. Because a save keeps the variables and the clock's reading together, a kept deadline means the same after a load.
+
 ### Operands
 
 `<dest>` - The destination for the instruction's result. Every shipped use names a variable.

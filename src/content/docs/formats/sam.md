@@ -85,6 +85,30 @@ worth to a guest").
 That is 56 loose files and 344 inside WADs: 274 item descriptions, 50 `Easy_` files, 8 `Online_` files and
 12 `coaster.sam`.
 
+**A `coaster.sam`'s tables.** All twelve carry `asCarTypes`, `asTextureData`, `asCrossSections`,
+`asCrossSectionSelects`, `asCrossSectionEdges1`, `asCrossSectionPoints1` and `asPylonControls`; eight also carry
+`asCrossSectionEdges2` (`b_drip`, `candy_c`, `c_hade`, `coasta`, `c_scat`, `coaster1`, `minecart`, `megacost`), two
+`asCrossSectionPoints2` (`coaster1`, `megacost`) and one `Points3` and `Edges3` (`coaster1`). The schema is not decoded
+from the executable; what the files show:
+
+- `asCarTypes[n]` names the car: `pcMeshFilename` (Chak Atak's, `coaster1`, is `CrocCar`, with `uiCarTypeUniqueID`
+  1188 and `fYOffset` 0.5). The car's `M1`..`M3` files beside it are its animation channels, as any model's are.
+- `asCrossSectionPoints1[n]` are the track's profile, each `fX`, `fY`, `fU` and a normal `fNx`, `fNy`. Chak Atak's
+  water channel: (-4, 2.5) U 1 N (-1, 1); (-3, 2) U 0.1 N (0, 1); (3, 2) U 0.9 N (0, 1); (4, 2.5) U 1 N (1, 1);
+  (0, -1.5) U 0 N (0, -1); then points 1 and 2 again.
+- `asCrossSectionEdges1[n]` join the points, each with a `usTexture` into `asTextureData` (a name and an
+  `fScrollRate`). Chak Atak's edge 1 joins points 5 and 6 with texture 1, `water2.tga` scrolling at 1.2; its other
+  edges use texture 0, `trak_sec3.tga`. Some edges join the same two points both ways.
+- `asCrossSections[n]` pick a point block and an edge block (`usCSPointBlockIndex`, `usCSEdgeBlockIndex`,
+  `usTrackEdge`, `usBlendToCSPointBlockIndex`, `fBlendLength`); `asCrossSectionSelects[n]` choose one by the
+  track's pitch (`usCrossSectionIndex`, `fPitchRangeMin`, `fPitchRangeMax`, `usBlendFrom/ToCrossSectionIndex`).
+- `asPylonControls[n]` name the supports: `pcMeshFilename` `StdPylon` (`uiPylonTypeUniqueID` 1186), with a radius,
+  an incline multiplier, the most pylons stacked, a least and greatest height and three costs.
+
+**The track's own textures are in a `GTexture` folder.** The twelve coaster WADs, and no other, ship one: 42 members,
+a `qickload.txt` in each (`coaster1`'s lists `Trak_sec2.wct` and `Trak_sec3.wct`). `coaster.sam` names them `.tga`
+where the folder holds `.wct`. The engine names the folder itself (OpenTPW's `docs/exe/park.md`, "Buildable items: the per-item archive").
+
 The 50 `Easy_` files are all the Jungle's, one in each of 50 of its 70 item WADs. Twelve rides' set
 `Upgrades[0..2].WearRate` (3, 2, 1; 1, 1, 1 for `minecart` and `wateride`) and `Upgrades[1..2].CostOfResearch`
 `0`, and `minecart`'s also `Research.Group` `2`; the other 38 hold comments only. The 20 WADs without one are
@@ -256,7 +280,7 @@ its global").
 | `UsageInfo.GoldenTicketCost` | What a golden ticket costs to ride it. Nine rides of the 274 `.wad` files set it: `fantasy`'s `dragfly` 4 and `twetours` 2, `hallow`'s `spider` 3 and `tourride` 1, `jungle`'s `tourride` (Jurassic Tours) 1 and `volcano` (Eruption) 3, and `space`'s `scitour` 2, `spawheel` 5 and `station` 3. Of the category files only `hallow/rides/Rides.sam` declares it, at `0` |
 | `Bumper.BumperType` | Which bumper vehicle the ride makes. Twelve rides set it, each to a different value from `-1` to `-14` (`-2` and `-3` are unused): every theme's go-karts and water ride, and its bumper ride (`bumper`, or `fantasy`'s `bbugs`); the jungle's Hot Pot `-1`, Dino Karts `-4` and Splish Splash `-5`; the other three bumper rides are hallow's `-6`, fantasy's `bbugs` `-11` and space's `-14`. Every other item reads `0`, which the four `Rides.sam` declare. None of the four bumper rides sets `Upgrades[0].InitSpeed`, so each inherits its `Rides.sam`'s 60, which the game makes the cars' performance (OpenTPW's `docs/exe/park.md`, "How a bumper ride's cars move") |
 | `Bumper.NorthXAdjust` .. `Bumper.WestYAdjust` | Eight integers, an x and a y for each of the four turns, which the placer adds to the anchor cell (with a fixed offset of its own per turn) to find a bumper ride's arena centre. 34 files across the four themes set them: all 12 rides with a `BumperType`, and 22 other rides (coasters, track rides and a few more) whose `BumperType` is `0`, declared or inherited; the comment beside `NorthXAdjust` reads "some constants to line up the Track sections with the rest of the co-ordinate system". The Hot Pot's, `-2 1`, `1 3`, `3 0`, `0 -2`, put the centre on the middle cell of its 5 × 5 footprint at every turn (OpenTPW's `docs/exe/park.md`, "Where a bumper ride's cars float") |
-| `SupplementalMeshes[n].FileName` | The extra models a ride loads beside its own, by index: what a bumper ride's cars, a go-kart's karts and shadow, a water ride's ring and a tour ride's craft are made of. The Hot Pot's are `b_wake.md2` and `b_car.md2`, and its template takes the car from index 1; the other three themes' bumper rides name their car at index 0 (`halcar.md2`, `spacecar.md2`, `fantasy`'s `bbugscar.md2`) |
+| `SupplementalMeshes[n].FileName` | The extra models a ride loads beside its own, by index: what a bumper ride's cars, a go-kart ride's karts (`fantasy`'s and `space`'s list a `gk_shadow` first), a water ride's ring and a tour ride's craft are made of. The jungle's: Dino Karts `gk_blue`, `gk_green`, `gk_orange`, `gk_purple`; Splish Splash `wr_ring`; Jurassic Tours `Bird`. The Hot Pot's are `b_wake.md2` and `b_car.md2`, and its template takes the car from index 1; the other three themes' bumper rides name their car at index 0 (`halcar.md2`, `spacecar.md2`, `fantasy`'s `bbugscar.md2`) |
 | `UsageInfo.ThirstEffect`, `UsageInfo.HungerEffect` | How much of each need using it **takes away** |
 | `UsageInfo.VomitEffect`, `UsageInfo.HappinessEffect`, `UsageInfo.LitterEffect` | How much of each it **adds** |
 | `UsageInfo.MinCapacity`, `MaxCapacity`, `MinDuration`, `MaxDuration` | Bounds the engine clamps to - see below |

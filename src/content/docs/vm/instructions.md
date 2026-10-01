@@ -172,11 +172,15 @@ The handler does the same work `ADDOBJ` does and then **throws away the handle i
 
 ## EVENT_EXT
 
-`EVENT_EXT <unknown1> <unknown2> <unknown3> <unknown4>` - Unknown
+`EVENT_EXT <type> <node> <effect> <lifetime>` - `EVENT` with the extra operand `ADDOBJ_EXT` takes.
 
 ### Operands
 
-Takes 4 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<type>`, `<node>`, `<effect>` - As `EVENT`'s.
+
+`<lifetime>` - Passed where `EVENT` passes a fixed 1000 (`0x00552833`). The engine uses it only for a particle (types 1 and 2), and only when it is not 1000.
+
+Like `EVENT`, it throws the handle away. No script the game ships uses this instruction.
 
 ## FLUSHANIM
 
@@ -456,11 +460,13 @@ The result register holds whatever the last instruction computed - see [Informat
 
 ## DBGMSG
 
-`DBGMSG <unknown>` - Unknown
+`DBGMSG <operand>` - Does nothing.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<operand>` - Stepped over (`0x00554243`): the engine moves past the word and reads nothing from it, prints nothing and writes no register.
+
+No script the game ships uses this instruction.
 
 ## NAME
 
@@ -644,9 +650,9 @@ None
 
 #### Commands
 
-- `1`: Set style of ride
+- `1`: Create the tour ride at the model's walk node 99 (`0x00554318`), the parameter a style flag. The engine makes a tour record from the node's position and the model's facing and keeps it for the other commands; a non-zero parameter sets one of the record's fields to 2500 where nought sets 5000 (what the field does is not decoded). With no node 99 it creates nothing. Every shipped use is `TOUR 1 0`
 
-- `2`: Calls the engine without reading its parameter, so the next word the engine reads is that parameter, which it refuses as an instruction, and the script ends. No shipped script uses it
+- `2`: Destroy the tour ride (`0x0055441b`), as the script's own death does. It calls the engine without reading its parameter, so the next word the engine reads is that parameter, which it refuses as an instruction, and the script ends. No shipped script uses it
 
 - `4`: Let off visitor. The visitor let off is written into the parameter, which must be a variable: the engine tests it before anything else, and with a literal lets nobody off and writes nothing.
 
@@ -1090,35 +1096,47 @@ None
 
 ## ENABLELIGHT
 
-`ENABLELIGHT <unknown>`
+`ENABLELIGHT <node>` - Switch a light of the script's model on.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<node>` - The light's node id, looked up with the light mask `0x20000` (see [the model format](/formats/models/)). There is no check for a missing node (`0x00555c7a`; what each of the four does in the engine: OpenTPW's `docs/exe/park.md`, "The lights (82-85) — decoded, unshipped").
+
+No script the game ships uses this instruction.
 
 ## DISABLELIGHT
 
-`DISABLELIGHT <unknown>`
+`DISABLELIGHT <node>` - Switch a light of the script's model off.
 
 ### Operands
 
-Takes 1 operand, which is not named above and is not yet understood. No script the game ships uses this instruction, so nothing about it can be recovered from the data.
+`<node>` - As `ENABLELIGHT`'s (`0x00555ccd`).
+
+No script the game ships uses this instruction.
 
 ## SETLIGHT
 
-`SETLIGHT <unknown1> <unknown2>`
+`SETLIGHT <node> <level>` - Set a light's brightness.
 
 ### Operands
 
-Takes 2 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<node>` - As `ENABLELIGHT`'s (`0x00555d20`).
+
+`<level>` - A percentage: the engine multiplies it by 0.01 and scales the light's own colour by the result, so 100 is the colour as authored.
+
+No script the game ships uses this instruction.
 
 ## COLOURLIGHT
 
-`COLOURLIGHT <unknown1> <unknown2> <unknown3> <unknown4>`
+`COLOURLIGHT <node> <red> <green> <blue>` - Set a light's colour.
 
 ### Operands
 
-Takes 4 operands, those not named above being unknown. No script the game ships uses this instruction, so nothing about them can be recovered from the data.
+`<node>` - As `ENABLELIGHT`'s (`0x00555d9a`).
+
+`<red>`, `<green>`, `<blue>` - Percentages, each multiplied by 0.01; the result replaces the light's colour.
+
+No script the game ships uses this instruction.
 
 ## STARTSCREAM
 
@@ -1290,7 +1308,7 @@ All 21 shipped uses name a literal where the destination goes, which means the w
 
 ## MONTH
 
-`MONTH <dest>` - Get the month from the computer's own clock: 1 to 12.
+`MONTH <dest>` - Get the month from the computer's own clock: 1 to 12 (the engine adds one to the clock's month at `0x00556622`).
 
 **It is the real local time, not the park's calendar.**
 
@@ -1362,8 +1380,12 @@ All 21 shipped uses name a literal where the destination goes, which means the w
 
 ## SPARK
 
-`SPARK <unknown1> <unknown2> <unknown3> <unknown4>`
+`SPARK <node1> <node2> <unused> <unused>` - Records two particle nodes and spawns nothing.
 
 ### Operands
 
-Takes 4 operands, those not named above being unknown. Across the 308 shipped scripts the 1 uses of this instruction write them as: 1 — variable; 2 — literal; 3 — literal; 4 — literal.
+`<node1>`, `<node2>` - Two particle-emitter node ids (mask `0x100`), which the engine stores in the script's frame and checks against the model (`0x005564ed`). The handler reads them no further, and starts no effect and plays no sound.
+
+`<unused>` - Fetched and never used.
+
+Takes 4 operands. The one shipped use, in space's `Plasma.RSE`, writes them as: 1 — variable; 2 — literal; 3 — literal; 4 — literal.

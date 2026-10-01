@@ -282,7 +282,7 @@ unknown mask is OpenTPW's `docs/exe/audio.md`, "Node lookup is by id AND a capab
 adds `0x46` to get the node. The flag words vary widely across the game (`0xB1`, `0x111` and
 `0x811` are the most common), so the table is a general way of naming nodes. The masks callers pass
 are `0x200` for a sound emitter, `0x100` for a particle emitter, `0x400` for a costume piece, `0x800`
-for walk nodes and `0x80` for heads. `0x211` marks the gates' `sound node`, and `0x111` most
+for walk nodes, `0x80` for heads and `0x20000` for lights (the light instructions). `0x211` marks the gates' `sound node`, and `0x111` most
 particle emitters. The costume code asks for bit `0x400`, and dresses a character by setting and
 clearing a node's hidden flag, bit `0x10` of the node's own flag word.
 

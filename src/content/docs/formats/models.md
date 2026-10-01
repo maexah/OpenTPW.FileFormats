@@ -261,8 +261,18 @@ belongs to. Record `r` names node `0x46 + r`.
 | 0x00   | 4 bytes  | Flags                                                                      |
 | 0x04   | 4 bytes  | Id                                                                         |
 | 0x08   | 4 bytes  | Unknown. Non-zero in 128 of the game's 2,452 records                       |
-| 0x0C   | 4 bytes  | Pointer (engine-confirmed). Set on exactly the 248 records whose flag word carries `0x40`, zero on the rest. Its first ushort is a face of the parent mesh, which the engine reads for the record's position (see [Which records have a position](#which-records-have-a-position)); the rest is not decoded |
+| 0x0C   | 4 bytes  | Pointer (engine-confirmed) to the record's **face anchor**, below. Set on exactly the 248 records whose flag word carries `0x40`, zero on the rest |
 | 0x10   | 4 bytes  | Pointer (engine-confirmed). Zero in every record                           |
+
+The face anchor places the node on a face of its parent mesh (engine-confirmed):
+
+| Offset | Size    | Description |
+| ------ | ------- | ----------- |
+| 0x00   | 2 bytes | The face, an index into the parent mesh's faces |
+| 0x02   | 2 bytes | How far back from this record a turn is kept, which the engine applies with flag `0x40000`; not decoded further |
+| 0x04   | 4 bytes | `u`, a float: the lerp from the face's first corner toward its second |
+| 0x08   | 4 bytes | `v`, a float: the lerp from that point toward the third corner |
+| 0x0C   | 4 bytes | A float: how far the node stands off the face, along the face's normal |
 
 345 of the 838 version-`0xDD` models in the archives carry a table. Every record stays inside its
 model's node count, and ids run from 0 to 99.
@@ -304,11 +314,16 @@ leg lasts, and where its ends are").
 
 The pointer at 0x0C is read only for a record whose flags meet `0x40040`, and only while its parent
 mesh carries runtime flag `0x200000`, which a vertex-morph clip sets on the mesh it animates: the
-position is then taken from a face of that mesh.
+position is then taken from a face of that mesh, as the morph has posed it. The point is the face's
+first corner lerped toward its second by `u`, that lerped toward the third by `v`, then the face's
+normal (from the table at mesh 0x64, which the morph routine does not write) times the offset. So a rider's head
+on Mumbo's tentacle moves with the tentacle. At rest the rule lands on the node's own place: measured
+over all 248 anchors in the game's 2,073 readable models, 247 within 0.05 units; the Squark's `Head04`
+is 0.26 off.
 
 #### Open questions
 
-- The word at 0x08, the rest of what the 0x0C pointer leads to, and what the flag bits this page does
+- The word at 0x08, the turn the face anchor steps back to, and what the flag bits this page does
   not name select.
 
 ### Paths
@@ -487,7 +502,7 @@ one per mesh:
 | 0x5C   | 2 bytes  | Face count                                                                 |
 | 0x5E   | 2 bytes  | Vertex order length (see **Vertex order**, below)                         |
 | 0x60   | 4 bytes  | Vertex data offset                                                         |
-| 0x64   | 4 bytes  | Pointer, purpose unknown (engine-confirmed pointer)                        |
+| 0x64   | 4 bytes  | Face normals offset: three floats each, indexed by each face's first word (see **Faces**; engine-confirmed) |
 | 0x68   | 4 bytes  | UV data offset                                                             |
 | 0x6C   | 4 bytes  | Material table offset                                                     |
 | 0x70   | 4 bytes  | Face data offset                                                           |
@@ -557,7 +572,7 @@ The face table (offset given in the mesh record) is *face count* records of 8 by
 
 | Size    | Description                                          |
 | ------- | ----------------------------------------------------- |
-| 2 bytes | Unknown                                                |
+| 2 bytes | Low 15 bits: the face's normal, an index into the face normals at mesh 0x64. Top bit unknown |
 | 2 bytes | Vertex index A (into the reordered vertex list)        |
 | 2 bytes | Vertex index B                                         |
 | 2 bytes | Vertex index C                                         |
@@ -567,7 +582,7 @@ correctly with a standard right-handed culling convention.
 
 #### Open questions
 
-- The leading unknown `ushort` of each face record.
+- The top bit of each face record's leading `ushort`.
 
 ### Materials
 

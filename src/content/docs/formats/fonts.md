@@ -110,7 +110,8 @@ high nibble first. How the pixel data stores them depends on the packing:
 The anti-aliased fonts mix `0` and `1` (`TITLEBIG` is 123 of one and 126 of the other); the plain
 `GAME*` fonts use `2` for most glyphs and `0` for the rest.
 
-The engine unpacks packing `1` and `2` into nibbles before drawing, and draws by moving each pixel
+The engine unpacks packing `1` and `2` into nibbles before drawing (its font object's addresses are in OpenTPW's
+`docs/exe/lobby.md`, "Meshes and fonts"), and draws by moving each pixel
 underneath towards the text colour by `coverage / 15`, scaled by the colour's alpha. The destination's
 own alpha is left alone.
 

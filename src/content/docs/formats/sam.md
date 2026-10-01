@@ -160,6 +160,49 @@ alongside the `MapInfo`, `FixedItemInfo`, `ThemeEngine`, `Seasons`, `Weather`, `
 override. A theme's file adds
 three groups the global file lacks: `ThemeAdvisorCostumes`, `GoldenTicketLocal` and `ChallengesInThisLevel`.
 
+**The golden-ticket thresholds.** `GoldenTicketLocal` is in the four themes' `Standard.sam` only; `GoldenTicketGlobal`
+in the global file only; there is no `GoldenTicketSecret` group, and no `Easy_` or `Online_` file sets a ticket key.
+How the game tests them is OpenTPW's `docs/exe/ride-operation.md`, "Golden tickets".
+
+| `GoldenTicketLocal.` | jungle | hallow | fantasy | space |
+|---|---|---|---|---|
+| `Visitors` | 100 | 100 | 2500 | 3000 |
+| `PeopleInPark` | 200 | 200 | 300 | 350 |
+| `Happiness` | 75 | 75 | 80 | 85 |
+| `AtLeastThisManyHappyPeople` | 150 | 150 | 150 | 150 |
+| `ProfitYear` | 15000 | 15000 | 20000 | 30000 |
+| `RecentVisitors` | 350 | 350 | 400 | 500 |
+| `RecentVisitorMonths` | 6 | 6 | 6 | 6 |
+
+`GoldenTicketGlobal`: `CoasterHeight` 105 (*"Gotta build this one on high ground. Jungle or fantasy it is"*),
+`GokartExcitement` 90, `WaterLength` 50, `MinCellsOwned` 3000 (which the game never reads) and `MinCellsCovered` 2000.
+
+**The challenges.** The global `Challenges` group holds `DaysAfterCompletedChallenge` 270,
+`DaysAfterDeclinedChallenge` 270, `DaysUntilFirstChallenge` 540 (game days), `DeclinesToForfeit` 2 and
+`ShortTimeLeftWarningAt` 20 (a percentage of the time left); no theme overrides them. A theme's
+`ChallengesInThisLevel[n].ChallengeType` is, despite its name, a **1-based index into `Challenges.sam`'s
+`Challenges[]`**, not a `Type`, up to 20 per level (the game copies them into its slots in this order, as
+[saves](/formats/saves/), "The challenge manager (model 19)", measures):
+
+| Theme | `ChallengesInThisLevel` |
+|---|---|
+| jungle | 1, 15, 6, 18, 12, 7, 8, 9 |
+| hallow | 2, 21, 23, 24, 17, 4, 20, 22, 5 |
+| fantasy | 28, 10, 26, 27, 11, 13, 30, 29, 31, 32 |
+| space | 3, 6, 16, 25, 33, 34, 35, 14 |
+
+Together they cover 1 to 35 but for 19, the *"NEVER CALL THIS CHALLANGE"* entry; 6 is listed twice. A chain
+(jungle's 7, 8, 9) is listed whole, not by its head.
+
+`Challenges.sam` itself (above) has 35 entries, each under a comment of EA's naming its goal, and so its `Type`:
+1 fries, 2 burgers, 3 drinks, 4 ice creams, 5 gifts, 6 balloons, 7 costumes, 8 restaurant meals, 9 and 10 a
+percentage of kids with balloons or costumes, 11 new visitors, 12 shop profit, 13 sideshow profit, 15 go-kart
+crossroads, 16 rides researched, 17 and 20 peeps onto a named ride, 18 build a named coaster, 19 its loops, 21 a kart
+track's sections, 24 toilet cleanliness, 25 all staff's happiness, 27 a handyman's happiness, 28 a ride upgraded to a
+level, 29 average staff skill, 30 build a named item, 31 an upgrade or a named item, 33 a named upgrade. The executable
+confirms 1-8, 12 and 13 by what it posts (6 counts balloons sold, not held); the rest are the comments' word.
+`FollowupType` names the next entry's `Type`.
+
 Many of the keys carry a trailing comment explaining themselves, for example
 `PeepInfo.ToiletDesparate 100` — *"toilet level above which peep is 'desperate'"*.
 

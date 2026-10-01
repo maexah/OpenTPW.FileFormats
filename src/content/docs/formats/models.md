@@ -58,7 +58,7 @@ gap of unknown content, not a claim that nothing is there.
 | 0x08   | 4 bytes  | **Animation format version**. Must be exactly `0xCB`, or the animation block is discarded (engine-confirmed) |
 | 0x14   | 4 bytes  | Save time, as a Unix timestamp. Read this way, every version-`0xDD` file dates from 16 April 1999 to 20 January 2000 |
 | 0x18   | 20 bytes | The name the file was saved under, null-padded ASCII. It matches the file's own name in 2,031 of the 2,125 version-`0xDD` files. The other 94 carry an earlier name (`speaker2.MD2` says `speaker.MD2`) |
-| 0x30   | 4 bytes  | Flags. Bit 0 gates the whole mesh/material fixup pass (engine-confirmed). It is set in every static mesh and in no animation file. Bit `0x4` makes the model's animation add to its authored pose instead of replacing it: a rotation key is composed with the node's rotation, and a position, path or raw-vertex-frame sample is added to what the node already holds (`FUN_00471860`, at `0x00471d53` and `0x0047205d`). It is set in 25 static meshes, all coaster parts: every `StdPylon` and `LoopPylon` (value `0xD`), and `candy_c`'s `ch_track`, `megacost`'s `cart` and `shocker`'s `CAR` and `RAIL` (value `0x5`). No model with a path sets it. The stored values all fit in the low byte; the engine sets higher bits at load |
+| 0x30   | 4 bytes  | Flags. Bit 0 gates the whole mesh/material fixup pass (engine-confirmed). It is set in every static mesh and in no animation file. Bit `0x4` makes the model's animation add to its authored pose instead of replacing it: a rotation key is composed with the node's rotation, and a position, path or raw-vertex-frame sample is added to what the node already holds (`FUN_00471860`, at `0x00471d53` and `0x0047205d`). It is set in 25 static meshes, all coaster parts: every `StdPylon` and `LoopPylon` (value `0xD`), and `candy_c`'s `ch_track`, `megacost`'s `cart` and `shocker`'s `CAR` and `RAIL` (value `0x5`). No model with a path sets it. Bit `0x20` is stored in 880 of the 2,129 files, all version `0xDD` and none a static mesh (the whole census: 0 in 91, 1 in 529, 3 in 5, 4 in 7, 5 in 4, 8 in 11, 9 in 288, 13 in 21, 16 in 292, 25 in 1, 32 in 878, 34 in 2), and `FUN_00470b30` sets it at load when the clip's word at `+0x12` is non-zero (whose header it writes is not re-checked). The stored values all fit in the low byte; the engine sets higher bits at load |
 | 0x36   | 2 bytes  | Frame/texture count                                                                   |
 | 0x40   | 2 bytes  | **Path count**, the number of records in the table at 0xAC (engine-confirmed). See [Paths](#paths) |
 | 0x42   | 2 bytes  | **Total node count**. See **Target resolution** under Animation (engine-confirmed)   |
@@ -993,7 +993,7 @@ every channel.
 **Value decoding.** Each 4-byte value is a vertex position quantised into three signed 10-bit
 fields: X in bits 0-9, Y in 10-19, Z in 20-29 (bits 30-31 unused). Each field is a signed value
 from -512 to 511. It is multiplied by that axis of the descriptor's **step** and added to that axis
-of its **centre** (engine-confirmed):
+of its **centre** (engine-confirmed, `FUN_004714a0`):
 
 ```
 component(raw, shift, centre, step):

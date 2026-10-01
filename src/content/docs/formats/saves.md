@@ -536,7 +536,7 @@ to 73,544 (11: 5,846; 12: 16; 13: 73,544; 14: 4,190; 15: 99; 16: 300; 17: 16; 19
 name the managers, and name the same things in all nine park files: `mStaffHQ` thing 1 (model 9),
 `mMechanicHQ` 2 (model 10), `mTagSystem` 4 (12), `mParkAnalyser` 5 (13), `mResearchLab` 6 (14), `mWeather`
 7 (15), `mBankAccount` 8 (16) and `mUIMsgReceiver` 9 (17); things 3 (model 11) and 10 (model 19) are named
-by no header field. There is no model 18 in a park file: the writer refuses it, "Should not be able to save
+by no header field, though 10 is the challenge manager (below). There is no model 18 in a park file: the writer refuses it, "Should not be able to save
 online persons". With those sizes, the walk closes exactly on `DLRW` in all nine park files.
 
 **The offsets below are file offsets, and they are not the offsets a decompiler shows.** A thing is
@@ -733,6 +733,40 @@ record's last 76 bytes hold `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWith
 stream): kind 0 holds eight samples of 50, the rest are empty, and `mLifetimeVisitors` reads 8. A played park
 fills kinds 1 to 4, 6, 7, 9 to 13, 15, 16 and 18 too. What each kind is, and that only kind 0 is ever read back,
 is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
+
+### The challenge manager (model 19)
+
+Thing 10 in every park file, 937 bytes, named by no header field. The writer is the executable's `FUN_004d2320`, from
+the World module's case `0x13` (OpenTPW's `docs/exe/ride-operation.md`, "Challenges", for what the game does with it).
+Measured field by field in the nine park files above and a `restart.INTS` the original wrote under Proton (two more copies measured are the shipped `Easymode.TPWI`, byte for byte): the 16-byte
+base thing, then **twenty 45-byte slots** from byte 16, then the manager's own 21 bytes.
+
+| Slot offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `mType`, the entry's `Type` (0: an empty slot) |
+| 4 | 4 | `mTargetTime` |
+| 8 | 4 | `mTargetVal` |
+| 12 | 2 | `mTargetObj` |
+| 14 | 2 | `mTargetObj2` |
+| 16 | 4 | `mTargetStaffType` |
+| 20 | 4 | `mPrize` |
+| 24 | 4 | `mDoubleOrNothingFollowup`, the `.sam`'s `FollowupType` |
+| 28 | 1 | `mCheckAtEndOnly` |
+| 29 | 4 | `mChallengeOffered` |
+| 33 | 4 | `mChallengeLost` |
+| 37 | 4 | `mChallengeDeclined` |
+| 41 | 1 | `mHaveWon` |
+| 42 | 1 | `mIndependent` |
+| 43 | 2 | `mThingIdForFollowup` |
+
+Then `mCurrentChallenge` (4, at 916), `mNextChallengeEventTime` (8, at 920, an absolute time on the park's calendar),
+`mSystemSwitchedOn` (1, 928), `mChallengeOn` (1, 929), `mWaitingForReply` (1, 930), `mValue` (4, 931) and
+`mActualThing` (2, 935), ending at 937. The slots hold the theme's `ChallengesInThisLevel` entries in list order
+([Settings and Modifiers](/formats/sam/)), field for field as `Challenges.sam` gives them. In every Instant Action file
+the empty slots' unwritten fields are `0xCD` fill and `mCurrentChallenge` is −1 with the system off; in the Full
+Simulation saves the empty slots are zero, and Alexah's jungle save has the system on, slot 0 (sell 30 drinks) won with
+`mValue` 30, and its next event at 2002-05-05 19:22:30. `mChallengeOffered` and `mChallengeLost` are 0 in every slot of
+every file, the won one too.
 
 ### The economy thing (model 16)
 

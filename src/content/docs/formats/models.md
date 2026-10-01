@@ -410,6 +410,8 @@ The block has a 0x30-byte header:
 | +0x14  | 4 bytes | Cell size Y, a float (10.0 in all five) |
 | +0x18  | 4 bytes | Cells across |
 | +0x1C  | 4 bytes | Cells down |
+| +0x20  | 4 bytes | Low end of the heights' authored range, a float: a whole number within 1.0 of the lowest height (jungle -10.0 against -10.0, fantasy -9.0 against -10.0, hallow 0.0, space -10.0, the lobby 0.0) |
+| +0x24  | 4 bytes | High end of that range: a whole number within 1.0 of the highest height (jungle 60.0 against 60.16, fantasy 20.0, hallow 21.0, space 28.0, the lobby 0.0). The engine lights the ground with 1 / (`+0x24` - `+0x20`), or 1/16 when the two are equal (`FUN_0056e3f0`) |
 | +0x28  | 4 bytes | Offset of the heights: vertex-count floats, rows of `cells across + 1` (engine-confirmed pointer) |
 | +0x2C  | 4 bytes | Offset of the cell records: cell-count 4-byte records, indexed `y * across + x` (engine-confirmed pointer) |
 

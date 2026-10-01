@@ -73,7 +73,11 @@ holding 55 - a defect in that one file rather than a rule, so a reader must not 
 
 That also settles what the older gap-counting method could not. It worked by making each consecutive
 pair of sets vote, so a bank whose sets are a single run offered nothing to measure, and the `*heads`
-banks are all of that shape. They store **seven**.
+banks are all of that shape. They store **seven** - but for a head the seven are not compass directions. Laid out, a
+head bank's 56 pictures (`Generic\Kidsheads\SPR_BI` looked at) are **eight headings to a row, a full turn with no
+reflection, and seven rows from straight above to straight below**: row 0 the crown, row 3 level, row 6 the chin. The
+game draws a head with its own direction switched off and picks the picture itself, heading + 8 × row (OpenTPW's
+`docs/exe/ride-operation.md`, "Which picture a head shows").
 
 ## Eight headings from five pictures
 

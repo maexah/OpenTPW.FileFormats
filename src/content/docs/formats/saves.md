@@ -1250,7 +1250,8 @@ Each is a struct followed by a run of length-prefixed blocks, and a record
 | 4 + n    | **Block 3 — the string blob**, byte for byte the `.RSE` file's          |
 | 4 + n    | Blocks 4 and 5                                                          |
 | 4 + n×32 | **The walk slots** — a count, and that many 32-byte slots (below)       |
-| 4 + n    | Two further blocks                                                      |
+| 4 + n    | **The head table** — one dword per head slot (below)                    |
+| 4 + n    | The script's directory, the string the game's loader keeps at `+0x38`   |
 | 4 bytes  | Guard — `OBJ `                                                          |
 | 4 bytes  | Object count                                                            |
 | 4 bytes  | Bytes per object                                                        |
@@ -1301,6 +1302,15 @@ the game puts back on loading, so a deadline less that reading is the time still
 sideshow, 180,933 ms in the past; `0xa0` for the two security cameras, 2,341 and 2,329 ms ahead, and for the ride, 63 ms
 ahead. A played jungle park holds `0xc4` set in two scripts, 25,198 and 2,745 ms past, and in its autosave one of them
 284 ms ahead.
+
+**The head table** is the script's `ADDHEAD` slots (the [Instruction Set](/vm/instructions/)): one dword per
+slot, the visitor whose head hangs on head node *slot + 1*, nought for a free slot. The game takes the slot count
+from the block's length over four. A script gets one slot per head node of its thing's model, counted from id 1 in
+the model's head space until an id is missing, so every script with a thing and a model carries the block, used or
+not. The shipped park's fourteen are all empty. A played jungle park carries seven, each as long as its model's head
+count: the Tom Tom Twister 40, Mumbo 5, the Sun God 32, the Crazy Ape 16, Rocky Racers 8, the Aztec Mayhem 27 and the
+ferry 1. Five of the seven hold riders (the Crazy Ape six of its sixteen, and seven in the
+autosave), at slots scattered as a random draw leaves them: the Twister's riders sit on slots 4, 24, 25 and 28.
 
 **The walk slots** are the script's walk-on places (the `.RSE` header's walk count; the
 [Instruction Set](/vm/instructions/)'s `WALKON` and `WALKOFF`), copied raw, 32 bytes each:

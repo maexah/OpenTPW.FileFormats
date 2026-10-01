@@ -780,7 +780,19 @@ The two reading commands, `COAST_GETQUEUE` and `COAST_GETPEEP`, put their answer
 
 ## ADDHEAD
 
-`ADDHEAD <visitor ID>` - Add a visitor (head only) to the ride.
+`ADDHEAD <visitor ID>` - Put a visitor's head on the ride. The rider is shown as a head on one of the model's head
+nodes, and nothing more.
+
+The script has one head slot per head node of its thing's model (ids 1 upwards in the head space, until one is
+missing). The game picks a slot at random: it draws as `RAND` does, halves the draw, takes it modulo the slot count, and
+draws again until the slot is free, so each retry is one more draw. The visitor goes in that slot and their head hangs
+on head node *slot + 1*. A script with no slots, or with every slot taken, does nothing. Nothing is written to the
+result register. The table is saved with the park (the [save format](/formats/saves/)).
+
+Six Lost Kingdom rides use it, with `DELHEAD`: the Sun God (`incagod`, 32 head nodes), the Crazy Ape (`Monkey`, 16),
+Mumbo (5), Rocky Racers (`PorkPie`, 8), the Tom Tom Twister (`Spider`, 40) and Eruption (`Volcano`, 16). Five of them
+push the rider with `HUSH` as they put the head on and take them back with `HOP` before `DELHEAD`; the Sun God puts the
+head on after a walk on and takes it off after a `WALKOFF`.
 
 ### Operands
 
@@ -788,7 +800,8 @@ The two reading commands, `COAST_GETQUEUE` and `COAST_GETPEEP`, put their answer
 
 ## DELHEAD
 
-`DELHEAD <visitor ID>` - Remove a visitor from the ride.
+`DELHEAD <visitor ID>` - Take a visitor's head off the ride. Every slot holding the visitor is freed and its head taken
+down, not just the first. Nothing is written to the result register.
 
 ### Operands
 

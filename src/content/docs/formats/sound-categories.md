@@ -134,14 +134,15 @@ That is the whole rest of the file.
 | `+0x02` | 2 bytes | Zero |
 | `+0x04` | 4 bytes | Zone records that follow the samples |
 | `+0x08` | 4 bytes | Zero. The game writes a pointer to the samples here when it loads the file |
-| `+0x0c` | 2 bytes | Two unsigned bytes, a low and a high: 47 and 47 in every scream variation. Not named |
-| `+0x0e` | 2 bytes | Two signed bytes, a low and a high: 0 and 6 in every scream variation. Not named |
+| `+0x0c` | 2 bytes | **Volume**, a low and a high, unsigned, 0-100: 47 and 47 in every scream variation |
+| `+0x0e` | 2 bytes | **Pitch**, a low and a high, signed, in 96ths of an octave: 0 and 6 in every scream variation |
 | `+0x10` | 2 bytes | **Shortest wait**, in ms, before a repeating voice starts its next sample |
 | `+0x12` | 2 bytes | **Longest wait**, in ms |
-| `+0x14` | 4 bytes | Not named |
-| `+0x18` | 2 bytes | A mask. With bit 4 set, the wait is taken from the voice's parameter rather than at random |
-| `+0x1a` | 2 bytes | Not named |
-| `+0x1c` | 2 bytes | A second mask, not named |
+| `+0x14` | 2 bytes | Not named |
+| `+0x16` | 2 bytes | **First controller's parameter id**, one byte and a zero, or 0 for none |
+| `+0x18` | 2 bytes | **First controller's mask**: bit 1 the volume, bit 2 the pitch, bit 4 the wait |
+| `+0x1a` | 2 bytes | **Second controller's parameter id**, one byte and a zero, or 0 for none |
+| `+0x1c` | 2 bytes | **Second controller's mask**, the same bits |
 | `+0x1e` | 4 bytes | **Weight** among the effect's variations |
 | `+0x22` | 4 bytes | A float: 95.0 in every scream variation. Not named |
 | `+0x26` | 4 bytes | Zero. The game writes a pointer to the zones here |
@@ -159,6 +160,16 @@ nought means no wait. The four held screams carry these waits in all four of the
 
 Four ride variations hold the pair the wrong way round (fantasy 156, jungle 216 and space 188 at
 100 to 0, hallow 187 at 60 to 0), and fourteen hold both ends equal.
+
+**The controllers.** A game call sets a voice's parameter by id; the variation's two controllers each answer to one
+id, and their masks say what the value drives. A driven volume or pitch is `value × (high − low) / 100 + low` over
+the variation's range; one that nothing drives is drawn at random within it. Over all 1,595 variations the masks use
+bits 1, 2 and 4 alone, and the second byte of each id field is zero. Jungle's ride effect 194, a bumper ride's
+engine, answers to parameter 16 with mask 2 over a pitch of -24 to 36, at volume 68; the game sets parameter 16 to a
+boat's speed / 3. The 645 speech variations carry `+0x1c` = 100 with no id, which nothing reaches.
+
+A pitch of `p` plays the sample at 2^((p + 1) / 96) of its own rate above nought and 2^((p − 1) / 96) below, by the
+game's own tables.
 
 **The weight** is a running total across the effect's variations when the common header's `0x10` is
 0, and a variation's own share when it is 1. The game turns running totals into shares as it loads.

@@ -585,6 +585,11 @@ correctly with a standard right-handed culling convention.
 
 ### Materials
 
+**How many.** Measured over every readable `.md2` (2,117 of them, 4,914 meshes; `wr_tunnel.md2` in jungle's
+`wateride.wad` does not parse): a mesh names **at most 31** materials (the jungle Coaster3 preview's `GROUND`), and
+49 name more than 16, among them the jungle Hot Pot's floor `jbb_floor` with 25, whose faces use materials 16 to 24.
+A face's material index is the vertex's texture index, so a reader has to keep every one.
+
 The material table (offset given in the mesh record, *material count* entries) uses 16-byte
 records:
 

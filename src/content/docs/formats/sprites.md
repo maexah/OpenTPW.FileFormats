@@ -7,12 +7,22 @@ bubbles and particles - are sprites, kept in `data\esprites.wad`. Each folder th
 **banks**: a `.ESP` file saying which pictures make up each of its sixteen sets, and a `.TPC` of the
 same name holding the pictures.
 
-Some banks have a `.FPC` beside the `.TPC`. The two carry the same number of pictures and differ only
-in size, and **both are version 3** - every one of the archive's 46 `.TPC` and 29 `.FPC` files is, so
-the layout below reads either. Which of the pair is loaded is chosen from the bank's flag at `0x10C`.
+Some banks have a `.FPC` beside the `.TPC`: the same figure seen from ground level, for first person,
+where the `.TPC` is seen from above. It is not a level of detail. **Both are version 3** - every one of the
+archive's 46 `.TPC` and 29 `.FPC` files is, so the layout below reads either. 28 of the 29 pairs hold the
+same number of pictures; `Jungle\Entertainers\SPR_EX` holds 219 in its `.TPC` and 210 in its `.FPC`. In
+all 29 pairs the `.FPC`'s pictures are taller for their width on average (the kids' 1.56 to 1.62 against
+1.34 to 1.39), as a figure seen from lower down is: the pair differ in viewing elevation, not only in size.
+
+The flag at `0x10C` says whether first person draws the bank from its `.FPC`. It is set in 27 of the 46
+banks, and every one of them has a `.FPC`; it is clear in all 17 banks without one, and in two that have
+one, `Jungle\Entertainers\SPR_EX` and `Space\Costumes\SPR_SK`, which first person leaves on their
+`.TPC`. In Lost Kingdom the flagged banks are the eight kids, the guards, the handymen, both mechanics, the
+researchers, `SPR_TI` and the entertainers `SPR_DI` and `SPR_NA`; the kid heads, the costume heads and the
+balloons have no `.FPC` and stay as they are.
 
 The game asks for a sprite by a number whose low four bits are the set and whose other bits are the
-bank. Frame *n* of a set is picture `first + n` in the bank's `.TPC`. Banks are numbered in the order
+bank. Frame *n* of a set is picture `first + n` in the bank's `.TPC`, or its `.FPC` in first person. Banks are numbered in the order
 they are **loaded**, which for two of the fourteen kinds is not the order their folder lists them - see
 [How a folder is swept](#how-a-folder-is-swept).
 
@@ -26,7 +36,7 @@ The particle effects use the two banks in `Generic\Particles`: `SPR_PA` (bank 0)
 | --- | --- | --- |
 | `0x000` | 12 bytes | Magic, `ESP_FILE2.00` |
 | `0x00C` | 256 bytes | Name, NUL-padded - `SPR_PA.TPS` |
-| `0x10C` | 1 byte | Flag; affects which picture file is loaded |
+| `0x10C` | 1 byte | `1`: first person draws this bank from its `.FPC` (see above); `0`: always the `.TPC` |
 | `0x10D` | 1 byte | Flag, not identified |
 | `0x10E` | 16 x 4 bytes | Sets |
 | `0x14E` | 4 x 4 bytes | Four groups, selected by a state of 0 to 3 - see below |

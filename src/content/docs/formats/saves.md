@@ -1235,7 +1235,9 @@ be given, the script count, and a list pointer from the saving session that mean
 park's read 1, 6,055, 16, 14 and a pointer. So a loaded park goes on counting ticks, and numbering new scripts, where
 the saved one left off.
 
-Then one record per script. Each is a struct followed by a run of length-prefixed blocks, and a record
+Then one record per script, **newest first**: the saving session's list order, handles 15 down to 1 in the shipped
+park, 5 absent. The game puts each at the head of its list as it reads it, so a loaded park walks them oldest first.
+Each is a struct followed by a run of length-prefixed blocks, and a record
 **must** end on the literal guard `OBJ ` — the game refuses the load without it, logging
 `RSSE: Load Fail - Object list missing`, which is what makes a walk of this module self-checking.
 

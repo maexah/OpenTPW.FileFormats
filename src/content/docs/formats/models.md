@@ -74,7 +74,7 @@ gap of unknown content, not a claim that nothing is there.
 | 0x74   | 4 bytes  | Transform-only node table: `(0x42 - 0x44)` records of 88 bytes. See **Node hierarchy** |
 | 0x78   | 4 bytes  | **Root node**: the one node with no parent (engine-confirmed pointer). The engine's pose walk starts from it (`FUN_0044ab30`). In all 847 version-`0xDD` static meshes (the archives' 838 and 9 loose) it names the single parentless node, node 0 in all but 60; zero in all 1,278 version-`0xDD` animation files |
 | 0x7C   | 4 bytes  | Node-lookup table: 0x48 records, 20 bytes each (engine-confirmed)                     |
-| 0x80   | -        | Start of the model's overall bounding box (not yet parsed; see Open questions)       |
+| 0x80   | 24 bytes | The model's box: six floats, read as min x, y, z then max x, y, z. Of the 173 models with an [.hmp](/formats/hmp/) of the same name, 167 have min ≤ max on every axis. The engine copies the `.hmp`'s own box over this as it loads it (`FUN_00451640`); the two match in 53 of the 173. See Open questions |
 | 0x98   | 4 bytes  | Animation data block offset. Animation files only, see **Animation** below           |
 | 0xAC   | 4 bytes  | Path table: 0x40 records, 16 bytes each, or 0 when the model has none (engine-confirmed). See [Paths](#paths) |
 
@@ -116,9 +116,8 @@ under **Node hierarchy** below.
 ### Open questions
 
 - The meaning of the 0x0C and 0x10 fields, and of the five pointers between 0x58 and 0x68.
-- The exact shape of the bounding box at 0x80 (min/max as two vectors, one vector plus extents,
-  etc.). Its presence is inferred only from animation files never containing a float triple
-  that reproduces it, not from having parsed it directly.
+- The box at 0x80 has not been measured beyond the 173 models with an `.hmp` beside them. In 6 of those, min is
+  above max on some axis, so a reading other than min then max is not ruled out for every model.
 - The `0xCF` and `0x18` layouts, beyond what is said above about the arrows.
 
 ## Static meshes

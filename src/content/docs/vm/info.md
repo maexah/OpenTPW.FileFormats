@@ -57,3 +57,8 @@ On its turn a script runs instructions until its time slice is spent or it gives
 `CRIT_LOCK` stops instructions counting against the slice until the matching `CRIT_UNLOCK`. The flag behind that is cleared as each script's turn begins, so **a critical section cannot outlive the turn that took it** - a script that locks and then yields comes back with instructions counting normally again.
 
 A script whose program counter has been parked by `END` is taken off the list at the end of the same tick.
+
+## Feature scripts
+
+The [park gate scripts](/vm/park-gates/) illustrate why feature variables must be resolved
+by their own names: ordinary closure and the terminal end sequence are different commands.

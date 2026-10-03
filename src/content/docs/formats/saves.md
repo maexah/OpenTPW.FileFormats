@@ -1446,6 +1446,8 @@ more slots than things stays small. A present record is:
 | -------- | -------- | --------------------------------------------------------------- |
 | `0x00`   | 1 byte   | Tag — `01` for present                                          |
 | `0x01`   | 4 bytes  | The **item** id, not a thing id                                 |
+| `0x1d`   | 4 bytes  | Packed model flags; low seven bits are the hoarding state below |
+| `0x23`   | 4 bytes  | Hoarding progress, little-endian float (`0` retracted, `1` closing endpoint) |
 | `0x2b`   | 2 bytes  | Node flag-word count                                            |
 | `0x2d`   | 2 bytes  | The model's node-lookup record count                            |
 | `0x2f`   | 4 bytes  | The lookup records' shared flags: `0x1` some record has a position, `0x4` something is attached, `0x8` some record's file flags carry `0x2` (walkable meshes); `0x2` is set by the routine that hides a model's head nodes. The Jungle Spray's reads `0x1`, a ridden Aztec Mayhem's `0x7` |
@@ -1455,6 +1457,19 @@ more slots than things stays small. A present record is:
 | —        | n×44     | The animation channels — see below                              |
 
 Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
+
+**Hoarding flags:** `0x01` active, `0x02` raising, `0x04` lowering; `0x08` selects Closed,
+`0x10` Hoarding (broken), `0x20` Condemn and `0x40` Upgrade. Bits above `0x40` belong to other
+model state. The restore routine (`0x004647a0`) expands these bits to runtime model flags
+`0x20` through `0x800`, and restores progress through `0x004547f0`. Progress alone does not say
+whether the panels are active or moving. The closing endpoint does not guarantee equal full height
+for every panel: the executable staggers their deformation.
+
+The saved placed object's model handle selects **slot index plus one**, not the item id; repeated
+instances of an item can have different hoarding states. Q91b checks this pairing for all eleven
+placed objects in the shipped Jungle park. Its synthetic record checks the unaligned flag and
+progress reads independently of normal zero-progress saves.
+
 
 **A lookup record's runtime flags** say whether the game keeps its node's position
 ([Models](/formats/models/#which-records-have-a-position)): `0x1` it has one, `0x20` its node has no children, `0x8`

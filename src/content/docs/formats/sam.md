@@ -559,6 +559,51 @@ What the shipped items actually use, across all 274 shape blocks in the four the
 also has an entrance. No shipped picture contains a space, a tab, a blank line or a character outside
 the table.
 
+### The hoarding picture
+
+`Info.Hoarding` uses a separate sixteen-character table. Every cell has kind zero; the bits select
+panel edges. Each selected edge makes one panel, including internal edges if the picture asks for them.
+The names below use the executable's compass bits; the same row reversal described below applies.
+
+| Character | Edge bits | Edges |
+| --------- | --------- | ----- |
+| `.` | `0x00` | none |
+| `^` | `0x01` | north |
+| `_` | `0x10` | south |
+| `[` | `0x40` | west |
+| `]` | `0x04` | east |
+| `J` | `0x14` | south, east |
+| `F` | `0x41` | north, west |
+| `7` | `0x05` | north, east |
+| `L` | `0x50` | south, west |
+| `=` | `0x11` | north, south |
+| `H` | `0x44` | east, west |
+| `C` | `0x51` | north, south, west |
+| `U` | `0x54` | south, east, west |
+| `n` | `0x45` | north, east, west |
+| `3` | `0x15` | north, south, east |
+| `O` | `0x55` | all four |
+
+The Belly Bounce's block is:
+
+```text
+Info.Hoarding
+---
+F.7
+[.]
+[.]
+L.J
+---
+```
+
+Its twelve selected edges leave gaps; a rectangle would give the wrong outline. A fresh Q91b corpus
+check (2026-10-03) reads all 274 item archives: 129 have hoardings, each matching its footprint's width
+and depth. Their first model meshes have at least four source vertices, all finite after transformation.
+The executable's mode-2 parser at `0x00402720` uses the glyph table at `0x007397b0`, skips literal spaces,
+preserves blank rows and reverses the rows. The working grid is 20 by 20; malformed overlong input is
+not a supported way to enlarge it. Corner fitting, terrain placement and animation are executable
+behaviour, documented in OpenTPW's `docs/exe/ride-hoardings.md`.
+
 ### How the picture is read
 
 > **The rows are read upside down.** Once the closing dashes are reached, the reader swaps the first row

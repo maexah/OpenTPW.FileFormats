@@ -164,7 +164,10 @@ thirteen guests wear kids banks 0, 2, 4, 5, 6 and 7, so reading them in name ord
 of them as the wrong child while every count and every trailer still agrees.
 
 How many banks a sweep loads is also capped by the detail setting, so a folder is not always read to the
-end - `kids` stops at two, four, six or eight of its eight, and the staff kinds at one or two. The
+end - `kids` stops at two, four, six or eight of its eight. Generic staff kinds 5–8 stop at one or two;
+entertainers (kind 4) are uncapped. Lost Kingdom has three entertainer banks, one handyman, two mechanics,
+one guard and one researcher: seven staff banks at low detail, eight above low. These counts come from the
+archive folders, so a fresh park needs no saved staff to discover their artwork. The
 shipped Jungle park's guests reach bank 7, so that park was saved with all eight loaded. The detail files
 `med.sam` and `high.sam` set the kids' `NUMKIDS` to 2 and `low.sam` to 0, which the executable reads as six
 and two, not as the files' own comment says (`0->4, 1->6, 2->8`); parks the original saved at those settings

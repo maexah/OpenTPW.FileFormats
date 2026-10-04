@@ -38,7 +38,7 @@ the order `SCHl`, `pIQT`, `SCCl`, `pIQT`, `SCDl`, `pIQT`, ... There is no other 
 | `roc.tgq` | 990 | 991 | 728,347 |
 | `roll.tgq` | 992 | 993 | 729,817 |
 
-9,412 frames in all. The game's reader accepts each FourCC in both byte orders, and other EA video codecs too (TGV,
+9,412 frames in all. The game's reader accepts `SCHl`, `SCDl`, `SCCl` and `SCLl` in both byte orders, and other EA video codecs too (TGV,
 TGQ, MAD); none of them ships. It reads `UV2f` exactly as `pIQT`.
 
 ## `pIQT`: one video frame

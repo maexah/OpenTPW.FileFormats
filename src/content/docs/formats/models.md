@@ -679,9 +679,10 @@ are true gradients. A renderer acting on this bit has to serve both.
 
 ### Normals
 
-Vertex normals aren't stored in the file at all. They're computed by accumulating each
-triangle's face normal onto its three vertices and re-normalizing, the usual smooth-shading
-approach. There's no format detail here; it's purely a rendering choice.
+The game's model lighter (`FUN_00574660`) takes one normal per vertex-order entry from the table at
+mesh 0x64, twelve bytes each: the same table a face's first word indexes. How many entries each
+file holds has not been counted across the models. OpenTPW does not read them for lighting yet: it
+accumulates each triangle's face normal onto its three vertices and re-normalizes.
 
 ## Animation
 

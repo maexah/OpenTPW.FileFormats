@@ -23,7 +23,7 @@ The fields are the game's own reads, one after another: `FUN_00414d40` reads the
 | Offset | Size | Description |
 | --- | --- | --- |
 | `0x000` | 4 bytes | Version. The park the game ships carries `400` (`90 01 00 00`); a saved park carries `500`, as all eight park files the original wrote in play do. This is **not** a magic number - `F4 01 00 00` is simply `500` written little-endian, and a reader that requires it rejects the shipped park. Accept both. The game refuses a version above 500 when `FUN_00414d40` is called in its mode 2, as two of its three callers do: "Trying to load future version savegame into earlier game - get a patch" |
-| `0x004` | 1 byte | Read on its own and not checked; `0` in all nine park files |
+| `0x004` | 1 byte | Read on its own and compared with nothing: the loader uses it as an index (× 20 into `0x78a460`) to pick what the legal text is checked against; `0` in all nine park files |
 | `0x005` | `0x500` bytes | Legal text: a copyright notice in UTF-16, 824 bytes (412 characters, so reading it as single bytes gives every other byte as a NUL), then zeros to the end of the field. A load whose text fails `FUN_005f7e60`'s check stops with "The save game legal text has been jiggered with!" |
 | `0x505` | `0x100` bytes | Validated by `FUN_0051ab60`, and its first 32 bytes are copied to `0x802080`; zero in all nine park files. What it holds is not settled |
 | `0x605` | 4 bytes | Magic, read **big-endian** (through `ntohl`) and required to equal `0x01221985`, so stored `01 22 19 85` |
@@ -1245,8 +1245,7 @@ each emitter's `+0xd0`: four in `Easymode.TPWI` (two `Button`, `Bubbles` in emit
 The **templates** are the effect library: 105 effects of `0x140` bytes and 20 effectors of `0x68`, the
 [particle library](../particles/)'s records. In all nine files the 105 effects equal `data/Particle/Tp2.plb`
 byte for byte, but for slots 101 and 102 in the four jungle files, which hold the jungle's two `.emt` effects,
-`Smoke` and `BeamUp`. The 20 effectors equal the library's apart from their first dword, which is nought in every
-saved one.
+`Smoke` and `BeamUp`. The 20 effectors equal the library's byte for byte in all nine files.
 
 The particles themselves (`0x34` bytes each) are never saved: the pool size is always 0, and a load starts
 each emitter with no particles.

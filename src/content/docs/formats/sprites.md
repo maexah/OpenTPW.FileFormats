@@ -103,16 +103,19 @@ A guest's bank - `Generic\Kids\SPR_BE`, and the seven beside it - is 175 picture
 
 | Set | First | Frames per direction | What it is |
 | --- | --- | --- | --- |
-| `12` | 0 | 4 | |
+| `12` | 0 | 4 | A jump with both arms up |
 | `4` | 20 | 4 | |
 | `11` | 40 | 4 | |
 | `2` | 60 | 8 | |
 | `0` | 100 | 1 | A single standing picture per direction |
-| `14` | 105 | 2 | |
-| `6` | 115 | 4 | |
+| `14` | 105 | 2 | Standing with hands on hips, the two pictures a pixel or so apart |
+| `6` | 115 | 4 | Bending forward at the waist and straightening |
 | `1` | 135 | 8 | Walking |
 
 `135 + 8 x 5 = 175`, the bank's whole pack.
+
+Sets 12, 14 and 6 have the same frame counts in all twelve guest banks, these eight and the four themes'
+`Costumes`. Every staff and entertainer bank has a set 6 and neither 12 nor 14.
 
 ## Banks by kind
 

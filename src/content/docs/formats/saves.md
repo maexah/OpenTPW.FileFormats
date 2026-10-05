@@ -847,10 +847,19 @@ map base come first, as for every placed thing.
 | 242 | 4 bytes | `mSpriteAngle` |
 | 246 | 4 bytes | `mSpriteID` - the bank of that kind |
 | 250 | 4 bytes | `mSpriteUnderRideCtrl` |
-| 254 | 144 bytes | the event ring: `mActionHistIndex`, 32 `mEventHistory[`*i*`]` of 4, then `mLastThought`, `mThoughtScript` and `mTimeBubbleShown` |
+| 254 | 132 bytes | the event ring: `mActionHistIndex`, then 32 `mEventHistory[`*i*`]` of 4 |
+| 386 | 4 bytes | `mLastThought` - the thought last set, 1 to 22, or 0 for none yet |
+| 390 | 4 bytes | `mThoughtScript` - the thought bubble's slot in the sprite table, 0 with no bubble showing |
+| 394 | 4 bytes | `mTimeBubbleShown` - the park's clock (`mGameTick`) when the last bubble was made |
 
 It closes on 398, where each model's own block begins, and it lands on the two places read independently of
 it: the navigator at 43 and `mSpriteAngle` at 242.
+
+The three thought fields are measured on two played saves. Lost Kingdom at `mGameTick` 19,004, 339 guests: every
+`mLastThought` is one of 0, 1, 2, 3, 4, 5, 6, 7, 9, 11, 14 and 16, no `mTimeBubbleShown` is above the park's clock,
+and `mThoughtScript` is set on 21 guests, the oldest of whose bubbles was made at 18,989, 15 ticks before. Wonder
+Land at 2,145, 53 guests: thoughts 0, 2, 3, 5, 6 and 9, and two bubbles, the older made at 2,132. `mStrandedTime` is
+0 on every guest of both. In the shipped `Easymode.TPWI` all four are 0 on every guest.
 
 **`mESPSprite` and `mSpriteID` are what the person's sprite is built again from**, and they equal that sprite's own kind
 and bank (the `TPCS` record's `+0xac` and `+0xb0`) on all 18 people of the shipped park and every person holding a

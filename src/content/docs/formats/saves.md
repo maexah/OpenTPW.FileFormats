@@ -658,6 +658,12 @@ toilets and one rest area, and **the three toilets are three copies of one catal
 single column**, at (55,15), (55,16) and (55,17) - which is what says the bit is being read rather than
 that some bit happens to be set.
 
+**`mFlags` bit `0x40` holds litter and bit `0x80` is fireworks**, the item's `UsageInfo.HoldsLitter` and
+`UsageInfo.IsFireworks`. A deciding guest carrying too much litter looks for the nearest object with `0x40`, and
+one passing an object with `0x80` stops to watch it. In Lost Kingdom's `Easymode.TPWI` exactly one object carries
+`0x40`, thing 17, the Litter Bin at (44,29), and none carries `0x80`; the other three themes' files were not
+measured for these two bits.
+
 **`mNext` is the object list's own link**, and walking it from `mFirstObject` reaches all fourteen objects
 exactly once and stops on nought. Garbage does not terminate, so a chain that covers the list and ends
 cleanly is itself the evidence for the offset.

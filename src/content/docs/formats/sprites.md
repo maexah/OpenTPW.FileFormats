@@ -198,6 +198,45 @@ dark blob.
 A balloon's set is a draw below the count of sets with frames, `(r >> 2) % 4`, used as the set number itself; it
 lands on a set with frames because `SPR_BL`'s four are sets 0 to 3.
 
+## Thought bubbles
+
+Two banks, `Generic\Thoughts\SPR_TB` (a 14,198-byte `.tpc` of 16 pictures) and `SPR_TC` (11,664 bytes, 10 pictures),
+neither with a `.fpc`. Every set in use is one frame, facing nowhere. `SPR_TB`'s sixteen sets are its sixteen
+pictures in order; `SPR_TC` uses sets 0 to 9, whose first pictures are 0, 1, 8, 9, 7, 2, 3, 4, 5, 6. A bubble is
+32 x 31 pixels with its origin down at -64; the four arrows are 41 or 42 x 51 at -119.
+
+The executable names a thought picture by one number, the bank in its high bits and the set in its low four, so
+`SPR_TC`'s sets are 16 to 25:
+
+| Number | Bank, set | Picture |
+| --- | --- | --- |
+| 0 | `TB` 0 | yellow smiling face |
+| 1 | `TB` 1 | orange level face |
+| 2 | `TB` 2 | red angry face |
+| 3 | `TB` 3 | blue sad face |
+| 4 | `TB` 4 | grey yawning face |
+| 5 | `TB` 5 | yellow laughing face |
+| 6 | `TB` 6 | green sick face |
+| 7 | `TB` 7 | pink frightened face |
+| 8 | `TB` 8 | burger |
+| 9 | `TB` 9 | thumbs down |
+| 10 | `TB` 10 | drink |
+| 11 | `TB` 11 | hourglass and thumbs down |
+| 12 | `TB` 12 | drink and burger |
+| 13 | `TB` 13 | toilet sign |
+| 14 | `TB` 14 | litter |
+| 15 | `TB` 15 | question mark |
+| 16 | `TC` 0 | smiling face, pink bubble |
+| 17 | `TC` 1 | sad face, pink bubble |
+| 18 | `TC` 2 | sleeping face, pink bubble |
+| 19 | `TC` 3 | placard, pink bubble |
+| 20 | `TC` 4 | question mark, pink bubble |
+| 21 | `TC` 5 | thumbs up |
+| 22 to 25 | `TC` 6 to 9 | a blue, a green, a red and a yellow arrow pointing down, no bubble |
+
+The blue bubbles are guests' and the pink ones staff's. Which thought shows which is the executable's table, in
+OpenTPW's `docs/exe/ride-operation.md`.
+
 ## Pictures (*.tpc)
 
 | Offset | Size | Description |

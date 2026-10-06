@@ -80,6 +80,11 @@ These are notes on the 2.0 executable (OpenTPW's `docs/exe/park-engine.md`, "Pla
   into pointers and copies the box over the model's at `+0x80`. If the file is missing, the signature is wrong, or
   the columns or rows differ from the footprint the item declares, it **rebuilds** the file from the model
   (`FUN_00451880`) and writes the rebuild back to disk. No shipped file triggers a rebuild.
+- **The preview's fit** (`FUN_004689f0`). The turning model in an object's window is sized and placed by the box
+  at `0x18` alone: half the footprint's diagonal in two thirds of the panel's width, or the distance from the box's
+  low corner at height nought to its high corner in the panel's height, whichever is tighter. The model turns
+  about half the box's width and depth from its own origin, which is the footprint's middle where the box's low
+  corner is the origin.
 - **Reading** (`FUN_00452ae0`). For a cell, it finds the thing standing there and carries the cell back into the
   thing's unturned space by its quarter turn. It reads the **cell grid** byte there and answers byte / 2.55 plus the
   height of the thing's root node. The raster and the mark plane are not read here.

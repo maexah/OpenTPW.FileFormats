@@ -1289,8 +1289,12 @@ None of the 197 carries the position and visibility channels alone.
 **A leading `P` is a prefix, not a suffix.** When its caller asks for it, the item loader loads a
 whole second model-and-animation set named `p<stem>` through the same probe, using the format string
 `"p%s"` at `0x0074d368`, and keeps it apart from the first. `PJunspray.MD2` and `PJunsprayM.MD2` are
-one such set. 39 archives ship one, all of them rides, sideshows and upgrades. What the second set
-is for is not known.
+one such set. 39 archives ship one, all of them rides, sideshows and upgrades (jungle 11, fantasy 6,
+hallow 10, space 12), and each ships an `M` clip for it (`P<stem>M.md2` or `P<stem>M1.md2`). **It is the
+model the game previews the item with**: the turning model in an object's window and on the buy screen
+is a fresh instance of the `P` model, playing that clip, where the item has one, and of the item's own
+model where it has none (OpenTPW's `docs/exe/park-engine.md`, "The object window's preview"). A `P`
+model leaves out what the preview should not show: the Inca Totem's pit under the ground, for one.
 
 #### Role 0 decides what a built item looks like
 
@@ -1344,4 +1348,3 @@ nearest float to 1000/30, not the exact value.
 - What bit `0x1` of a position record's type would do. No position record sets it, and no path sets
   `0x10`, which every position record carries.
 - What drives the eight paths that no clip follows, the lobby islands' among them.
-- What the second, `p`-prefixed model set is for.

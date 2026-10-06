@@ -249,21 +249,24 @@ names for the fields these are. A record with `mValid` 0 is an empty slot, and t
 | `0x00` | i32 | `mType` | The kind: 0 handyman, 1 mechanic, 2 entertainer, 3 guard, 4 researcher |
 | `0x04` | i32 | `mName` | A row, 0 to 34, of the kind's name table (`HANDYMAN_NAMES.str`, `MECHANIC_NAMES.str`, `ENTERTAINER_NAMES.str`, `GUARD_NAMES.str`, `RESEARCHER_NAMES.str`) |
 | `0x08` | u8 | `mPayGrade` | The grade, 0 to 4 |
-| `0x09` | u8 | `mSubType` | The costume: 0 for a handyman, guard or researcher, 0 or 1 for a mechanic, 0 to 2 for an entertainer |
+| `0x09` | u8 | `mSubType` | 0 on every handyman, guard and researcher measured, 0 or 1 on the mechanics, 0 to 2 on the entertainers. The game takes it as the costume |
 | `0x0A` | u8 | `mValid` | 1 where the slot holds a candidate |
-| `0x0B` | u8 | `mOnPointer` | 1 while the candidate is in the player's hand; 0 on every record measured |
+| `0x0B` | u8 | `mOnPointer` | 0 on every record measured. By the game's name for it, 1 while the candidate is in the player's hand; no file here shows that |
 | `0x0C` | i32 | `mTimeSig` | The header's `mGameTick` as the candidate joined the pool |
-| `0x10` | i32 | `mTimeoutTime` | How long the candidate waits to be hired, in fours of `mGameTick`: 120 to 179 |
+| `0x10` | i32 | `mTimeoutTime` | How long the candidate waits to be hired, in fours of `mGameTick`. 120 to 179 on every record measured, which is the range the shipped balance gives (`StaffPoolInfo.StaffTimeoutTime` 120, and up to half of it more), not a limit of the format |
 
 Lost Kingdom holds sixteen, in slots 0 to 11, 13, 18, 22 and 23: six joined on tick 361 and ten on 722, which is
 also the pool's own `mTimeSig` (below), the tick it was last topped up on. The name is kept as a row, not as text,
 so the same save shows different names under the two language folders where their tables differ: slot 3's mechanic,
 row 12, is Rob O'Farrell by `English` and Alex Cullum by `american`.
 
-Measured on the eleven park files on the machine this was written on (the shipped `Easymode.TPWI`, a player's copy
-of it and its `restart.INTS`, and eight `.TPWS` and `.INTS` files written by the game in three themes): 188 occupied
-records, every one inside the ranges above, with grades 0 to 3 and a `mTimeSig` never later than the file's
-`mGameTick`. The three `restart.INTS` files written as a Full Simulation park was created hold the opening pool, twenty-two
+Measured on the ten different park files on the machine this was written on (the shipped `Easymode.TPWI`, of which
+a player's copy is the same byte for byte; that player's `restart.INTS`; and eight `.TPWS` and `.INTS` files written
+by the game in three themes; one more than the nine the rest of this page counts, which leaves out that
+`restart.INTS`): 172 occupied records, every one inside the ranges above, with grades 0 to 3 and a
+`mTimeSig` never later than the file's `mGameTick`. In Lost Kingdom's file the sixteen empty slots are of two kinds:
+eight still hold the fields of a candidate who has gone, with `mValid` 0, and eight were never used, their `mName`,
+`mPayGrade` and `mTimeoutTime` the fill byte `0xCD` and the rest nought. The three `restart.INTS` files written as a Full Simulation park was created hold the opening pool, twenty-two
 candidates all joined on tick 0.
 
 ### The arrival and clock fields

@@ -52,10 +52,23 @@ Each set:
 ### The four groups at `0x14E`
 
 These are read, not merely counted. The loader keeps the bank in a larger record and the four groups
-land at `+0x20E` through `+0x21D` in it; a routine picking a sprite's animation takes a state of 0 to
-3 and reads that group's four bytes as **two set numbers, each stored one higher than the set it
-names, and two further bytes** whose meaning is not identified. A group's set numbers are therefore
-`byte - 1`, and a stored `0` means "no set".
+land at `+0x20E` through `+0x21D` in it. A group whose first byte is not `0` is in use, and the loader
+counts those. A routine picking a sprite's animation takes a state of 0 to 3 and reads that group's
+four bytes:
+
+| Byte | Description |
+| --- | --- |
+| `0` | Which of the executable's four state scripts runs, stored one higher: `1` is the first. `0`: the group is not in use |
+| `1` | The set the script shows, stored one higher than the set it names |
+| `2` | The frame the loop starts from, after frames 0 to it have been shown once |
+| `3` | How many more turns frame 0 is held between rounds of the loop |
+
+Bytes 2 and 3 reach a sprite only when it is created on a state; a sprite switched to a state later
+keeps what it had. An entertainer performing is a sprite switched to state 0.
+
+Of the 46 shipped banks, 34 have no group and 12 have one, always the first: `1, 5, 0, 0` in eleven
+of them (the first script, set 4) and `1, 5, 2, 40` in `Hallow\Entertainers\SPR_DR`. The twelve are the four
+themes' `Entertainers` banks, three each; no other kind of bank has a group.
 
 ## Directions
 

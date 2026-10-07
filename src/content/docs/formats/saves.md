@@ -1107,7 +1107,7 @@ Five of the six person models are staff - **4** mechanic, **5** handyman, **6** 
 | 398 | 4 bytes | `mCurrentPayGrade` | `3`, `3`, `3`, `3`, `2` |
 | 402 | 4 bytes | *unnamed float* - happiness | `89`, `89`, `92`, `91`, `97` |
 | 406 | 4 bytes | `mJobsDone` | `0` on all five |
-| 410 | 66 bytes | `mName[0..32]` | 33 shorts, not text |
+| 410 | 66 bytes | `mName[0..32]` | The name as text: 33 characters of 16 bits, ended by a nought. `Duke Mighten`, `Mike Cooper`, `Pierre Hintze`, `Mike Man`, `Nicholas Ricks` |
 | 476 | 2 bytes | `mPatrolRegionBL` | packed cell id |
 | 478 | 2 bytes | `mPatrolRegionTR` | packed cell id |
 | 480 | 1 byte | `mPercentageThroughGrade` | `0` on all five |

@@ -738,6 +738,12 @@ the open check refuses the object, though leaving the track editor opens it anyw
 chain that closes on `mTotalTakings` at 1090 rather than on a value, since nought is also what its
 neighbour after it holds.
 
+**`mTimeMarkedForMaintenance` is the park clock when `mAssignedStaffMember` was last written** - four bytes at 1082,
+a reading of `mGameTick`. The game stamps it as a handyman takes a toilet to clean or a mechanic a ride, and reads
+it to forget the member: more than 100 ticks on, an assignment whose member has since taken other work is cleared,
+and the stamp with it. A finished clean clears the member and the request and leaves the stamp. It is `0` on all
+fourteen objects in the shipped park, where nobody is assigned to anything.
+
 ### The staff HQ (model 9): strikes and training budgets
 
 Thing 1 in every park file, the one the header's `mStaffHQ` names, **103 bytes**. Its serialiser writes the

@@ -995,7 +995,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 
 | Offset | Size | Name | Shipped park |
 | --- | --- | --- | --- |
-| 398 | 4 bytes | `mArrivalDate` | |
+| 398 | 4 bytes | `mArrivalDate` | `648` to `660`, one apart in id order: the world's `mGameTick` (755 in this file) as the guest was made |
 | 402 | 4 bytes | `mArrivalIndex` | |
 | 406 | 4 bytes | `mBalloonScript` | `0` on all thirteen: the one-based slot of the guest's balloon in the `TPCS` sprite table, or none (below) |
 | 410 | 4 bytes | `mBeenAdmitted` | |
@@ -1025,8 +1025,8 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | 501 | 4 bytes | `mSavedState` | `6` on all thirteen - a new guest is constructed deciding |
 | 505 | 4 bytes | `mState` | `2`, `5`, `3` - heading for the gate, entering, waiting outside |
 | 509 | 4 bytes | *unnamed float* - thirst | `36`, `13`, `12`, ... |
-| 513 | 4 bytes | `mTimeOfLastSpotAnim` | |
-| 517 | 4 bytes | `mTimeStartedIdling` | |
+| 513 | 4 bytes | `mTimeOfLastSpotAnim` | `0` on all thirteen: a reading of `mGameTick`, nought until the first spot animation |
+| 517 | 4 bytes | `mTimeStartedIdling` | `0` on all thirteen: a reading of `mGameTick`, nought until the guest first queues or stands idle |
 | 521 | 4 bytes | *unnamed float* - `mTiredness` | `0` throughout |
 | 525 | 4 bytes | *unnamed float* - toilet | `13`, `15`, `24`, ... |
 | 529 | 4 bytes | *unnamed float* - vomit, the meter the game's own log calls illness | |

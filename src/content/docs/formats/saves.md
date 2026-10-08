@@ -350,10 +350,12 @@ which of three optional sub-records follow it**, one bit each:
 | `0x2` | track | 31 bytes |
 | `0x4` | effects | 10 bytes |
 
-A cell that is entirely default writes its status byte and nothing else, which is where the block's
-variable length comes from. Only two combinations occur in the shipped park - `3` on 16,134 cells and `7`
-on the other 250, coming to 84 and 94 bytes - but the bits add independently, so a walk that sums them
-reads the combinations no shipped park happens to contain. The shipped park's cells total 1,378,756 bytes,
+**The game's writer gives every cell its map and its track sub-record**: its test for a default one answers
+"not default" for both, always, and only the effects sub-record is left out when its ten bytes are a default's.
+So a file the game wrote opens every cell with `3` or `7`, 84 or 94 bytes, and the effects sub-record is where
+the block's variable length comes from: `3` on 16,134 cells of the shipped park and `7` on the other 250;
+15,132 and 1,252 in a played Full Simulation park. The reader takes each sub-record its bit names, so a walk
+that sums the bits reads the six combinations the game never writes. The shipped park's cells total 1,378,756 bytes,
 exactly the region from `0x1A6D` to `0x152431`, and an implementation that only needs what is *in* the park
 can measure each cell and skip it.
 
@@ -401,6 +403,11 @@ header, parsed by different code, and indexed `x * 128 + y` where the save's cel
 Every cell agrees. Agreement in aggregate would prove little; agreement cell by cell under *opposite*
 indexing is not something a misaligned or transposed reading can produce. 1,495 cells are non-zero, over
 exactly the eight values the attribute map uses: 0, 1, 3, 8, 17, 128, 144 and 148.
+
+**`mMeshInstance` at 3 is a queue cell's model.** It is a handle of the running game's, kept as saved and
+used after a load: non-zero on exactly the queue cells (`mType` 3), 4 of 4 in the shipped park and 78 of 78 in
+a played one, and nought on every other cell of both. `mHoardingNeighbours` at 28 is nought on every cell of
+both.
 
 **`mWho` at 50 is occupancy** - the id of the thing standing on the cell. Twenty-four cells of
 the shipped park carry a value, and eleven of them are exactly its eleven placed catalogue objects, each

@@ -1185,7 +1185,7 @@ Five of the six person models are staff - **4** mechanic, **5** handyman, **6** 
 | 481 | 2 bytes | `mRestArea` | `0` on all five |
 | 483 | 4 bytes | `mState` | `1`, `1`, `1`, `0`, `1` |
 | 487 | 4 bytes | `mTimeStartedIdling` | `0`, `0`, `712`, `752`, `0` |
-| 491 | 8 bytes | `mTimeHired` | |
+| 491 | 8 bytes | `mTimeHired` | a `FILETIME` (hundreds of nanoseconds since 1601): `1.1.2000 15:37:30` on four and `29.1.2000 03:00:00` on the researcher (below) |
 | 499 | 4 bytes | *unnamed float* - tiredness | `75`, `75`, `82`, `79`, `93` |
 
 Then, at **+503**, whatever the kind adds:
@@ -1209,6 +1209,12 @@ where it sorts. The one at 402 falls between `mCurrentPayGrade` and `mJobsDone`,
 `mTimeHired`. What the code does with them agrees - the resting handler recovers the first by
 `HappinessRecuperationRate` and the second by `RecuperationRate`, both indexed by the pay grade, and the
 "too tired to work" test reads the second against `AllStaffConstants.RestLevel`.
+
+**`mTimeHired` is the park's calendar as the member was made**: the calendar's start plus `mGameTick` x
+`mFunnySecsPerRealSec` / 4 seconds, 3,750 seconds a tick in every shipped park, stored whole as a `FILETIME`. The
+shipped four read tick 15 exactly and the researcher tick 648; the 53 members of Alexah's played jungle park read 53
+different dates from 2.3.2000 to 25.2.2002, each a whole number of ticks, the newest hires the latest. The staff
+window's days employed are counted from it.
 
 **The alphabetical rule is not quite a rule here, though, and that is worth knowing rather than relying
 on.** `mTimeStartedIdling` is written *before* `mTimeHired`, which sorts the other way. The order above is
@@ -1289,11 +1295,28 @@ be named from the code that fills them are:
 | `0xB0` | 4 bytes | Which bank of that kind |
 | `0xB4` | 4 bytes | Two numbers in one: the low four bits are the **set**, and everything above them is how far past its kind's first bank this sprite's bank sits. The game takes it apart exactly that way before it looks a picture up |
 | `0xB8` | 4 bytes | Which frame of that set |
-| `0xBC` | 4 bytes | A byte of the loaded bank, looked up by the word at `0xB4` whenever the program changes: `1` on every child and handyman, `4` on every guard and researcher, `1`, `8` or `17` on an entertainer, `1` or `8` on a mechanic, over the ten park files |
+| `0xBC` | 4 bytes | The frames per direction of the set the sprite was **made** on, the third byte of that set in its bank's `.esp` (below) |
 | `0xC0` | 4 bytes | Which of eight ways round it was last drawn facing |
 
 The three floats at `0x88`, `0x8C` and `0x90` are where the sprite stands, in world units at ten to a
 map cell.
+
+**`0xBC` is set as the sprite is made and not when its picture changes.** A person's sprite is made on set 0 of
+its bank and its animation programs change the set at `0xB4` afterwards, so a walking child on set 1 (eight frames a
+direction) still holds set 0's `1`. Only a bank's own state animation writes it again, with that state group's set: an
+entertainer that has performed holds its group's (`8` on the jungle's `SPR_DI`, `17` on its `SPR_EX`) and one
+that has not holds set 0's. A balloon is made on its colour's set and holds `2`, whole and burst. A thought bubble is
+made on bank 0's set 0 whatever its picture and holds `1`. All 1,053 live sprites of the six park files to hand that
+hold any (the shipped jungle park, and two played saves each of jungle and fantasy) read exactly this against their
+banks: `1` on every child, costume and handyman and on a mechanic of bank 1 (`SPR_OM`), `8` on every head and on a
+mechanic of bank 0 (`SPR_FA`), `4` on every guard and researcher.
+
+**A thought bubble is a record of its own, as a balloon is**, named by its person's `mThoughtScript`: kind 9
+(`thoughts`), bank 0, `0xB4` the picture (0 to 15 the first bank's sets, 16 up the second's, so here the word does
+run past fifteen), frame 0, 2.5 above the ground, on one of 22 programs of six words each from word 1462 and, once
+it has shown, four words into it. The programs set pictures 0 to 15 in order, then 21, then 16 to 20, so picture 21
+is on word 1558 and picture 18 on 1576. The played jungle saves hold 23 and 19, the fantasy saves 2 each; one of
+the 46 is saved at its program's first word, just made.
 
 An earlier version of this page said the record carried **no position at all**. That was wrong, and
 wrong for a reason worth keeping: the scan that went looking for one swept for values shaped like map

@@ -1700,14 +1700,17 @@ Forty bytes between the ride scripts' `ESSR` tag and the camera's own `EMAK`. Th
 | Size | Name | In `Easymode.TPWI` |
 | --- | --- | --- |
 | 4 bytes, float | `gf_CameraZoom` | 110 |
-| 4 bytes, float | `gf_YRotation` | 0 |
+| 4 bytes, float | `gf_YRotation`, the camera's turn about the point it looks at, in radians | 0 |
 | 4 bytes | `gui_CameraFlags`; the loader reads it and then sets the running flags to nought | 256 |
 | 12 bytes, three floats | `gs_RequiredPOIPosition`, the point the camera looks at, ten units to a cell | 475, 0, 175.01 |
 | 12 bytes, three floats | `gs_SavedPOIPosition` | 0, 0, 0 |
 | 4 bytes, float | `gf_SavedYRotation` | 0 |
 
 The flags read 256 in the four files saved from the menu and nought in the three autosaves and the three
-`restart.INTS`. The saved point and rotation are nought in all ten.
+`restart.INTS`. The saved point and rotation are nought in all ten, and the rotation is nought in all ten (`-0.0`
+in two). The game turns the camera a quarter turn a key press, and on loading rounds the rotation to a whole
+quarter turn when one of its options is set: a file holding -0.7854 read 0 after the load, and one holding
+±1.5708 read as written (measured in the game, 2026-10-08).
 
 ## The coasters module (`SAOC`)
 

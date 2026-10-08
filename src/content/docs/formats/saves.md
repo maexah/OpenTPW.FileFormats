@@ -225,8 +225,9 @@ current; the played fantasy park holds the first two, the second current.
 the rest of the 150 are zero. `mNumObjectControls` after the array counts the used ones - 50 in Lost Kingdom's
 save, among them the eleven kinds of its fourteen objects (the eight kinds it has placed, plus the bus, the
 gates and the traffic lights), so it is not a list of what stands in the park. `mPreviousSearchKey` reads 1100
-there; the loader zeroes it after reading it. Three fields are settled, each checked against the item files
-for all 50 records with no mismatch:
+there; the loader zeroes it after reading it. The first five fields below are settled against the item files
+for all 50 records with no mismatch; the count is checked against that save's fourteen objects, and both of
+the last two against the running game's memory (the game's reader of them is its arrivals' headcount):
 
 | Offset | Type | Holds |
 | --- | --- | --- |
@@ -235,8 +236,11 @@ for all 50 records with no mismatch:
 | `0x0C` | i32 | The item's `UsageInfo.RipOffOK` - 100 for the six shops, 250 for the four sideshows (each from its folder's `Shops.sam` or `SideShow.sam`), 0 for the rest |
 | `0x10` | u8 | Researched: 1 on 26 records, exactly the 26 whose item's file (with its `Easy_` layer) sets `Upgrades[0].CostOfResearch` 0. Among them the rides Belly Bounce, Crazy Ape, Rocky Racers and Aztec Mayhem, the shops Balloon, Burger and Drinks, and the sideshows Jungle Spray and Strength Bird; the other 24 read 0 |
 | `0x14` | i32 | The upgrade tier researched, 0 to 2: 2 on 17 of the 26 researched records, 0 on every other record |
+| `0x18` | i32 | How many of the item stand in the park. Lost Kingdom's save: 3 for the Small Toilet, 2 for the Security Camera, 1 for each of nine more kinds, 0 for the rest, 14 in all, its fourteen objects |
+| `0x1C` | u32 | `mGameTick` when the first of the item was built, kept after the last is sold: 15 on nine records in Lost Kingdom's save, the Balloon Shop among them with a count of 0, and 604 for the bus. The game writes it only while it reads 0, so the gates and the traffic lights, made on tick 0, keep 0 |
 
-The other fields (`0x08`, `0x18`, `0x1C`, and the three bytes after `0x10`, all nought here) are not settled here. The game fills a
+Across the six park files read (Lost Kingdom's and five played saves of three themes) every record with a
+count above 0 has a stamp, but for the gates and the lights. The other fields (`0x08` and the three bytes after `0x10`, all nought here) are not settled here. The game fills a
 record from the item's own description, so a save carries whatever the item files said when the record was made.
 
 ### The staff pool

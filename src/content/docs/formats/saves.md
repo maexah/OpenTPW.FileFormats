@@ -299,7 +299,8 @@ by the game in three themes; one more than the nine the rest of this page counts
 `mTimeSig` never later than the file's `mGameTick`. In Lost Kingdom's file the sixteen empty slots are of two kinds:
 eight still hold the fields of a candidate who has gone, with `mValid` 0, and eight were never used, their `mName`,
 `mPayGrade` and `mTimeoutTime` the fill byte `0xCD` and the rest nought. The three `restart.INTS` files written as a Full Simulation park was created hold the opening pool, twenty-two
-candidates all joined on tick 0.
+candidates all joined on tick 0. A candidate whose time runs out has `mValid` cleared and nothing else
+(`0x005084f0`), which is the first kind of empty slot, and a newcomer takes the lowest slot whose `mValid` is 0.
 
 ### The arrival and clock fields
 
@@ -318,6 +319,14 @@ each field is read:
 | `0x001A4F` | 4 | `mMonthAtLastUpdate` | 1 |
 | `0x001A53` | 4 | `mDayAtLastUpdate` | 2 |
 | `0x001A57` | 4 | `mFunnySecsPerRealSec` | 15000 |
+
+The five pairs are the park's staff as the pool last counted them, one pair a kind in the order of `mType` (handyman,
+mechanic, entertainer, guard, researcher): `mPeopleInCat` is how many of the kind the park employed, and
+`mStopProducing` is 1 where that had reached the kind's `StaffPoolInfo.Max<Kind>InPark`. The game counts them only as
+it tops the pool up (`0x00508000`), so they are a reading taken at the pool's `mTimeSig`, not at the save: Lost
+Kingdom's 1 in each is its five staff, one of a kind. An OpenTPW-written file with these pairs, the pool's records and
+its `mTimeSig` taken from a running park was read by the game, which topped the pool up 361 counts after that
+`mTimeSig` (OpenTPW's `docs/exe/saves.md`, "OpenTPW's writer, the staff pool and the arrival timer").
 
 #### The arrival block
 

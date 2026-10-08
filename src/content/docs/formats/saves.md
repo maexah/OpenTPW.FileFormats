@@ -23,9 +23,9 @@ The fields are the game's own reads, one after another: `FUN_00414d40` reads the
 | Offset | Size | Description |
 | --- | --- | --- |
 | `0x000` | 4 bytes | Version. The park the game ships carries `400` (`90 01 00 00`); a saved park carries `500`, as all eight park files the original wrote in play do. This is **not** a magic number - `F4 01 00 00` is simply `500` written little-endian, and a reader that requires it rejects the shipped park. Accept both. The game refuses a version above 500 when `FUN_00414d40` is called in its mode 2, as two of its three callers do: "Trying to load future version savegame into earlier game - get a patch" |
-| `0x004` | 1 byte | Read on its own and compared with nothing: the loader uses it as an index (× 20 into `0x78a460`) to pick what the legal text is checked against; `0` in all nine park files |
+| `0x004` | 1 byte | The language the game was running in when it wrote the file: `0` English (and any language not named here), `1` Spanish, `2` Italian, `3` Swedish, `4` German, `5` French, `6` Japanese (the writer, `FUN_00415f50`). The loader compares it with nothing and uses it as an index (× 20 into `0x78a460`) to pick the legal text the next field is checked against; `0` in all ten park files |
 | `0x005` | `0x500` bytes | Legal text: a copyright notice in UTF-16, 824 bytes (412 characters, so reading it as single bytes gives every other byte as a NUL), then zeros to the end of the field. A load whose text fails `FUN_005f7e60`'s check stops with "The save game legal text has been jiggered with!" |
-| `0x505` | `0x100` bytes | Validated by `FUN_0051ab60`, and its first 32 bytes are copied to `0x802080`; zero in all nine park files. What it holds is not settled |
+| `0x505` | `0x100` bytes | Validated by `FUN_0051ab60`, and its first 32 bytes are copied to `0x802080`; the writer fills the field with zeros and copies the same 32 bytes back in from `0x802080` (`FUN_00415f50`). Zero in all ten park files. What it holds is not settled |
 | `0x605` | 4 bytes | Magic, read **big-endian** (through `ntohl`) and required to equal `0x01221985`, so stored `01 22 19 85` |
 | `0x609` | 4 bytes | Online-header flag: any value but `0` means an author header follows it (read by `FUN_00418da0`: the author's name and e-mail, a park description and the date published); `0` means none does. `0` in all nine park files, and nothing pads it |
 
@@ -42,12 +42,19 @@ place the cuts.
 | `0x60D` | 4 bytes | Tag - `BILZ` |
 | `0x611` | 4 bytes | The size the payload inflates to |
 | `0x615` | 4 bytes | The size of this whole block, its tag and header included - so `0x60D` plus this is the file's length |
-| `0x619` | 16 bytes | Not identified; four dwords, `15, 9, 0, 0`, in all nine park files read (the shipped park and eight played ones) |
+| `0x619` | 16 bytes | Four dwords, `15, 9, 0, 0`: the first two are the window bits and the memory level the stream was deflated with, the last two are written as nought (`0x00619280`). The same in all ten park files |
 
 Neither of those two sizes is a compressed length. The ZLIB stream begins at `0x629` - the 28-byte
 header counts the tag, which is an easy four bytes to lose - and continues to the end of the file. Both sizes
 are worth checking on load: one confirms the block reaches the end of the file, the other that the payload
 inflated to the size it claimed, 1,608,309 bytes in the shipped park.
+
+The stream is plain zlib 1.1.3, deflated in one call at the default level with a 32K window (15 bits) and
+memory level 9, so it opens `78 9C`. Inflating any of the ten park files and deflating the result again with
+those settings (level 6, window bits 15, memory level 9, default strategy) gives the stored stream back byte
+for byte; with memory level 8, zlib's own default, it does not in any of them. The ten are the shipped park,
+the eight files Alexah's Full Simulation play wrote (three of them `restart.INTS`, which has this same
+layout), and one Instant Action save written under Proton on 2026-10-08.
 
 ## Inside the stream: a chain of modules
 

@@ -599,6 +599,18 @@ thirteen hang off cell (0,0) through `mMapChild`: that cell's `mWho` holds 15, a
 10 and on down to 1, whose `mMapChild` is 0. The same holds in all nine park files, the head of the chain
 being whichever unplaced thing is in `mWho` at (0,0).
 
+**A person stands in the chain of their own cell.** `mMapChild` and `mMapParent` with the cell's `mWho` are one
+chain a cell: `mWho` names its head, each thing's `mMapChild` the next and `mMapParent` the one before. Every thing
+of all ten park files is in exactly one chain, and every guest and member of staff in the chain of the cell their
+`mX` and `mY` name, ahead of any catalogue object on it: 18 of 18, 65 of 65 and 392 of 392, riders and resting
+staff with no sprite among them. The loader takes the chain as the file has it and enters nobody in a cell of its
+own accord.
+
+**The five staff lists run in the list's order.** The header's `mFirstHandyman`, `mFirstMechanic`,
+`mFirstEntertainer`, `mFirstGuard` and `mFirstResearcher` each name the first thing of that model in the thing
+list, and each member's `mNext` (the record's last two bytes) the next of the model after it, `0` on the last: so
+in all ten files.
+
 After that the models diverge completely and the sizes are wildly uneven, so the stream cannot be strided
 - each model has to be recognised, and each has one fixed size: **1** a guest (533 bytes), **3** a
 placeable catalogue object (1,099), **4 to 8** the five kinds of staff (511, 513, 509, 511 and 509), **9**
@@ -916,7 +928,7 @@ map base come first, as for every placed thing.
 | 16 | 4 bytes | `mSpriteScript` |
 | 20 | 4 bytes | `mNextAnim` |
 | 24 | 4 bytes | `mNextServiceInterval` |
-| 28 | 2 bytes | `mAccurateDestX` |
+| 28 | 2 bytes | `mAccurateDestX` - the navigator's `path_target_pos` in `mX`'s units (shifted right by eight): 18 of 18 in the shipped park, 392 of 392 in a played one |
 | 30 | 2 bytes | `mAccurateDestY` |
 | 32 | 2 bytes | `mAdjustorSpeed` |
 | 34 | 2 bytes | `mBaseSpeed` |
@@ -925,7 +937,7 @@ map base come first, as for every placed thing.
 | 41 | 2 bytes | `mLastRecordedMapId` |
 | 43 | 177 bytes | the navigator - see below |
 | 220 | 4 bytes | `mPreviousSpeed` |
-| 224 | 4 bytes | `mPreviousX` |
+| 224 | 4 bytes | `mPreviousX` - where the person stood a turn before, in the navigator's fixed point, not a float |
 | 228 | 4 bytes | `mPreviousY` |
 | 232 | 4 bytes | `mStrandedTime` |
 | 236 | 2 bytes | `mPurposeSpeed` |
@@ -1046,7 +1058,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | Offset | Size | Name | Shipped park |
 | --- | --- | --- | --- |
 | 398 | 4 bytes | `mArrivalDate` | `648` to `660`, one apart in id order: the world's `mGameTick` (755 in this file) as the guest was made |
-| 402 | 4 bytes | `mArrivalIndex` | |
+| 402 | 4 bytes | `mArrivalIndex` | `0` on all thirteen, none yet through the gate: the guest's number among the park's visitors, the world's `mNumberOfVisitorsToDate` as the gate let them in. `1` to `13`, each once, in a save made with thirteen visitors |
 | 406 | 4 bytes | `mBalloonScript` | `0` on all thirteen: the one-based slot of the guest's balloon in the `TPCS` sprite table, or none (below) |
 | 410 | 4 bytes | `mBeenAdmitted` | |
 | 414 | 4 bytes | `mCash` | `684`, `510`, `654`, ... twelve different amounts across thirteen guests |
@@ -1234,6 +1246,12 @@ A handle is the address the record had in the session that saved it, and the loa
 nought: it allocates each live record afresh and stores the new address in the slot. A file with every live
 handle set to `1` loads and its people walk (measured under Proton, 2026-10-08).
 
+A new sprite takes the lowest empty slot from 1, and when none is empty the table grows by fifty; the loader makes
+its table of the count the file gives. A sprite the game has just made holds its slot, state `1`, the timer, alpha
+`255`, both scales `1.0`, its program and its place, and whatever the allocator left elsewhere: a file whose new
+sprites are nought everywhere else loads and its people walk (measured under Proton, 2026-10-08, with a park
+written by OpenTPW).
+
 Slot 0 is never used. The park the game ships has 100 slots of which 18 are live, and those 18 are
 exactly its people: thirteen from the `kids` banks and one each from `entertainers`, `handymen`,
 `mechanics`, `guards` and `researchers`. People are not the only sprites: Alexah's played jungle park has 450
@@ -1244,10 +1262,12 @@ be named from the code that fills them are:
 
 | Offset | Size | Description |
 | --- | --- | --- |
+| `0x04` | 4 bytes | The record's own slot in the table |
 | `0x08` | 4 bytes | How far into that program it has got. Because showing a frame is the only thing that ends a turn, a saved value always rests just past a frame instruction |
 | `0x0C` | 4 bytes | **Which** animation program - the index of its first instruction, in the same array `0x08` counts into. A jump inside a program moves `0x08` and leaves this alone, so it names the program the sprite was *started* on rather than where it has reached |
 | `0x14` | 4 bytes | Where that program starts; re-pointed on load, so the stored value is meaningless |
-| `0x18` | 4 bytes | State |
+| `0x18` | 4 bytes | State - `1` as a sprite is made, `2` on all but one of the 1,071 saved sprites to hand |
+| `0x1C` | 4 bytes | A timer set to `20` as a sprite is made or changes program; `20` or `19` saved |
 | `0x7C` | 4 bytes | When this sprite is next due to step |
 | `0x80` | 4 bytes | How long between steps |
 | `0x88` | 4 bytes | Where it stands across the map, a float, in world units - ten to a map cell |
@@ -1260,6 +1280,7 @@ be named from the code that fills them are:
 | `0xB0` | 4 bytes | Which bank of that kind |
 | `0xB4` | 4 bytes | Two numbers in one: the low four bits are the **set**, and everything above them is how far past its kind's first bank this sprite's bank sits. The game takes it apart exactly that way before it looks a picture up |
 | `0xB8` | 4 bytes | Which frame of that set |
+| `0xBC` | 4 bytes | A byte of the loaded bank, looked up by the word at `0xB4` whenever the program changes: `1` on every child and handyman, `4` on every guard and researcher, `1`, `8` or `17` on an entertainer, `1` or `8` on a mechanic, over the ten park files |
 | `0xC0` | 4 bytes | Which of eight ways round it was last drawn facing |
 
 The three floats at `0x88`, `0x8C` and `0x90` are where the sprite stands, in world units at ten to a

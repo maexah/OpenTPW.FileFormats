@@ -753,9 +753,12 @@ strike fields first and then hands a second writer the training block, which nam
 | --- | --- | --- | --- |
 | 16 | 4 bytes | `mForceStrike` | `0` |
 | 20 | 2 bytes | `mStaffMemberPickedUp` | `0` |
-| 22 + 12*i* | 12 bytes each, *i* 0 to 4 | `mStrikeLevel[`*i*`]` | three dwords, `0`, `0`, `715`, on all five |
+| 22 + 12*i* | 12 bytes each, *i* 0 to 4 | `mStrikeLevel[`*i*`]`: three dwords, the kind's strike level (0 to 4), whether it is on strike, and the game tick it was last looked at | `0`, `0`, `715`, on all five |
 | 82 + 4*i* | 4 bytes each, *i* 0 to 4 | `mBudget[`*i*`]`, the monthly training budgets | `0` on all five |
 | 102 | 1 byte | `mHaveEverTrained` | `0` |
+
+The five records are in the order handymen, mechanics, entertainers, guards, researchers. `715` is the tick the
+month first turned in the shipped park, 1 February 2000.
 
 `16 + 4 + 2 + 5 × 12 + 5 × 4 + 1` is `103`, and in the shipped park the record ends exactly on the World
 module's `DLRW`. The five budgets are, in order, the handymen's, the mechanics', the entertainers', the

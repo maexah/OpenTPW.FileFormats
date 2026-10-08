@@ -56,6 +56,11 @@ for byte; with memory level 8, zlib's own default, it does not in any of them. T
 the eight files Alexah's Full Simulation play wrote (three of them `restart.INTS`, which has this same
 layout), and one Instant Action save written under Proton on 2026-10-08.
 
+**The game does not need that stream back.** A file whose payload was deflated again by another zlib (.NET's
+`ZLibStream`, 39,239 bytes of stream where the game's own was 37,210), behind a header giving the new block size
+and the same four dwords, was listed and loaded by the game under Proton, the park running on from the saved tick
+(2026-10-08). The loader inflates what is there to the length the header gives.
+
 ## Inside the stream: a chain of modules
 
 The inflated payload is **not** one structure. It is a run of modules, each written by the subsystem
@@ -121,7 +126,23 @@ module begins at **`0x49B`**; where World starts is always derived from that len
 After the last tag comes an untagged UI block. It is four bytes, nought, in seven of the nine park files -
 in the shipped park it ends the stream on 1,608,309. In the two saves of Alexah's played jungle park its
 first dword is `1` and 540 more bytes follow, among them the UTF-16 text of an advisor line about the
-ticket price; that longer form is not decoded.
+ticket price. The dword is a count: the writer (`FUN_0048ee50`) counts the entries in use among the ten of a
+table at `0x7c26b0` and writes 540 bytes (`0x21c`) for each:
+
+```text
+u32        count
+per entry:
+  u32        a property of the entry's window (the getter FUN_0065e705, property 1)
+  u16[256]   the message's text, UTF-16
+  u32        property 7
+  u16        property 4, then two bytes of padding
+  u32        property 5
+  u32        property 6
+  u16        property 3, then two bytes of padding
+  u32        property 8
+```
+
+What the seven properties are is not decoded.
 
 ## The world block (`WRLD`)
 
@@ -555,7 +576,9 @@ That leading dword is the trap in this block: read as the thing's own id it is o
 still looks plausible. The ids are not in order - the shipped park runs 41, 40 … 29, then 15, then 28 -
 which is what a list with something spliced into it looks like, and what a counter cannot be; and the last
 record's is `0`, a terminator no thing could have as an id. Read correctly, the shipped park's chain starts
-at 42 and is an exact permutation of 1 to 42.
+at 42 and is an exact permutation of 1 to 42. That holds in all ten park files: the highest id is the number
+of things (526 of 526 in a played park), so the game gives a freed id out again. The loader hangs each thing on
+the node its id names and then rebuilds its free list from every id the file did not use.
 
 **Every thing opens with the same 16 bytes**: the list head, then the same four 2-byte map fields in the order
 above (`FUN_0050b090`). The singleton managers write them too, and models 12 and 17 write nothing else. So a
@@ -1200,9 +1223,14 @@ staff walking about. It is written as:
 | 4 bytes x slots | One handle per slot; zero where the slot is empty |
 | 280 bytes x live | One record per **non-zero** handle, in slot order |
 
+A handle is the address the record had in the session that saved it, and the loader only tests it against
+nought: it allocates each live record afresh and stores the new address in the slot. A file with every live
+handle set to `1` loads and its people walk (measured under Proton, 2026-10-08).
+
 Slot 0 is never used. The park the game ships has 100 slots of which 18 are live, and those 18 are
 exactly its people: thirteen from the `kids` banks and one each from `entertainers`, `handymen`,
-`mechanics`, `guards` and `researchers`.
+`mechanics`, `guards` and `researchers`. People are not the only sprites: Alexah's played jungle park has 450
+slots with 439 live in its save and 435 in its autosave, for 392 people in the thing list.
 
 A record is a runtime structure written out whole, so most of it is bookkeeping. The fields that can
 be named from the code that fills them are:
@@ -1333,7 +1361,14 @@ as they stand, so a set is the file's word on who is told, and in what order. Se
 is things 1, 4, 5 and 8 and then every member of staff in all nine park files: `1, 4, 5, 8, 25, 26, 27, 28,
 30` in the shipped park, and `1, 4, 5, 8` in the four park files with no staff. Set `0xb`, the day's change, is
 the fourteen catalogue objects and thing 10; set `0xd`, the year's change, is thing 8, the economy thing,
-alone. What each message does is OpenTPW's `docs/exe/ride-operation.md`, "The month's change".
+alone.
+
+Four sets follow the thing list by model, in all ten park files: set `0xa` holds every guest (model 1), every
+member of staff (models 4 to 8) and the one model-17 thing; `0xb` every catalogue object (model 3) and the
+model-19 thing; `0xc` every member of staff and the things of models 9, 12, 13 and 16; `0x1b` every guard
+(model 7) and the model-17 thing. The other sets hold only the singleton managers, the same in every file but
+set `0x1c`, which holds the model-17 thing in the eight played files and nothing in the shipped park or the
+Instant Action save. What each message does is OpenTPW's `docs/exe/ride-operation.md`, "The month's change".
 
 ## The clock module (`KOLC`)
 
@@ -1349,6 +1384,14 @@ The game makes both clocks read these values again when it loads a park, so ever
 file - a script's deadlines, a channel's time stamps - keeps its distance from the save's own moment. In
 `Easymode.TPWI` they are `0x06D13894` (114,374,804) and `0x06D8DF7E` (114,876,286); in a played jungle park,
 `0x00498D70` (4,820,336, about 80 minutes) and `0x0049A676` (4,826,742).
+
+## The vanilla time module (`TNAV`)
+
+One dword, between the clock's `KOLC` tag and the module's own `TNAV`: a reading of the game's real-time clock
+in milliseconds as the file was written (`FUN_00403220`, the clock `FUN_005f5f10`: the performance counter, or
+`timeGetTime` without one). On loading the game keeps this reading less its own (`FUN_00403260`). In the eight played
+files it is 12 ms to 28 s ahead of the clock module's second dword (`4,852,920` against `4,826,742` in a jungle
+save); it is `114,938,044` in `Easymode.TPWI`.
 
 ## The game system module (`SYSG`)
 
@@ -1382,7 +1425,9 @@ The header is the script subsystem's five global dwords, which the game reads st
 the subsystem is set up, the tick counter behind every script's one-in-eight turn, the handle the next new script will
 be given, the script count, and a list pointer from the saving session that means nothing on loading. The shipped
 park's read 1, 6,055, 16, 14 and a pointer. So a loaded park goes on counting ticks, and numbering new scripts, where
-the saved one left off.
+the saved one left off. The fourth is not the count the records are walked by, which is the dword after the five
+discarded ones: an Instant Action save written after a load holds 28 in the header over fourteen records. A file
+with the pointer set to `0xDEADBEEF` loads and runs (measured under Proton, 2026-10-08).
 
 Then one record per script, **newest first**: the saving session's list order, handles 15 down to 1 in the shipped
 park, 5 absent. The game puts each at the head of its list as it reads it, so a loaded park walks them oldest first.
@@ -1629,6 +1674,41 @@ The shipped park's module is 44 bytes, the root and the stamp only (inflated 1,5
 The played fantasy park holds one bumper arena with no sections. Walked as a tree, the module lands
 exactly on its tag in all nine park files read (the shipped park and eight played ones).
 
+## The flying rides module (`RYLF`)
+
+Between the track rides' `KART` tag and the module's own `RYLF`, written by `FUN_0055de70`:
+
+```text
+char[4]  magic               "FLY_"
+u32      set up              1 in all ten park files; nought and nothing more follows
+u32      table size          400
+byte[400]  a table of 100 dwords
+u32 x 4  four values         268500, 13500, 106500, 13500 in Easymode.TPWI
+char[4] x 5  "PAD_" five times
+u32      record size         0x122c
+byte[0x122c] per record      one for each non-zero dword of the table's last 99
+```
+
+With no record that is 452 bytes, as in eight of the ten park files; the two saves of Alexah's played jungle park
+carry one record (5,104 bytes). What a record holds is not decoded.
+
+## The camera module (`EMAK`)
+
+Forty bytes between the ride scripts' `ESSR` tag and the camera's own `EMAK`. The names are the loader's
+(`FUN_0042cec0` logs each):
+
+| Size | Name | In `Easymode.TPWI` |
+| --- | --- | --- |
+| 4 bytes, float | `gf_CameraZoom` | 110 |
+| 4 bytes, float | `gf_YRotation` | 0 |
+| 4 bytes | `gui_CameraFlags`; the loader reads it and then sets the running flags to nought | 256 |
+| 12 bytes, three floats | `gs_RequiredPOIPosition`, the point the camera looks at, ten units to a cell | 475, 0, 175.01 |
+| 12 bytes, three floats | `gs_SavedPOIPosition` | 0, 0, 0 |
+| 4 bytes, float | `gf_SavedYRotation` | 0 |
+
+The flags read 256 in the four files saved from the menu and nought in the three autosaves and the three
+`restart.INTS`. The saved point and rotation are nought in all ten.
+
 ## The coasters module (`SAOC`)
 
 It begins right after the `EMAK` tag and ends at the `SAOC` tag, and opens with four dwords: the number
@@ -1653,6 +1733,19 @@ The pieces follow, and then the track and the trains, which are not described he
 that coaster's pieces, so only the first coaster's header sits at a known place. A guest is offered a coaster
 only with bit 0 set, bit 1 clear and no clash. The module holds no rating of the ride: the game works the ride's
 excitement out again after a load.
+
+## The advisor, sound and advisor scoring modules (`SVDA`, `NUOS`, `CSDA`)
+
+**The advisor** (`FUN_00599c30`), between `SAOC` and `SVDA`: the magic `ADV_`, the dword `0x168`, 360 bytes of
+the advisor's state copied whole, then a length and that many bytes. The length is nought in nine of the ten park
+files (372 bytes in all) and 88 in the played Halloween autosave. Neither part is decoded.
+
+**Sound** (`FUN_0051c350`), between `SVDA` and `NUOS`: two dwords (1 and 1024 in all ten), the dword `0x54`, 84
+bytes, and then, when both dwords are set, records written one by one through a callback (`0x006b5c10`): 1,349
+bytes of them in `Easymode.TPWI`, 666 to 5,186 in the others. Not decoded.
+
+**Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
+nought in three of the played files and 113 to 258 in the rest.
 
 ## The cheats module (`STHC`)
 

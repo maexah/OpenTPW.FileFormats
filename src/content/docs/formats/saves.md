@@ -1628,7 +1628,7 @@ Each is a struct followed by a run of length-prefixed blocks, and a record
 | 4 bytes  | Guard — `OBJ `                                                          |
 | 4 bytes  | Object count                                                            |
 | 4 bytes  | Bytes per object — 28                                                   |
-| n        | The script's own object list, the effects it has started: two list links the game replaces on loading, then five dwords not described here |
+| n        | **The object list**, the effects the script has started, newest first (below) |
 
 Fourteen fields of the struct are established:
 
@@ -1749,6 +1749,27 @@ long one lasts: OpenTPW's `docs/exe/ride-operation.md`, "How long a leg lasts, a
 park's sideshow saves its three slots all nought. In Alexah's Lost Kingdom autosave the Jungle Spray's read 700 and
 1,100, the Steak Shop's 600, the Inca God's 800; a slot on the ride saves its start at or just past its due,
 restamped on arrival.
+
+**The object list** is what the script's `ADDOBJ`s have started and no `KILLOBJ` has stopped (the
+[Instruction Set](/vm/instructions/)), each record copied raw from the game's linked list, 28 bytes, from the head
+of the list: the newest first.
+
+| Offset | Size | Description |
+| ------ | ---- | ----------- |
+| `0x00` | 4 | Next record, an address; the game replaces it on loading |
+| `0x04` | 4 | Previous record, the same |
+| `0x08` | 4 | Type: 1 and 2 a particle, 3 to 10 a sound |
+| `0x0c` | 4 | The handle the particle or sound system gave for it; never nought |
+| `0x10` | 4 | The model node asked for, by id; -1 for none |
+| `0x14` | 4 | That node's lookup record in the model (the [Models](/formats/models/) page's node lookup ids), found among the particle nodes (`0x100`) for types 1 and 2 and the sound nodes (`0x200`) for the rest; -1 for none |
+| `0x18` | 4 | The tag `KILLOBJ` matches |
+
+The game links each record in at the head of the list as it reads it, so a loaded list stands the other way round
+from its file. It starts nothing on loading: a record keeps its handle, and the same handle goes out in the next
+save (the Drinks Shop's smoke is `0x7a0014` in the shipped Lost Kingdom park and in three files saved from it). The
+effect's own id is not kept. Thirteen files of the game's own hold 140 records in 100 of their 440 scripts: a litter
+bin one sound with no node (type 5, tag 10), a Gift Shop three smokes on nodes 3, 2 and 1 (records 0, 1 and 2), a
+dirty Small Toilet two particles on node 1.
 
 **A bounce slot** is taken from the first free one, and the node its rider is on is the slot's index plus the base
 at `0x70`: slots 0 to 6 on nodes 1 to 7 in a played park. A rider's due is their start plus the ride's duration

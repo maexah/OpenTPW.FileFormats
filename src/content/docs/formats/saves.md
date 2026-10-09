@@ -381,7 +381,30 @@ can measure each cell and skip it.
 
 The map sub-record is a **29-byte tile base** followed by a **23-byte litter block**. The track
 sub-record repeats the same tile base field for field and adds `mSegmentNumber`, two bytes, for its 31 -
-`0xffff` on every cell of the shipped park. The effects sub-record's ten bytes are not described here.
+`0xffff` on every cell of the shipped park.
+
+**The effects sub-record is five signed 16-bit words**: happiness, illness, hunger, security and attraction,
+the balance file's `RegionFX` keys in its own order. A cell's words are the sum of what the things round it
+add. Each source adds one of the eight `RegionFX` effects of `data/levels/Standard.sam` over the square of that
+effect's `Radius` round its own cell, held to the map, each word divided by `|dx| + |dy| + 1` and cut towards
+nought:
+
+| Source | Effect | Where |
+| --- | --- | --- |
+| An object with `0x1` in `mFlags` (a toilet) | 1, or 6 while its State of repair, cut to a byte, is under 25 | the object's cell |
+| An object with `0x10` (it provides security) | 4 | the object's cell |
+| An object with `0x80` (fireworks) | 7 | the object's cell |
+| An entertainer (model 6) | 0 | the cell in their `mLastRecordedMapId`, the person record's `+41` |
+| A guard (model 7) | 3 | the same field of theirs |
+| A cell whose `mLitter` is 7 | 2 | that cell |
+| A cell whose `mLitter` is 8 | 5 | that cell |
+
+So a camera's own cell reads security 20, the four beside it 10, and its eleven-by-eleven square's corners 1.
+**Measured on every cell of thirteen park files the game wrote**, 212,992 cells: the ten bytes are exactly this
+sum, and a cell has the sub-record exactly where one of its words is not nought. No file among them holds
+fireworks or litter of kind 8, so those two rows are the executable's alone. A file whose cells do not hold an
+object's effect is still loaded; the game takes the effect off when the object is sold all the same, and the
+cells round it then read under nought.
 
 | Offset | Size | Name |
 | --- | --- | --- |

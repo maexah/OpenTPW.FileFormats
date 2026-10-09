@@ -1964,7 +1964,7 @@ with head nodes (lookup flag `0x80`), bought or shipped, but not on an arrival v
 
 | Dword | Description                                                                        |
 | ----- | ----------------------------------------------------------------------------------- |
-| 0     | Flags — `0x1` loop, `0x4` hold the last frame rather than count as busy             |
+| 0     | Flags — `0x1` loop, `0x2` frozen on frame nought, `0x4` held on the last frame, `0x8` a clip of role 0 has run past its end on this channel |
 | 1     | The animation role, or **12** for "running nothing"                                 |
 | 2     | Which clip of that role                                                             |
 | 3     | Start stamp — a reading of the saved clock (`KOLC`): where the clip began           |
@@ -1982,15 +1982,23 @@ has emptied; a played park saves some with a clip queued behind the running one.
 
 > **The flag word is the engine's own field, not the one a caller passes when starting a clip**, and
 > the two disagree where it matters. A caller's flags are `0x1` loop, `0x2` start at once, `0x4` do not
-> lay the rest pose down, `0x8` do not apply the hide list. Stored on the channel, `0x1` and `0x8` mean
-> the same, but `0x2` means **frozen at frame nought** and `0x4` means **held on the last frame** —
+> lay the rest pose down, `0x8` do not apply the hide list. Stored on the channel, `0x1` means
+> the same, but `0x2` means **frozen at frame nought**, `0x4` means **held on the last frame** and `0x8`
+> that **a clip of role 0 has run past its end** —
 > states the engine has recorded, not requests. On loading, the game copies the word back as it stands
 > and adds `0x10` to a held channel (OpenTPW's `docs/exe/ride-operation.md`). Feeding the stored word back
 > in as caller flags therefore drops the held pose — in the shipped park that is **eleven of the fifteen**
 > channels that hold a real role.
 
+**Bit `0x8` marks a role 0 clip that has ended.** The game sets it as a channel on role 0 (an item's `C` clips,
+the one a thing plays as it is built) runs past its clip's end, keeps it through the hold or the loop that
+follows, and takes it off at the first advance of the channel on any other role. In thirteen park files the game
+wrote (2,882 channels) the 12 channels held on a role 0 clip all carry it, and no channel on another role and no
+idle channel does: a Litter Bin and a newly bought Crazy Ape read `0xc`. A writer sets it on a channel held or
+looping on role 0 whose clip has ended, and on no other.
+
 **Bit `0x10` comes and goes on a held channel.** The files hold a held channel as `0x4` or as `0x14` (`0xc` and
-`0x1c` with the hide-list bit): 8 and 2 in `Easymode.TPWI`, 27 and 28 in a played jungle park, and the two with
+`0x1c` on role 0): 8 and 2 in `Easymode.TPWI`, 27 and 28 in a played jungle park, and the two with
 `0x14` in the shipped park are the security cameras, whose clips ended less than a second before the save. A file
 whose nine held channels all carried `0x10` was loaded by the game and saved by it four minutes on: the three still
 held from before the load (the gates, a lane of the Jungle Spray, the litter bin) came back `0x4` or `0xc`, as did

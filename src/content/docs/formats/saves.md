@@ -794,6 +794,11 @@ objects in the shipped park, so nothing there exercises the refusal. Closing an 
 shuts every one a guest may be offered, and each object's window has a door of its own - writes `0`, and
 opening it writes `1`.
 
+**`mPersonBeingLoaded` is the guest the object has called forward** - two bytes at 1040, a handle. Where it is set
+it names the head of the object's queue (`mFirstInQ`), a guest in state 11 or 13: on seven objects of Alexah's played
+jungle park, and on the Belly Bounce of a park saved by the game with a guest stepping up to it. Nought on all
+fourteen objects in the shipped park.
+
 **`mRequestedService` is non-zero while a mechanic has been called to the object** - four bytes at 1078.
 Calling one closes the object and writes `1`; a repair or a cancelled call writes `0`, and while it is set
 the open check refuses the object, though leaving the track editor opens it anyway. It is `0` on all fourteen objects in the shipped park. Its offset rests on the
@@ -1486,7 +1491,8 @@ the subsystem is set up, the tick counter behind every script's one-in-eight tur
 be given, the script count, and a list pointer from the saving session that means nothing on loading. The shipped
 park's read 1, 6,055, 16, 14 and a pointer. So a loaded park goes on counting ticks, and numbering new scripts, where
 the saved one left off. The fourth is not the count the records are walked by, which is the dword after the five
-discarded ones: an Instant Action save written after a load holds 28 in the header over fourteen records. A file
+discarded ones: an Instant Action save written after a load holds 28 in the header over fourteen records (29 over
+fifteen, with an arrival vehicle's script made since). A file
 with the pointer set to `0xDEADBEEF` loads and runs (measured under Proton, 2026-10-08).
 
 Then one record per script, **newest first**: the saving session's list order, handles 15 down to 1 in the shipped
@@ -1622,6 +1628,14 @@ park's sideshow saves its three slots all nought. In Alexah's Lost Kingdom autos
 1,100, the Steak Shop's 600, the Inca God's 800; a slot on the ride saves its start at or just past its due,
 restamped on arrival.
 
+**A bounce slot** is taken from the first free one, and the node its rider is on is the slot's index plus the base
+at `0x70`: slots 0 to 6 on nodes 1 to 7 in a played park. A rider's due is their start plus the ride's duration
+(30,000 ms on a Belly Bounce at 30 seconds). **A slot let go keeps its node and its two readings**, with a handle of
+nought: a Belly Bounce the game saved with three aboard holds two such slots, due 43 and 61 seconds before the
+file's clock. The rider is a
+guest in state 16 whose `mMajorDest` is the script's thing, out of the queue (no links), standing where they got on,
+with their sprite on animation program 66 and picture set 2 (nine of nine bounce riders in two files).
+
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
 > object's own operating speed over it — that ride's `mOperatingSpeed` is 60 in the same file.
@@ -1673,6 +1687,11 @@ model state. The restore routine (`0x004647a0`) expands these bits to runtime mo
 `0x20` through `0x800`, and restores progress through `0x004547f0`. Progress alone does not say
 whether the panels are active or moving. The closing endpoint does not guarantee equal full height
 for every panel: the executable staggers their deformation.
+
+`Easymode.TPWI` holds `0x08` on the Belly Bounce's record alone and nought on the others. A park the game loaded
+and saved again holds `0x08` on the records of all six objects a guest may be offered (the ride, the sideshow, the
+shop and the three toilets) and nought on the other eight, where the file it had loaded held nought on five of the
+six (measured under Proton, 2026-10-08).
 
 The saved placed object's model handle (`MeshInstanceID`) selects **slot index plus one**, not the item id; repeated
 instances of an item can have different hoarding states. The record names the object back by the script handle at
@@ -1731,6 +1750,15 @@ has emptied; a played park saves some with a clip queued behind the running one.
 > and adds `0x10` to a held channel (OpenTPW's `docs/exe/ride-operation.md`). Feeding the stored word back
 > in as caller flags therefore drops the held pose — in the shipped park that is **eleven of the fifteen**
 > channels that hold a real role.
+
+**Bit `0x10` comes and goes on a held channel.** The files hold a held channel as `0x4` or as `0x14` (`0xc` and
+`0x1c` with the hide-list bit): 8 and 2 in `Easymode.TPWI`, 27 and 28 in a played jungle park, and the two with
+`0x14` in the shipped park are the security cameras, whose clips ended less than a second before the save. A file
+whose nine held channels all carried `0x10` was loaded by the game and saved by it four minutes on: the three still
+held from before the load (the gates, a lane of the Jungle Spray, the litter bin) came back `0x4` or `0xc`, as did
+two lanes whose clips ended 47 and 25 seconds before the save; a toilet's, ended 5 seconds before it, came back
+`0x14`; and channels running a clip started after a hold carried `0x10` alone (measured under Proton, 2026-10-08).
+So a held channel's `0x10` is not kept for good, and a reader must take both forms as held.
 
 > **The module does not say how many channels a thing has**, and the walk cannot step over a record
 > without knowing. The count is the item's own `NumSimultAnims` — the Jungle Spray runs three lanes and

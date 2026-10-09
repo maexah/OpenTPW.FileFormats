@@ -1729,11 +1729,20 @@ autosave), at slots scattered as a random draw leaves them: the Twister's riders
 | `0x08` | 4 | Start, a reading of the game clock (`KOLC`) |
 | `0x0c` | 4 | Due, the same clock |
 | `0x10` | 4 | The walker's person handle |
-| `0x14` | 2 | Facing, an octant 0-7 |
+| `0x14` | 2 | Facing, one of eight ways, 0-7 (below) |
 | `0x16` | 2 | Action |
 | `0x18` | 2 | State: 0 free, 1 walking on, 2 on the ride, 3 walking off, 4 off |
 | `0x1a` | 2 | Flags |
 | `0x1c` | 4 | Not decoded |
+
+**The facing** is which of eight ways the walker is drawn. Along z is 0 and the ways count on towards x: for a
+direction on the ground (x, z), `trunc( 10.5 − 4·atan2( z, x )/π ) mod 8`. A slot walking on (state 1) holds the way
+from its walk node to its head node, and one walking off or off (3, 4) the way from its walk-off pair's first node to
+its second, in the world, so it turns with the ride. A slot on the ride (state 2) keeps the walk's facing where its
+action is 1, 2 or 4; under any other action (5 and 6, the sideshows') it holds the way its head node points, the third
+row of the node's matrix. A Jungle Spray turned 0 holds 7, 0 and 1 walking on to its three lanes, 0 standing in one,
+and 3, 4 and 5 walking off; turned 270 it holds 6 standing. All 100 slots that hold a walk in thirteen files of the
+game's own follow it: 36 in use and 64 let go, which keep their walk off's.
 
 A slot let go keeps everything but its state and handle, so due less start is the last leg walked, the walk off's (how
 long one lasts: OpenTPW's `docs/exe/ride-operation.md`, "How long a leg lasts, and where its ends are"). The shipped

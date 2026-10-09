@@ -1733,7 +1733,7 @@ autosave), at slots scattered as a random draw leaves them: the Twister's riders
 | `0x16` | 2 | Action |
 | `0x18` | 2 | State: 0 free, 1 walking on, 2 on the ride, 3 walking off, 4 off |
 | `0x1a` | 2 | Flags |
-| `0x1c` | 4 | Not decoded |
+| `0x1c` | 4 | Not decoded; nought in every slot counted |
 
 **The facing** is which of eight ways the walker is drawn. Along z is 0 and the ways count on towards x: for a
 direction on the ground (x, z), `trunc( 10.5 − 4·atan2( z, x )/π ) mod 8`. A slot walking on (state 1) holds the way
@@ -1744,7 +1744,10 @@ row of the node's matrix. A Jungle Spray turned 0 holds 7, 0 and 1 walking on to
 and 3, 4 and 5 walking off; turned 270 it holds 6 standing. All 100 slots that hold a walk in thirteen files of the
 game's own follow it: 36 in use and 64 let go, which keep their walk off's.
 
-A slot let go keeps everything but its state and handle, so due less start is the last leg walked, the walk off's (how
+A slot no walk has used is 32 nought bytes. A slot let go keeps everything but its state and handle, which are
+nought: in thirteen files of the game's own, 281 slots are 181 never used, 36 in use and 64 let go, and each of the 64
+holds its four nodes, its action, flags of 1, and a due past its start and at or before the file's clock. So due less
+start is the last leg walked, the walk off's (how
 long one lasts: OpenTPW's `docs/exe/ride-operation.md`, "How long a leg lasts, and where its ends are"). The shipped
 park's sideshow saves its three slots all nought. In Alexah's Lost Kingdom autosave the Jungle Spray's read 700 and
 1,100, the Steak Shop's 600, the Inca God's 800; a slot on the ride saves its start at or just past its due,

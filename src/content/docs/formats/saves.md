@@ -1778,7 +1778,10 @@ dirty Small Toilet two particles on node 1.
 at `0x70`: slots 0 to 6 on nodes 1 to 7 in a played park. A rider's due is their start plus the ride's duration
 (30,000 ms on a Belly Bounce at 30 seconds). **A slot let go keeps its node and its two readings**, with a handle of
 nought: a Belly Bounce the game saved with three aboard holds two such slots, due 43 and 61 seconds before the
-file's clock. The rider is a
+file's clock. **A slot never used is 16 nought bytes.** Counted in thirteen park files: seven scripts hold bounce
+slots, 70 in all; 25 are in use, 37 are all nought, and all 8 let go hold a handle of nought, the node of their
+slot, and a due 30,000 ms past its start and at or before the file's clock. The count at `0x6c` is the slots in
+use in all seven. The rider is a
 guest in state 16 whose `mMajorDest` is the script's thing, out of the queue (no links), standing where they got on,
 with their sprite on animation program 66 and picture set 2 (nine of nine bounce riders in two files).
 

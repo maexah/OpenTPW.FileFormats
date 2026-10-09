@@ -1880,7 +1880,14 @@ carry `0x2`, on fifteen items, and every one names a live sprite that no person'
 A head's sprite is kind 1 (a child's head, `0xB0` the child) or kind 3 (a costume's head, `0xB0` the costume), and
 all 122 read alike elsewhere: `0x08` 1698, `0x0C` 1704, `0x10` 1696, state 2, `19` at `0x1C` with word 1714 in the
 loop stack's last place, `1` at `0x74`, set 0, `8` at `0xBC`, `0x3000080` at `0xC4` and `1` at `0x114`. They are
-every sprite of kinds 1 and 3 in the four files. The node's own flag word is the same with a head on it and
+every sprite of kinds 1 and 3 in the four files. `0x0C` is the word the sprite was made on and stays; `0x74` is
+`1` while the loop count at `0x78` is nought, so the word in the stack is not a loop's start. Of the fields that
+differ from one head to the next, only the slot at `0x04`, the kind and `0xB0` are the head's own. The place
+(`0x88` to `0x90`), the scale (`0xA4`, `0xA8`) and the frame (`0xB8`) are nought, `1.0` and nought on every head
+of a ride whose script keeps a head table, and are set on the heads of the rides that keep none; `0xD0` to
+`0xDC`, `0xE4` to `0xEC`, `0xFC` and `0x100` repeat what the sprite was last drawn with, and `0xF8` and `0x110`
+are pointers of the run that wrote the file. A file whose head sprites hold nought in all of those loads, and the
+game shows the heads and takes them off as its own. The node's own flag word is the same with a head on it and
 without. A ride's script keeps a table of the same riders by head node ([the ride script module](#the-ride-script-module-essr)),
 in another order; some rides hang heads and keep no such table (a coaster's cars, the Aztec Mayhem).
 

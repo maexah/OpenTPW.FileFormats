@@ -238,7 +238,11 @@ seaplane and more than 60 the ferry (OpenTPW's `docs/exe/park.md`, "Arrivals"). 
 the arrival timer makes when no vehicle is current, picks one of the three at random from `mRandomSeed`, and a
 kind whose feature cannot be found falls back to the others; both cache by kind as well. However it was picked,
 the engine creates the vehicle thing the first time that kind is sent for, then caches its id in that kind's
-slot. `mCurrentArrivalVehicle` holds whichever is on its way, or nought when none is.
+slot. `mCurrentArrivalVehicle` holds whichever is on its way, or nought when none is, and goes with that
+vehicle's saved script: the game asks the named thing's script how far round it has got. A park written with the
+bus driving in, its script as it ran and this handle 15, loaded with the bus current and driving on; written
+with the handle nought and a guest waiting at the stop to go home, it loaded with another vehicle sent for at
+once (measured under Proton, 2026-10-08 and 2026-10-09).
 
 So the slots say what a park has *done*, not what it owns: an empty slot means that kind has never been sent
 for, whatever the size of the crowds. The shipped Lost Kingdom park holds the bus, thing `15`, in
@@ -1300,7 +1304,7 @@ nought: it allocates each live record afresh and stores the new address in the s
 handle set to `1` loads and its people walk (measured under Proton, 2026-10-08).
 
 A new sprite takes the lowest empty slot from 1, and when none is empty the table grows by fifty; the loader makes
-its table of the count the file gives. A sprite the game has just made holds its slot, state `1`, the timer, alpha
+its table of the count the file gives. A sprite the game has just made holds its slot, state `1`, a loop stack with all its room (`20`), alpha
 `255`, both scales `1.0`, its program and its place, and whatever the allocator left elsewhere: a file whose new
 sprites are nought everywhere else loads and its people walk (measured under Proton, 2026-10-08, with a park
 written by OpenTPW).
@@ -1319,8 +1323,10 @@ be named from the code that fills them are:
 | `0x08` | 4 bytes | How far into that program it has got. Because showing a frame is the only thing that ends a turn, a saved value always rests just past a frame instruction |
 | `0x0C` | 4 bytes | **Which** animation program - the index of its first instruction, in the same array `0x08` counts into. A jump inside a program moves `0x08` and leaves this alone, so it names the program the sprite was *started* on rather than where it has reached |
 | `0x14` | 4 bytes | Where that program starts; re-pointed on load, so the stored value is meaningless |
-| `0x18` | 4 bytes | State - `1` as a sprite is made, `2` on all but one of the 1,071 saved sprites to hand |
-| `0x1C` | 4 bytes | A timer set to `20` as a sprite is made or changes program; `20` or `19` saved |
+| `0x18` | 4 bytes | State - `1` as a sprite is made, `2` once its program has run a turn, `4` once it has reached its end word; `2` on all but one of the 1,154 saved sprites to hand |
+| `0x1C` | 4 bytes | How much room the loop stack has left: `20` with nothing pushed, one less for each loop the program is inside (below) |
+| `0x20` | 4 bytes x 20 | The loop stack: where each loop the program is inside starts, a word of the array. The first pushed lies in the **last** place, `0x6C` |
+| `0x78` | 4 bytes | How many loops the program is inside |
 | `0x7C` | 4 bytes | When this sprite is next due to step |
 | `0x80` | 4 bytes | How long between steps |
 | `0x88` | 4 bytes | Where it stands across the map, a float, in world units - ten to a map cell |
@@ -1335,6 +1341,7 @@ be named from the code that fills them are:
 | `0xB8` | 4 bytes | Which frame of that set |
 | `0xBC` | 4 bytes | The frames per direction of the set the sprite was **made** on, the third byte of that set in its bank's `.esp` (below) |
 | `0xC0` | 4 bytes | Which of eight ways round it was last drawn facing |
+| `0x114` | 4 bytes | Whether it is showing a frame: `1` once a frame has been shown, `0` as made and again at its end word |
 
 The three floats at `0x88`, `0x8C` and `0x90` are where the sprite stands, in world units at ten to a
 map cell.
@@ -1355,6 +1362,22 @@ run past fifteen), frame 0, 2.5 above the ground, on one of 22 programs of six w
 it has shown, four words into it. The programs set pictures 0 to 15 in order, then 21, then 16 to 20, so picture 21
 is on word 1558 and picture 18 on 1576. The played jungle saves hold 23 and 19, the fantasy saves 2 each; one of
 the 46 is saved at its program's first word, just made.
+
+**The loop stack.** A program's loop start pushes where the loop begins: it takes one off `0x1C` and stores the
+word at `0x20` plus four times what is left, so the stack fills from its last place down, and it counts the loop in
+`0x78`. An earlier version of this page called `0x1C` a timer; it is the room left. Of the 1,154 sprites in the
+twelve park files to hand that the game itself wrote, 1,018 hold `20` and an empty stack, 122 hold `19` with word
+1714 in the last place (on program 1704, whose count is at `0x74`, a second counter this page does not explain) and
+14 hold `19` with word 1730 there and `1` at `0x78` (on program 1760).
+
+**A balloon let go is a record nobody names.** The game puts the balloon's own sprite on the program at word
+1666 and clears its guest's `mBalloonScript`: the alpha is set to 250, then frame 1 (the burst) is shown and 20
+taken off the alpha, turn after turn, in a loop that starts at word 1655. So one saved mid-burst is kind 10 on
+program 1666, resting on word 1657 with `0x1C` at `19`, word 1655 at `0x6C`, `1` at `0x78`, state `2` and shown;
+one just let go is on word 1666 with alpha 255 and an empty stack; one that has finished is state `4`, not shown,
+alpha -10, and its slot is emptied on its next turn. None of the twelve files holds one, since a burst lasts
+under two seconds. The layout is the game's own after it let balloons go, read from its memory, and the game
+loaded a file written this way and burst the balloon on from the alpha the file held (2026-10-09).
 
 An earlier version of this page said the record carried **no position at all**. That was wrong, and
 wrong for a reason worth keeping: the scan that went looking for one swept for values shaped like map

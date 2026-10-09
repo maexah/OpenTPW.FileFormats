@@ -338,10 +338,17 @@ its global").
 | `Upgrades[n].QueueWaitTimeConstant` | Each upgrade level's queue constant, **a float** (how the game parses one: OpenTPW's `docs/exe/park-engine.md`, "How a key finds its global"), which the longest queue a guest will join or stay in is scaled by. Every theme's `Rides.sam` declares `30`, `35` and `40`, and no other category file, nor any `Easy_` or `Online_` file, declares it. 68 of the 76 rides in the four themes set their own at all three levels; the other eight are the four Mystery rides and `fantasy`'s `ccride`, `dragfly` and `flamingo` and `space`'s `wateride`, which take the category's. All 217 declarations, the category files' twelve included, are whole numbers from `3` to `250`; `fantasy`'s `b_drip` states level 0 twice, `50` both times. In the jungle all 17 rides with a queue set their own: the Belly Bounce `130`, `135`, `145`, The Hot Pot `100`, `120`, `140`, the Sun God `3`, `4`, `4` |
 | `Upgrades[n].InitCapacity`, `InitDuration`, … | Each upgrade level's settings: every theme's `Rides.sam` gives `InitSpeed` 60, 75 and 90 for the three levels and `InitDuration` 3 at each. Of the 76 rides in the four themes none sets its own `InitSpeed` at any level, and nine set `InitDuration`, one value at all three levels: the Belly Bounce and Bounce On Iggy `30`, The Hot Pot, Pumpkin Castle and Uforia `25`, Jurassic Tours, Tweety Tours, Flightmare Tours and Star Tours `40`; none of the jungle's 50 `Easy_` files sets either |
 
-**Two of these are the text-file side of bits the saved park carries.** `Info.IsChoosable` matches the
-catalogue object's `mFlags` bit `0x4`, and `UsageInfo.ProvidesRelief` matches bit `0x1` - checked object
-for object against Lost Kingdom's save, where the two sources agree on all fourteen object records (the
-eleven placed things and the fixed bus, gates and lights): six may be visited and three are toilets.
+**Nine keys are the text-file side of the bits the saved park carries** in a catalogue object's `mFlags`:
+`UsageInfo.ProvidesRelief` `0x1`, `UsageInfo.ChillsYouOut` `0x2`, `Info.IsChoosable` `0x4`, `Info.HasQueue`
+`0x8`, `UsageInfo.ProvidesSecurity` `0x10`, `UsageInfo.RideHandlesSprite` `0x20`, `UsageInfo.HoldsLitter`
+`0x40`, `UsageInfo.IsFireworks` `0x80` and `Info.RunsContinuously` `0x100` - checked object for object
+against thirteen park files, 378 objects (the saves page, "The whole of `mFlags`"). Of the jungle's 67 items
+the nine are set, in that order, on 2, 1, 32, 17, 1, 18, 1, 0 and 6: relief on the two toilets, the second on
+the Staff Room alone, security on the Security Camera alone and litter on the Litter Bin alone.
+**`Info.MapOffsetX` and `Info.MapOffsetY` are the cells from an object's anchor to the cell
+its record keeps as `mTopLeft`**, turned with the object: of the four themes' catalogued items one declares
+either, the jungle's Huge Hollow Rock (`Info.MapOffsetY 1`), and of their upgrades one, the jungle's Dino
+Karts Tunnel (the same).
 `Upgrades[0].InitCapacity` and `InitDuration` likewise match the `mOperatingCapacity` and
 `mOperatingDuration` that save records for a placed item.
 

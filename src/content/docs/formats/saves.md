@@ -674,7 +674,7 @@ coordinates. Its record is **1,099 bytes**.
 | 192 | 4 bytes | `mRideScriptHandle` | the id of the object's running script in the ride scripts module |
 | 196 | 4 bytes | `mTrackRideHandle` | nought, or for an item whose `Bumper.BumperType` is set, its slot in the track-rides module in the low byte and the `BumperType` above: `0xfffffc00` for a Dino Karts in slot 0. In all nine park files (the shipped park and eight played ones), non-zero on exactly the objects whose item has a `BumperType` |
 | 200 | 4 bytes | `mState` | nought on every object a guest may be offered (`mFlags` `0x4`) and 3 on every other, in seven park files (349 of 349); the game sets it so as it builds the object |
-| 204 | 2 bytes | `mTopLeft` | a packed cell: the anchor cell (`mX`, `mY`) on 345 of 349 placed objects in seven park files; the Huge Hollow Rock (item 1427, the cell above) and the Dino Karts Tunnel (item 1501, at 90 degrees the cell to the left) are the four others. The object's model record carries this cell |
+| 204 | 2 bytes | `mTopLeft` | a packed cell: the anchor cell (`mX`, `mY`) moved by the item's `Info.MapOffsetX` and `Info.MapOffsetY`, the pair turned by the object's angle and a half turn more (see below). Two items of Lost Kingdom's declare an offset, the Huge Hollow Rock (item 1427) and the Dino Karts Tunnel (item 1501), each one row; on every other object it is the anchor cell. The object's model record carries this cell |
 | 206 | 2 bytes | `mEntryPos` | the cell a visitor is sent to |
 | 208 | 2 bytes | `mNext` | this object's link in the object list |
 | 210 | 2 bytes | `mAssignedStaffMember` | a handle: the member of staff sent to service it, `0` for none |
@@ -792,6 +792,38 @@ that some bit happens to be set.
 one passing an object with `0x80` stops to watch it. In Lost Kingdom's `Easymode.TPWI` exactly one object carries
 `0x40`, thing 17, the Litter Bin at (44,29), and none carries `0x80`; the other three themes' files were not
 measured for these two bits.
+
+**The whole of `mFlags` is nine keys of the item's description, a key a bit**, as the game sets them when it
+builds the object:
+
+| Bit | Key |
+|---|---|
+| `0x1` | `UsageInfo.ProvidesRelief` |
+| `0x2` | `UsageInfo.ChillsYouOut` |
+| `0x4` | `Info.IsChoosable` |
+| `0x8` | `Info.HasQueue` |
+| `0x10` | `UsageInfo.ProvidesSecurity` |
+| `0x20` | `UsageInfo.RideHandlesSprite` |
+| `0x40` | `UsageInfo.HoldsLitter` |
+| `0x80` | `UsageInfo.IsFireworks` |
+| `0x100` | `Info.RunsContinuously` |
+
+Each key is the item's own where its file names it and its folder's where it does not. Measured on the 382
+placed objects of thirteen park files (Lost Kingdom's shipped park, four the original wrote from it, and a
+player's two saves each of Lost Kingdom and Wonderland; the rest of the thirteen hold no placed object): the
+word is the nine keys' on all 378 whose item one of the four item folders holds, and nought on the four
+others, two Dino Karts upgrades in each Lost Kingdom save, whose files set none of the nine. The bits set
+among the 382: `0x1` 103, `0x2` 17, `0x4` 185, `0x8` 32, `0x10` 82, `0x20` 175, `0x40` 33, `0x100` 11, and
+`0x80` on none. No higher bit is set on any.
+
+**`mTopLeft` is the anchor cell moved by the item's `Info.MapOffsetX` and `Info.MapOffsetY`**, the pair turned
+by the object's angle and a half turn more. For an offset of `(x, y)`: unturned, `x` columns and `y` rows
+before the anchor; at 90 degrees, `y` columns before it and `x` rows after; at 180, `x` columns and `y` rows
+after; at 270, `y` columns after and `x` rows before. In the same thirteen files the 378
+objects above all hold the cell this gives. Two records have an item with an offset, the Huge Hollow Rock
+(`Info.MapOffsetY 1`) unturned, a row above its anchor, in both Lost Kingdom saves; and the Dino Karts
+Tunnel, an upgrade whose own file declares the same `Info.MapOffsetY 1`, stands at 90 degrees a column
+before its anchor in both. No object with an offset stands at 180 or 270 degrees in these files.
 
 **`mNext` is the object list's own link**, and walking it from `mFirstObject` reaches all fourteen objects
 exactly once and stops on nought. Garbage does not terminate, so a chain that covers the list and ends

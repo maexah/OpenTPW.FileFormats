@@ -395,7 +395,7 @@ nought:
 | An object with `0x10` (it provides security) | 4 | the object's cell |
 | An object with `0x80` (fireworks) | 7 | the object's cell |
 | An entertainer (model 6) | 0 | the cell in their `mLastRecordedMapId`, the person record's `+41` |
-| A guard (model 7) | 3 | the same field of theirs |
+| A guard (model 7) | 3 | the same field of theirs; a field of nought adds nothing |
 | A cell whose `mLitter` is 7 | 2 | that cell |
 | A cell whose `mLitter` is 8 | 5 | that cell |
 
@@ -1040,7 +1040,7 @@ map base come first, as for every placed thing.
 | 34 | 2 bytes | `mBaseSpeed` |
 | 36 | 1 byte | `mCount` |
 | 37 | 4 bytes | `mESPSprite` - the sprite kind worn: 0 a child, 2 a costume, a member of staff their own |
-| 41 | 2 bytes | `mLastRecordedMapId` |
+| 41 | 2 bytes | `mLastRecordedMapId` - a packed cell id (`y × 128 + x + 1`): the cell the person was made on, and nought for an arrival, who is made on none. Only an entertainer's and a guard's is ever changed: it follows them, a step behind at most, and is the cell their region effect stands round (the map cells' effects sub-record). In thirteen park files every entertainer's and guard's is the cell they stand on or the one before, and no mechanic's, handyman's or researcher's is |
 | 43 | 177 bytes | the navigator - see below |
 | 220 | 4 bytes | `mPreviousSpeed` |
 | 224 | 4 bytes | `mPreviousX` - where the person stood a turn before, in the navigator's fixed point, not a float |

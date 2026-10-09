@@ -1750,11 +1750,41 @@ with a queue is built closed), and one channel on role 0, held (flags `0xC`) at 
 Proton, 2026-10-08).
 
 **A queue cell's `mMeshInstance` is a slot of this module too**, plus one. Its record's item id is 17000 plus the
-cell's tile index (17002 to 17007), its cell is the cell, and its script handle is nought: 4 of 4 queue cells in the
-shipped park and 78 of 78 in a played one. A queue cell holding nought there is drawn black by the game, piece and
-ground both, and still works as a queue (measured under Proton, 2026-10-08). The other records - most of them,
-items 173xx in the shipped park (143 of its 161) and 171xx too in a played one - are named by no thing and no
-cell's `mMeshInstance`.
+cell's tile index (17001 to 17007), its cell is the cell, and its script handle is nought. A queue cell holding
+nought there is drawn black by the game, piece and ground both, and still works as a queue (measured under Proton,
+2026-10-08). The other records - most of them, items 173xx in the shipped park (143 of its 161) and 171xx too in a
+played one - are named by no thing and no cell's `mMeshInstance`.
+
+### A queue piece's record
+
+Every queue piece's record is the same bytes but for four fields, so a writer can make one from the cell alone.
+In nine park files (the shipped Lost Kingdom park, five played saves of three themes, one of them with no queue, and three saved under Proton)
+all 225 queue cells name a record that reads exactly:
+
+| Offset | Size | Value |
+|---|---|---|
+| `0x00` | 1 | 1, the slot is present |
+| `0x01` | 4 | 17000 plus the cell's tile index |
+| `0x05`, `0x09` | 4, 4 | the cell's x and y |
+| `0x0d`, `0x11` | 4, 4 | 1 and 1, one cell square |
+| `0x15` | 4 | `0x33A`, the flags a queue piece is made with |
+| `0x19` to `0x26` | 14 | nought: no script, no hoarding |
+| `0x27` | 4 | 360 less the tile's angle, 360 folded to 0 |
+| `0x2b` | 2 | the node flag words that follow: 2, or 4 for tile indices 5, 6 and 7 |
+| `0x2d` to `0x36` | 10 | nought: no lookup records |
+| `0x37` | 4 a word | the node flag words, all nought |
+| then | 44 | one channel: role 12 (none) at its second dword and at its eighth, every other dword nought |
+
+Tile index 1 is the dead end, the piece of a queue that has not reached a path (one record, in a park saved just
+after a ride was bought); 2 a straight, 3 and 4 the bends, 5 the end at a path, 6 and 7 the bins. Index 0 names
+the same model as index 1 in the game's table and is in no file.
+
+**A cell that leaves the queue gives its slot up, and a cell tiled again takes another.** A park saved by OpenTPW
+with two queue cells cleared, one tiled again as a bend and two laid, their records made as above in the lowest
+empty slots, loaded in the game with the queue fenced along its new cells and bare grass where the old ones were
+(measured under Proton, 2026-10-09). The same park saved with the two new cells naming no model drew them black;
+the bend's cell, still naming the straight's record, drew a straight; and the cleared cell, still naming its old
+record, kept its piece standing on bare ground.
 
 **The game makes each model again from its record when it loads**, in the slot the record lies in, and then lays
 the saved state over it. It compares the two counts at `0x2b` and `0x2d` with the fresh model's first: where either

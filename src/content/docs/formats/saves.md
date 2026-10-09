@@ -1827,15 +1827,40 @@ the game wrote (7,688 records of 95 items) ten of them appear:
 | Bit | What it says |
 |---|---|
 | `0x1` | The node is hidden |
-| `0x2` | Not described |
+| `0x2` | Every child of the node is a transform-only node with no child of its own: a mesh that holds only markers, as the Crazy Ape's two arms hold its head and nose nodes |
 | `0x4` | Not described; set in no record |
 | `0x8` | The node's mesh has been morphed and its face normals are out of date; the game works them out again when it next poses the mesh |
-| `0x20` | A clip running on one of the model's channels has a track for this node |
-| `0x40` | Not described |
-| `0x80` | That track is a morph |
-| `0x100`, `0x800` | Two more kinds of track the clip has for the node |
-| `0x200` | Not described; as many words carry it as lookup records carry `0x1` |
-| `0x400` | A clip neither hides nor shows this node |
+| `0x20` | A clip bound to one of the model's channels has a track for this node |
+| `0x40` | Set as the model's file is loaded, on one node of seven track and scenery items (62 words); not described further |
+| `0x80` | That track is a morph (its flags hold `0x1000`) |
+| `0x100` | That track moves the mesh's texture coordinates (`0x10000`) |
+| `0x800` | That track places, turns, scales or routes the node (any of `0x289`) |
+| `0x200` | The node's [lookup record](/formats/models/#node-lookup-ids) has a position: its flags in the model's file meet `0x30` |
+| `0x400` | The node is transform-only (its flags in the model's file hold `0x200`). A clip's hide list neither hides nor shows it; a visibility track still does |
+
+**A word can be worked out from the model's file and the clips its channels have run.** A model just made holds
+`0x400` and `0x1` on every transform-only node, and `0x200` and `0x2` where the rows above say. A clip bound to a
+channel sets `0x20` on each node it has a track for, with `0x80`, `0x100` and `0x800` by the track's flags, and
+`0x1` on each node of its [hide list](/formats/models/#the-hide-list) but a transform-only one. The next clip
+bound to that channel first takes those off: the track bits of the old clip's tracks, and `0x1` of its tracks'
+and its list's nodes, a transform-only node's apart. A clip that merely ends takes nothing off, so an idle
+channel's last clip still marks its nodes: an idle Staff Room keeps `0xa2` on the mesh its build clip morphed. A
+[visibility](/formats/models/#visibility-bit-0x20000) track sets and clears `0x1` as the clip plays, on a
+transform-only node too, and there what it left stays after its clip is replaced: the Crazy Ape's `Dummy01`, the
+parent of its arms, is shown by the build clip and reads `0x420` under it and `0xc20` under the ride clip.
+
+Of the 870 records of an item a player can buy or a park places by name, 836 read exactly so, bit `0x8` apart.
+In 30 of the others a transform-only node was shown or hidden by a visibility track of an earlier clip the record
+does not name; in 4 a running clip's tracks are not marked at all, and in 2 an idle shop holds no build marks. A
+Crazy Ape just bought reads `0 a0 a0 20 a0 a2 a2 a1 a1`, then `601` for its 24 markers, then `420`; one running
+its ride clip `0 0 0 0 a0 a2 a2 1 1`, `601` 24 times, `c20`.
+
+**A record written with no tables keeps its build clip's marks.** The game makes the model with its build clip
+bound, so a record declaring no node words leaves those marks on it through every later clip: a Crazy Ape saved
+running, with no words, read `0 a0 a0 20 a0 a2 a2 a1 a1`, `601` 24 times, `c21` in the game's memory after the
+load and went on reading so, where the same file with its words read `0 0 0 0 a0 a2 a2 1 1 .. c20` (measured under
+Proton, 2026-10-09). The two looked the same on screen from the saved camera; what the leftover marks change in the
+picture is not known.
 
 **The words follow from the item and what its channels play.** Grouped by item and by each channel's role, clip
 and loop, frozen and held bits, the 7,688 records make 127 groups: in 113 of them every record's words are the
@@ -1865,6 +1890,13 @@ it is posed all the same, `0x2` something is attached to it, `0x4` the ride view
 `0x400`. The shipped park's Jungle Spray saves `0x29` on eleven records and `0x21` on its `camera`, which is posed only
 while the ride view is on it; a played park's Aztec Mayhem saves `0x29` on 34 of its 39 records and `0x2b`, with a
 handle, on the five heads carrying a rider: all 39 carry `0x8`.
+
+Over the same 870 records, with nothing attached, every pair follows from the model's file: `0x1` where the
+record's flags there meet `0x30`, `0x8` where they meet `0x580f00` or the item's description sets
+`Info.DoHeadProcessing`, `0x10` where the node's own flags hold `0x400`, `0x20` where the node has no child; the
+handle is `-1` for a record with a position and nought for one without. The shared flags at `0x2f` are `0x1`
+where some record has a position, `0x8` where some record's flags hold `0x2`, and `0x2` on every record of a ride
+with head nodes (lookup flag `0x80`), bought or shipped, but not on an arrival vehicle's (the ferry's four records).
 
 **A channel is 11 dwords**, in the order the game copies them back onto the running channel:
 

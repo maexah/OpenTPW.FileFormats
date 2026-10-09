@@ -1367,7 +1367,8 @@ the 46 is saved at its program's first word, just made.
 word at `0x20` plus four times what is left, so the stack fills from its last place down, and it counts the loop in
 `0x78`. An earlier version of this page called `0x1C` a timer; it is the room left. Of the 1,154 sprites in the
 twelve park files to hand that the game itself wrote, 1,018 hold `20` and an empty stack, 122 hold `19` with word
-1714 in the last place (on program 1704, whose count is at `0x74`, a second counter this page does not explain) and
+1714 in the last place (on program 1704, whose count is at `0x74`, a second counter this page does not explain:
+these are the riders' heads hung on rides, below) and
 14 hold `19` with word 1730 there and `1` at `0x78` (on program 1760).
 
 **A balloon let go is a record nobody names.** The game puts the balloon's own sprite on the program at word
@@ -1739,9 +1740,9 @@ more slots than things stays small. A present record is:
 | `0x2b`   | 2 bytes  | Node flag-word count                                            |
 | `0x2d`   | 2 bytes  | The model's node-lookup record count                            |
 | `0x2f`   | 4 bytes  | The lookup records' shared flags: `0x1` some record has a position, `0x4` something is attached, `0x8` some record's file flags carry `0x2` (walkable meshes); `0x2` is set by the routine that hides a model's head nodes. The Jungle Spray's reads `0x1`, a ridden Aztec Mayhem's `0x7` |
-| `0x33`   | 4 bytes  | How many things are attached                                    |
-| `0x37`   | n×8      | Per lookup record: its runtime flags, and the handle of what is attached to it (-1 for nothing; a record without a position starts at nought) |
-| —        | n×4      | One flag word per node; bit `0x10` is hidden                    |
+| `0x33`   | 4 bytes  | How many things are attached: the count of lookup records below that carry `0x2` |
+| `0x37`   | n×8      | Per lookup record: its runtime flags, and the slot in the sprite table of the head attached to it (-1 for nothing; a record without a position starts at nought) |
+| —        | n×4      | One flag word per node; bit `0x1` is hidden (the table below)   |
 | —        | n×44     | The animation channels — see below                              |
 
 Everything from `0x01` on is **unaligned**, because the one-byte tag leads.
@@ -1817,6 +1818,46 @@ nodes and no lookup records. A file made that way, with one idle channel, loaded
 placed objects in the shipped Jungle park. Its synthetic record checks the unaligned flag and
 progress reads independently of normal zero-progress saves.
 
+
+### The node flag words
+
+A node's word holds eleven bits of the game's own flags for that node, packed. In the 45 park files to hand that
+the game wrote (7,688 records of 95 items) ten of them appear:
+
+| Bit | What it says |
+|---|---|
+| `0x1` | The node is hidden |
+| `0x2` | Not described |
+| `0x4` | Not described; set in no record |
+| `0x8` | The node's mesh has been morphed and its face normals are out of date; the game works them out again when it next poses the mesh |
+| `0x20` | A clip running on one of the model's channels has a track for this node |
+| `0x40` | Not described |
+| `0x80` | That track is a morph |
+| `0x100`, `0x800` | Two more kinds of track the clip has for the node |
+| `0x200` | Not described; as many words carry it as lookup records carry `0x1` |
+| `0x400` | A clip neither hides nor shows this node |
+
+**The words follow from the item and what its channels play.** Grouped by item and by each channel's role, clip
+and loop, frozen and held bits, the 7,688 records make 127 groups: in 113 of them every record's words are the
+same, and in the other fourteen they differ in `0x8` alone, but for one word of item 1181's in `0x400`. On loading,
+the game lays each word over the fresh model's node and does not work the track bits out again, so they are what
+tell it which nodes the running clips move until a clip is next started.
+
+### A head on a node
+
+A rider's head showing on a ride (on a Crazy Ape's tentacle, in a coaster's car) is a sprite of its own in the
+[sprite table](#the-sprite-table-tpcs), and the ride's model record names it: the lookup record of the node it
+hangs on carries `0x2` in its flags and the sprite's slot beside them, the shared flags at `0x2f` carry `0x4`, and
+`0x33` counts the heads. In four played parks (two saves each of a jungle and a fantasy one) 122 lookup records
+carry `0x2`, on fifteen items, and every one names a live sprite that no person's record names; in every record
+`0x33` is the count of them, and `0x4` is set exactly where there is one.
+
+A head's sprite is kind 1 (a child's head, `0xB0` the child) or kind 3 (a costume's head, `0xB0` the costume), and
+all 122 read alike elsewhere: `0x08` 1698, `0x0C` 1704, `0x10` 1696, state 2, `19` at `0x1C` with word 1714 in the
+loop stack's last place, `1` at `0x74`, set 0, `8` at `0xBC`, `0x3000080` at `0xC4` and `1` at `0x114`. They are
+every sprite of kinds 1 and 3 in the four files. The node's own flag word is the same with a head on it and
+without. A ride's script keeps a table of the same riders by head node ([the ride script module](#the-ride-script-module-essr)),
+in another order; some rides hang heads and keep no such table (a coaster's cars, the Aztec Mayhem).
 
 **A lookup record's runtime flags** say whether the game keeps its node's position
 ([Models](/formats/models/#which-records-have-a-position)): `0x1` it has one, `0x20` its node has no children, `0x8`

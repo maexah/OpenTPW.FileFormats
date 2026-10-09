@@ -413,8 +413,8 @@ Every cell agrees. Agreement in aggregate would prove little; agreement cell by 
 indexing is not something a misaligned or transposed reading can produce. 1,495 cells are non-zero, over
 exactly the eight values the attribute map uses: 0, 1, 3, 8, 17, 128, 144 and 148.
 
-**`mMeshInstance` at 3 is a queue cell's model.** It is a handle of the running game's, kept as saved and
-used after a load: non-zero on exactly the queue cells (`mType` 3), 4 of 4 in the shipped park and 78 of 78 in
+**`mMeshInstance` at 3 is a queue cell's model.** It is a slot of the ride system module (`SYSR`, below) plus
+one, kept as saved and used after a load: non-zero on exactly the queue cells (`mType` 3), 4 of 4 in the shipped park and 78 of 78 in
 a played one, and nought on every other cell of both. `mHoardingNeighbours` at 28 is nought on every cell of
 both.
 
@@ -1502,14 +1502,15 @@ Each is a struct followed by a run of length-prefixed blocks, and a record
 | 4 + n    | **Block 1 — the stack**, one dword per slot; empty with no `#setstack`  |
 | 4 + n    | **Block 2 — the variables**, one dword per slot                         |
 | 4 + n    | **Block 3 — the string blob**, byte for byte the `.RSE` file's          |
-| 4 + n    | Blocks 4 and 5                                                          |
+| 4 + n    | **Block 4 — limbo**, 8 bytes a slot: a visitor's handle (nought for a free slot) and the clock reading they are due back at |
+| 4 + n    | **Block 5 — the bounce slots**, 16 bytes a slot: a visitor's handle, the node they are on, the clock reading they are due off at and the one they got on at |
 | 4 + n×32 | **The walk slots** — a count, and that many 32-byte slots (below)       |
 | 4 + n    | **The head table** — one dword per head slot (below)                    |
 | 4 + n    | The script's directory, the string the game's loader keeps at `+0x38`   |
 | 4 bytes  | Guard — `OBJ `                                                          |
 | 4 bytes  | Object count                                                            |
-| 4 bytes  | Bytes per object                                                        |
-| n        | The script's own object list                                            |
+| 4 bytes  | Bytes per object — 28                                                   |
+| n        | The script's own object list, the effects it has started: two list links the game replaces on loading, then five dwords not described here |
 
 Fourteen fields of the struct are established:
 
@@ -1529,6 +1530,37 @@ Fourteen fields of the struct are established:
 | `0xc4` | 49    | The deadline the last `SETTIMER` set, a clock reading, not scaled by the speed word; nought until one runs |
 | `0xe0` | 56    | A coaster script's ride handle, which its `COAST 8` stores; nought before that   |
 | `0xe4` | 57 (low word) | A 16-bit play rate in thousandths: 1000, or a `TRIGANIMSPEED`'s rate. The word above it, `0xe6`, is a separate field; it reads `0xffff` in every script of the shipped park |
+
+Sixteen more, from the game's loader of a script (which makes the struct) and a count over the 374 records of six
+park files:
+
+| Offset | Description |
+| ------ | ----------- |
+| `0x00`, `0x04` | The list links, and `0x18` to `0x38` nine pointers to the blocks that follow, and `0xb0` the object list's head: addresses of the saving session, which the game replaces on loading |
+| `0x0c`, `0x10`, `0x14` | Other scripts' handles, set on a few records in pairs (a ride's script and its companion's); nought otherwise |
+| `0x4c` | The head slot count — the head table's length over four |
+| `0x58`, `0x60` | The limbo slot count (block 4's length over eight) and how many are taken |
+| `0x64` | The bounce slot count (block 5's length over sixteen) |
+| `0x6c`, `0x6e` | Two words: how many are bouncing, and `BOUNCESETBASE`'s value (a Belly Bounce with six aboard reads `0x00080006`) |
+| `0x70` | 1 on every record: the base node numbers are counted from |
+| `0x74` | The name's offset in the string blob, `-1` until the script names itself |
+| `0x7c` | The walk slot count |
+| `0x88`, `0x8a` | Two words, 1000 each on every record |
+| `0x8c` | The variable count — block 2's length over four |
+| `0x90` | The string blob's length |
+| `0x94` | A dword of the `.RSE` header, 50 on every record |
+| `0xac` | 2 bytes: the id of the thing the script belongs to; nought for a script with none |
+| `0xc0` | The speed word (below) |
+| `0xc8` | **The model handle of the script's thing** — the object's `MeshInstanceID`, a slot of the ride system module plus one; nought for a script with no thing |
+
+A record whose struct holds only what the loader sets (the handle, the counts, the call index at the stack size
+less one, `0x70`, `0x74`, the two words at `0x88`, the looping key `0xffff`, the thing, the speed word 50, the
+model handle, `-1` at `0xd8` and `0xffff03e8` at `0xe4`) with the counter at word 0 loads, and the script runs
+from its start (measured under Proton, 2026-10-08).
+
+**The records tie to the objects one to one.** Every object's `mRideScriptHandle` names a record that holds the
+object's id at `0xac` and its `MeshInstanceID` at `0xc8`: 360 of 360 across the six files. Of the other fourteen
+records six share a thing and its model with that thing's own script, and eight have no thing.
 
 **How those were pinned rather than guessed.** Dword 20 equals the length of the body block that
 follows it for all fourteen scripts, which fixes the struct's alignment and with it every offset in the
@@ -1604,9 +1636,9 @@ and this one stops everything standing frozen once it is.
 | ------- | ---------------------------------------------------------------- |
 | 4 bytes | Module length in bytes, counting what follows this dword - **17,522** in the shipped park, which ends exactly on the `SYSR` tag |
 | 4 bytes | Present record count — **161** in the shipped park                |
-| 4 bytes | Free record count                                                |
-| 4 bytes | High-water mark                                                  |
-| n       | One record per slot                                              |
+| 4 bytes | Empty slot count — 7 there, so 168 slots                         |
+| 4 bytes | The cursor: the slot the next model made will take. The lowest empty slot (90 there, slots 90 to 96 being the empty ones), or the slot count where none is empty, in all six park files read |
+| n       | One record per slot, present and empty together                  |
 
 A slot that holds **nothing costs exactly one byte** — the tag alone — which is how a module with far
 more slots than things stays small. A present record is:
@@ -1615,7 +1647,15 @@ more slots than things stays small. A present record is:
 | -------- | -------- | --------------------------------------------------------------- |
 | `0x00`   | 1 byte   | Tag — `01` for present                                          |
 | `0x01`   | 4 bytes  | The **item** id, not a thing id                                 |
+| `0x05`   | 4 bytes  | The cell it stands on, across: an object's `mTopLeft` cell       |
+| `0x09`   | 4 bytes  | The cell, down                                                  |
+| `0x0d`   | 4 bytes  | Its footprint in cells, across                                  |
+| `0x11`   | 4 bytes  | Its footprint, down                                             |
+| `0x15`   | 4 bytes  | The flags it was made with: `0x32F` a placed object, `0x361` a fixed one (gates, traffic lights, an arrival vehicle), `0x33A` a piece of queue |
+| `0x19`   | 4 bytes  | **The script handle of the thing it is the model of** - the object's `mRideScriptHandle`; nought for a piece of queue and other scenery |
 | `0x1d`   | 4 bytes  | Packed model flags; low seven bits are the hoarding state below |
+| `0x21`   | 2 bytes  | Not described; nought on every object's record in six park files |
+| `0x27`   | 4 bytes  | The angle in degrees: an object's `mAngle`; a piece of queue's is 360 less its cell's tile angle |
 | `0x23`   | 4 bytes  | Hoarding progress, little-endian float (`0` retracted, `1` closing endpoint) |
 | `0x2b`   | 2 bytes  | Node flag-word count                                            |
 | `0x2d`   | 2 bytes  | The model's node-lookup record count                            |
@@ -1634,8 +1674,24 @@ model state. The restore routine (`0x004647a0`) expands these bits to runtime mo
 whether the panels are active or moving. The closing endpoint does not guarantee equal full height
 for every panel: the executable staggers their deformation.
 
-The saved placed object's model handle selects **slot index plus one**, not the item id; repeated
-instances of an item can have different hoarding states. Q91b checks this pairing for all eleven
+The saved placed object's model handle (`MeshInstanceID`) selects **slot index plus one**, not the item id; repeated
+instances of an item can have different hoarding states. The record names the object back by the script handle at
+`0x19`. Across six park files (the shipped Lost Kingdom park and five played saves of three themes) every one of
+the 360 objects names a present slot whose record holds its item id, its script handle and its angle, and each of
+the 337 placed ones its `mTopLeft` cell.
+
+**A queue cell's `mMeshInstance` is a slot of this module too**, plus one. Its record's item id is 17000 plus the
+cell's tile index (17002 to 17007), its cell is the cell, and its script handle is nought: 4 of 4 queue cells in the
+shipped park and 78 of 78 in a played one. A queue cell holding nought there is drawn black by the game, piece and
+ground both, and still works as a queue (measured under Proton, 2026-10-08). The other records - most of them,
+items 173xx in the shipped park (143 of its 161) and 171xx too in a played one - are named by no thing and no
+cell's `mMeshInstance`.
+
+**The game makes each model again from its record when it loads**, in the slot the record lies in, and then lays
+the saved state over it. It compares the two counts at `0x2b` and `0x2d` with the fresh model's first: where either
+differs it steps over both tables by the file's counts and keeps the fresh model's own. So a record may declare no
+nodes and no lookup records. A file made that way, with one idle channel, loaded and its model stood and animated
+(measured under Proton, 2026-10-08). Q91b checks this pairing for all eleven
 placed objects in the shipped Jungle park. Its synthetic record checks the unaligned flag and
 progress reads independently of normal zero-progress saves.
 
@@ -1688,14 +1744,13 @@ entry 1, Traffic Lights role 5 (looping), Belly Bounce role 2 (looping), Jungle 
 three lanes, Coconut Kiosk role 5 (looping), Litter Bin role 0, both Security Cameras role 6, Staff
 Room nothing, the three Small Toilets role 5, Fountain role 5 (looping) and the Bus role 5 entry 2.
 
-> Because a record names an **item**, three Small Toilets are three records that read alike, and the
-> module carries nothing that tells them apart. In this file the records of placed things happen to run
-> in ascending script-handle order, which pairs them off — but that is an ordering that matches, not a
-> decoded thing handle, and within one item id the choice is unobservable because those records are
-> identical.
+> Three Small Toilets are three records of one **item** id. What tells them apart is the script handle at
+> `0x19` and the slot each lies in, which the toilet's own record names: scripts 11, 12 and 13 in slots 120, 121
+> and 122 of this file.
 
-Everything in this section is measured from `Easymode.TPWI`, the one file of this shape that ships, so
-treat it as what that file proves and no more.
+The channel layout and the counts in this section are measured from `Easymode.TPWI`, the one file of this shape
+that ships; the header, the fields at `0x05` to `0x19` and the angle are measured over the six park files named
+above.
 
 ## The track-rides module (`KART`)
 

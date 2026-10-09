@@ -268,7 +268,10 @@ the last two against the running game's memory (the game's reader of them is its
 | `0x1C` | u32 | `mGameTick` when the first of the item was built, kept after the last is sold: 15 on nine records in Lost Kingdom's save, the Balloon Shop among them with a count of 0, and 604 for the bus. The game writes it only while it reads 0, so the gates and the traffic lights, made on tick 0, keep 0 |
 
 Across the six park files read (Lost Kingdom's and five played saves of three themes) every record with a
-count above 0 has a stamp, but for the gates and the lights. The other fields (`0x08` and the three bytes after `0x10`, all nought here) are not settled here. The game fills a
+count above 0 has a stamp, but for the gates and the lights. The other fields (`0x08` and the three bytes after `0x10`, all nought here) are not settled here.
+**Buying one adds one to the count and stamps a record that reads 0; selling one takes one off and leaves the
+stamp**: a park the game saved after a Crazy Ape was bought on tick 924 holds count 1 and stamp 924 on item 1101,
+and saved again after the ape was sold, count 0 and stamp 924 (measured under Proton, 2026-10-08). The game fills a
 record from the item's own description, so a save carries whatever the item files said when the record was made.
 
 ### The staff pool
@@ -551,6 +554,12 @@ three belong to a footprint rather than to the ground, and that `9` and `10` fal
 > the ground there as well and the two fight for the same depth. The same goes for the four queue cells,
 > where every piece of queue brings its own base.
 
+**The ground tile under a footprint is index 8 of set 0, turned 0, and bare ground's is index 55**: all 1,374
+footprint cells and all 47,861 bare cells of seven park files. The game writes the first as it
+builds a thing and the second as it sells one: the sixteen cells of a Crazy Ape went from `(0, 55, 0)` to
+`(0, 8, 0)` when it was bought and back when it was sold, and the queue cell the game had laid before its
+entrance, over a path, was left bare ground too (measured under Proton, 2026-10-08).
+
 ### Where a built thing stands on its cells
 
 An object's record gives an anchor cell and an angle (see the catalogue object below). Its footprint is
@@ -650,18 +659,18 @@ coordinates. Its record is **1,099 bytes**.
 
 | Offset | Size | Name | Notes |
 | --- | --- | --- | --- |
-| 8 | 2 bytes | `mX` | from the shared map base |
+| 8 | 2 bytes | `mX` | from the shared map base: the anchor cell in the high byte, and `0x80`, the middle of the cell, in the low byte of every placed object in seven park files (349 of 349) |
 | 10 | 2 bytes | `mY` | |
 | 16 | 4 bytes | `mAngle` | degrees - `0`, `90` or `270` in the shipped park |
 | 20 | 2 bytes | `mId` | the item's `Info.Id`, from its own `.sam` |
 | 22 | 32 bytes | eight `tv[`*t*`]` dwords | when the object was built: year, month, day, day of the week, hour, minute, second, millisecond - not `SYSTEMTIME`'s order, which puts the day of the week third. It is a date on the **park's own calendar**, not the real one; the game writes it with `FileTimeToSystemTime` and reads it back with `SystemTimeToFileTime`, ignoring the day of the week; a stamp that will not convert loads as nought. The shipped park: the Belly Bounce and ten more read 2000-01-01 15:37:30, the bus 2000-01-27 05:10:00, the gates and the lights 2000-01-01 00:00:00 |
 | 54 | 4 bytes | `MeshInstanceID` | the object's model instance; a coaster's record in the coasters module carries the same number (Temple Of Gloom in Alexah's played jungle park: 330) |
 | 58 | 2 bytes | `mFlags` | see below |
-| 60 | 132 bytes | 33 pairs of `mNameA[`*i*`]`, `mNameB[`*i*`]` | 2 bytes each |
+| 60 | 132 bytes | 33 pairs of `mNameA[`*i*`]`, `mNameB[`*i*`]` | 2 bytes each: the two lines of the object's name, a character of each in turn - see below |
 | 192 | 4 bytes | `mRideScriptHandle` | the id of the object's running script in the ride scripts module |
 | 196 | 4 bytes | `mTrackRideHandle` | nought, or for an item whose `Bumper.BumperType` is set, its slot in the track-rides module in the low byte and the `BumperType` above: `0xfffffc00` for a Dino Karts in slot 0. In all nine park files (the shipped park and eight played ones), non-zero on exactly the objects whose item has a `BumperType` |
-| 200 | 4 bytes | `mState` | |
-| 204 | 2 bytes | `mTopLeft` | |
+| 200 | 4 bytes | `mState` | nought on every object a guest may be offered (`mFlags` `0x4`) and 3 on every other, in seven park files (349 of 349); the game sets it so as it builds the object |
+| 204 | 2 bytes | `mTopLeft` | a packed cell: the anchor cell (`mX`, `mY`) on 345 of 349 placed objects in seven park files; the Huge Hollow Rock (item 1427, the cell above) and the Dino Karts Tunnel (item 1501, at 90 degrees the cell to the left) are the four others. The object's model record carries this cell |
 | 206 | 2 bytes | `mEntryPos` | the cell a visitor is sent to |
 | 208 | 2 bytes | `mNext` | this object's link in the object list |
 | 210 | 2 bytes | `mAssignedStaffMember` | a handle: the member of staff sent to service it, `0` for none |
@@ -677,8 +686,8 @@ an `mTemp` and then `mNumEntries` entries of `mData[`*i*`]` - interleaved with `
 `mNumWalkAways`, and then a long tail of shop and ride fields: `mOperatingCapacity`,
 `mOperatingDuration`, `mOperatingSpeed`, `mPersonBeingLoaded`, `mCostOfGoods`, `mQualityOfGoods`,
 `mChanceOfWinning`, `mPricePerUse` (clamped to 0-500 as it is read), `mAmountOfSpecialIngredient`,
-`mQueueSizeInCells`, `mRequestedService`, `mTimeMarkedForMaintenance`, `mTotalCosts`, `mTotalTakings`,
-`mUpgradeBalloonSprite` and `mUpgradeLevel`.
+`mQueueSizeInCells`, three floats (below), `mRequestedService`, `mTimeMarkedForMaintenance`, `mTotalCosts`,
+`mTotalTakings`, `mUpgradeBalloonSprite` and `mUpgradeLevel`.
 
 **Those ring buffers are not empty, and the arithmetic is what says so.** An empty ring writes 13 bytes -
 `mCurrentEntry` 4, `mNumEntries` 4, `mWrappedAround` 1, `mTemp` 4, then `mNumEntries` entries of 4 - and
@@ -693,6 +702,30 @@ That puts `mOperatingCapacity` at 1034, `mOperatingDuration` at 1035, `mOperatin
 `mRequestedService` at 1078, `mTimeMarkedForMaintenance` at 1082, `mTotalCosts` at 1086, **`mTotalTakings`
 at 1090**, `mUpgradeBalloonSprite` at 1094 and `mUpgradeLevel` at 1098, a byte: 0 on every object in the shipped park, and non-zero only
 on the Belly Bounce in Alexah's played jungle park, at 1, beside speed 75, duration 30 and capacity 7, that level's starting values.
+
+**Three floats follow `mQueueSizeInCells`**, at 1066, 1070 and 1074. The game starts all three at 100.0 as it
+builds the object. The second and third are the remaining life and the state of repair (a played Crazy Ape reads
+70.0 and 29.0); the first reads 100.0 on every object of seven park files (349 of 349) and what it is for is not
+described here.
+
+**The name is two lines.** `mNameA` is the first and `mNameB` the second, each up to 32 characters and a
+terminator, stored a character of each in turn. They are rows of the running language's `OBJECT_NAMES.str`: the
+game holds a table of item id, first row, second row for 281 items, and a ride's name is two rows (`Belly` and
+`Bounce`, `Crazy` and `Ape`, `Temple` and `Of Gloom`) where every other item's is one, its second row the
+table's empty row 1 (`Small Toilet`, `Drinks Shop`). The gates carry the park's name, `LOST` and `Kingdom`. A
+save written under another language holds that language's rows (`Small bathroom`, `Trash Can` in a park saved by
+the American release). In a record the game has just made, the bytes after each terminator are whatever the
+memory held, not nought.
+
+**A record the game has just made** (a Crazy Ape bought and the park saved 111 ticks on, measured under Proton,
+2026-10-08) holds: the date on the park's calendar; `mFlags` `0xc`; `mState` 0; `mTopLeft` the anchor; its entry
+and exit cells; `mNext` the object that headed the list before it, itself the new `mFirstObject` and the new head
+of the thing list; `mBackOfQueue` the one queue cell the game lays before its entrance and
+`mQueueSizeInCells` 1; `mCanLoad` 0, because a thing with a queue is built closed; `mIsTrackRideValid` 1; each
+ring with `mNumEntries` 30, not wrapped, its unreached entries unwritten memory; the item's starting capacity,
+duration and speed; quality and ingredient 50, chance 100; and the three floats 100.0. Its id joins listener set
+`0xb`. Only its anchor cell names it in `mWho`; all sixteen cells of its footprint carry the anchor's packed id
+as their parent.
 
 **The shop fields, measured across all nine park files** (the shipped Lost Kingdom and Alexah's eight):
 `mQualityOfGoods` and `mAmountOfSpecialIngredient` hold 50 on every object in the shipped park and 0, 50 or 100 in
@@ -1555,6 +1588,7 @@ park files:
 | `0x8c` | The variable count — block 2's length over four |
 | `0x90` | The string blob's length |
 | `0x94` | A dword of the `.RSE` header, 50 on every record |
+| `0x98` | `-1` on 369 of 374 records, nought on five; `-1` on a record the game has just made |
 | `0xac` | 2 bytes: the id of the thing the script belongs to; nought for a script with none |
 | `0xc0` | The speed word (below) |
 | `0xc8` | **The model handle of the script's thing** — the object's `MeshInstanceID`, a slot of the ride system module plus one; nought for a script with no thing |
@@ -1636,6 +1670,14 @@ file's clock. The rider is a
 guest in state 16 whose `mMajorDest` is the script's thing, out of the queue (no links), standing where they got on,
 with their sprite on animation program 66 and picture set 2 (nine of nine bounce riders in two files).
 
+**A record the game has just made** (a Crazy Ape's, bought 111 ticks before the save, the ride closed for want
+of a queue; measured under Proton, 2026-10-08) is first in the module under the header's next handle. Its struct
+holds the fields the loader sets, its name's offset (0: the script had named itself), `-1` at `0x98`, its thing
+and its thing's model handle, and the object's operating speed, 60, as the speed word. Its stack block is twenty
+dwords of `0xFFFFFFFF` but for what has been pushed, its head table sixteen noughts, its object list empty, and
+its directory `data\levels\jungle\Rides\monkey\`. A record written with the folder in lower case
+(`rides`) loads.
+
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
 > object's own operating speed over it — that ride's `mOperatingSpeed` is 60 in the same file.
@@ -1698,6 +1740,14 @@ instances of an item can have different hoarding states. The record names the ob
 `0x19`. Across six park files (the shipped Lost Kingdom park and five played saves of three themes) every one of
 the 360 objects names a present slot whose record holds its item id, its script handle and its angle, and each of
 the 337 placed ones its `mTopLeft` cell.
+
+**Buying a thing takes the slot at the cursor and selling one empties its slot.** A park whose table read 161
+present, 7 empty, cursor 90 was saved after a Crazy Ape was bought: 163, 5, 92, the ape in slot 90 (handle 91)
+and the queue piece the game lays before its entrance in slot 91. Saved again after the ape was sold, with two
+arrival vehicles made in between: 163, 5, 90, slots 90 and 91 empty again and the vehicles in 92 and 93. A made
+record holds the placer's flags `0x32F`, the object's script handle, hoarding `0x9` at progress 1.0 (a thing
+with a queue is built closed), and one channel on role 0, held (flags `0xC`) at speed 1.1 (measured under
+Proton, 2026-10-08).
 
 **A queue cell's `mMeshInstance` is a slot of this module too**, plus one. Its record's item id is 17000 plus the
 cell's tile index (17002 to 17007), its cell is the cell, and its script handle is nought: 4 of 4 queue cells in the

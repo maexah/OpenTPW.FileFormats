@@ -34,11 +34,12 @@ Word 0 is the record's type. The loader knows three and passes over any other.
 
 | Type | What the loader does |
 |---|---|
-| 1 | Starts a sound: word 1 picks one of two sound categories (nought or not), word 2 is the effect in it, words 3, 4 and 5 are x, the height and z, and word 6 is doubled; each of the four is divided by 1024 toward nought |
+| 1 | Starts a sound with a range: word 1 picks the category (nought the global `cat_ambient`, anything else the level's own), word 2 is the effect in it, words 3, 4 and 5 are x, the height and z, and word 6, doubled, is how far from the listener the sound is heard; each of the four is divided by 1024 toward nought |
 | 2 | Starts a particle effect: `Particles_Spawn( word 1, word 3, word 4, word 5 )` (`0x00551006`). Word 1 is the effect in the [particle library](../particles/); words 3, 4 and 5 are x, the height and z in 1024ths of a park unit (ten units to a map cell) |
-| 3 | Starts a sound as type 1 does, without word 6, then hands its voice words 3, 5, 7 and 8, each over 1024 |
+| 3 | Starts a sound as type 1 does, with no range, then gives its voice a rectangle on the ground: from (word 3, word 5) to (word 3 + word 7, word 5 + word 8), each over 1024. The game keeps the voice at the listener's place, held inside that rectangle. Word 6 is not read |
 
-What word 6 of a type 1 and words 7 and 8 of a type 3 mean to the sound system is not decoded.
+A sound past its range is silenced, by the distance over x and z alone, and comes back when the listener is
+inside it again. A type 1 with a word 6 of 50000 is heard up to 97 park units away.
 
 ## Every record the game ships
 
@@ -65,6 +66,17 @@ The first nine words of each; the rest are nought.
 | space | 1 | 0 | 2 | 419800, 20000, 3700 | 70000, 0, 0 |
 | space | 1 | 1 | 143 | 40900, 0, 39500 | 10000, 0, 0 |
 | space | 1 | 1 | 144 | 41800, 0, 4400 | 10000, 0, 0 |
+
+## What the jungle's sounds are
+
+| Record | Effect | Its samples |
+|---|---|---|
+| type 3, effect 2 | global ambient 2 | `gull2.mp2`, `gull3.mp2`: gulls |
+| type 3, effect 3 | global ambient 3 | `SEA1.mp2`, `SEA7.mp2`, `SEA8.mp2`: the sea |
+| type 1, effect 181 | the jungle's own ambient 181 | one variation |
+| type 1, effect 182 | the jungle's own ambient 182 | none: the effect has no variation |
+| type 1, effect 8 | global ambient 8 | `watfall.mp2`, looped: the waterfall, 13 units from its spray |
+| type 1, effect 7 | global ambient 7 | `River.mp2`, looped |
 
 ## The jungle's waterfall
 

@@ -1591,7 +1591,8 @@ the particle density at `+0x20`: 500 in the shipped park and the nine files save
 chains' heads are 16-bit slots, -1 for an empty chain. An emitter is started in the slot at the head of the free
 chain and put at the head of the used one.
 
-Not every emitter in use is named by a record: 73 of the 128 in those files are not. A script's one-shot
+Not every emitter in use is named by a script's record: 73 of the 128 in those files are not. A broken
+bumper ride's car names its smoke itself ([a car's smoke](#the-track-rides-module-kart)). A script's one-shot
 event keeps no record, so a park saved with a Loudspeaker standing holds the two puffs it had in the air
 (template 36) with nothing naming them.
 
@@ -2214,7 +2215,7 @@ Of the car's record:
 | `0x20` | 4 bytes | The handle of the sound it holds, of the session that saved it; nought with none        |
 | `0x24` | 4 bytes | The lookup record of its model's emitter node of id 2, -1 before it is placed: 3 for a Hot Pot boat |
 | `0x28` | 4 bytes | And of id 1: 2 for a Hot Pot boat                                                        |
-| `0x2c` | 4 bytes | The handle of its smoke, -1 with none                                                    |
+| `0x2c` | 4 bytes | The handle of its smoke's emitter in [the particles module](#a-live-emitter-and-its-handle), `count << 16 \| slot`; -1 with none |
 | `0x30` | 4 bytes | An address: its rider list                                                               |
 | `0x34` | 8 bytes | Where it floats, x then y                                                                |
 | `0x3c` | 8 bytes | Its velocity, a tick                                                                     |
@@ -2253,6 +2254,18 @@ In a Hot Pot's go saved by the original, four boats and a rider in each, the fir
 `0x340c009`, mesh 1, models 94 and 95, clip 5, at (`0x20b9f`, `0x12fad`) with velocity (-134, -94), headings
 345 and 336, radius `0x300`, buoy 5, timer 319 of the ride's 750, and its chunk ends on the arena's centre
 (`0x20a00`, `0x13200`), the ride's own handle and the buoy's place (`0x20187`, `0x12987`).
+
+**A car's smoke.** While a bumper ride is broken, each car that was driven as it broke (flag `0x4000`) holds
+at `0x2c` the handle of an emitter of template 2 in the particles module, started where its emitter node of id 2
+stood. The car's step puts the emitter there again every track tick, each coordinate times 1024, cut to a
+whole number and shifted down four bits, so **its place is in 64ths of a unit**, not the whole units of an
+emitter a script's record names. In a Hot Pot broken in a go and saved by the original seven seconds later,
+the four boats hold `0x1400001`, `0x1410008`, `0x1420005` and `0x143000c`: emitters 1, 8, 5 and 12 under the
+counts 320 to 323, each template 2 with a life of nought, the first at (28330, 1949, 16855) for a node at
+(442.6575, 30.4622, 263.3747). The pot's own two smokes, a script's records of template 16, were started
+after them (324 and 325). A file saved after the ride was fixed holds -1 in each car and the four emitters
+killed, a life of -2, until their last particle is gone. The ride's own word for broken is not in the file:
+its script sets it again on its first turn after a load.
 
 **A car's two model records.** The handles at `0x08` and `0x0c` each name a record of the ride system module,
 made as the car is launched and written with it. In the three files of the original's with a Hot Pot's boats

@@ -2223,6 +2223,13 @@ out, twelve boats and twelve wakes:
 
 Bit `0x40` of a node word is on the first node of every one of the 24 and on no other node of theirs.
 
+**A boat's three stamps in a go** are readings of the saved clock (the clock module's). The start stamp is the
+reading as the clip's present loop began: it steps by the clip's length, 534 ms, each loop. The time and the
+no-pause stamp are the reading at the channel's last advance, in both files the clock module's own reading.
+All four boats of a file hold the same three: 114598988, 114599017, 114599017 in one of the original's files
+(29 ms into the loop) and 114633495, 114633597, 114633597 in another (102 ms). The original, loading the second,
+holds the same start stamp on its first frame and 114634029 a loop later.
+
 **A rider's head** is on the lookup record of their seat's node: seat 1 is record nought, which then reads
 flags `0x23` and the slot of a head's sprite (kind 1, or 3 for a costume, on the rider's bank; "A head on a
 node"). The rider's own person record names no sprite while they ride. The head's sprite record holds what its

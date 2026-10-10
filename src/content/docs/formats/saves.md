@@ -2154,12 +2154,48 @@ the two lists, the close. The rides are in the order of their slots.
 | 196    | 4 bytes   | The handle of the ride whose buoy it steers at, nought with none         |
 | 200    | 8 bytes   | That buoy's place, x then y                                              |
 
-Of the car's record: its flags at `+0x00` (bit 0 in use), the supplemental mesh it is drawn as at `+0x04`,
-**the model table handle of its own model at `+0x08` and of its wake's at `+0x0c`** (each a slot of the ride
-system module, with a record there), where it floats at `+0x34` and `+0x38`, its velocity at `+0x3c` and
-`+0x40`, its headings at `+0x50` and `+0x54`, its radius at `+0x64`, the point it steers at at `+0x6c` and
-`+0x70`, its buoy's index at `+0x7c`, the ticks left in its go at `+0x88`, and three addresses the loader
-replaces: its rider list at `+0x30`, its arena at `+0x98` and its ride at `+0x9c`.
+Of the car's record:
+
+| Offset | Size    | Description                                                                              |
+| ------ | ------- | ---------------------------------------------------------------------------------------- |
+| `0x00` | 4 bytes | Flags: `0x1` in use, `0x4` chasing a car, `0x8` steering at a buoy, `0x20` unloading, `0x4000` driven, `0x80000` riders being seated, `0x400000` the ride's lead car, `0x1000000` bobs, `0x2000000` has a wake |
+| `0x04` | 4 bytes | The supplemental mesh it is drawn as                                                     |
+| `0x08` | 4 bytes | **The model table handle of its own model** (a slot of the ride system module, with a record there) |
+| `0x0c` | 4 bytes | And of its wake's                                                                        |
+| `0x10` | 4 bytes | The clip its model plays: 5 in a go, 12 for none                                         |
+| `0x20` | 4 bytes | The handle of the sound it holds, of the session that saved it; nought with none        |
+| `0x2c` | 4 bytes | The handle of its smoke, -1 with none                                                    |
+| `0x30` | 4 bytes | An address: its rider list                                                               |
+| `0x34` | 8 bytes | Where it floats, x then y                                                                |
+| `0x3c` | 8 bytes | Its velocity, a tick                                                                     |
+| `0x44` | 8 bytes | Its velocity after the last tick's friction, before any bump                             |
+| `0x4c` | 4 bytes | Its speed                                                                                |
+| `0x50` | 4 bytes | The heading it steers along, in 512ths of a turn                                         |
+| `0x54` | 4 bytes | The heading it is drawn at                                                               |
+| `0x5c` | 4 bytes | How far the drawn heading turned in the last tick                                        |
+| `0x64` | 4 bytes | Its radius                                                                               |
+| `0x6c` | 8 bytes | The point it steers at                                                                   |
+| `0x74` | 8 bytes | Its offset from its target                                                               |
+| `0x7c` | 4 bytes | Its buoy's id, which is the buoy's place in its ride's ring; -1 with none                |
+| `0x80` | 4 bytes | The pool index of the car it chases, -1 with none                                        |
+| `0x88` | 4 bytes | The ticks left in its go                                                                 |
+| `0x8c` | 4 bytes | Buoys, or ticks of a chase, left before it chooses a new target                          |
+| `0x90` | 4 bytes | Ticks since it was launched: the phase of its bob                                        |
+| `0x98` | 4 bytes | An address: its arena                                                                    |
+| `0x9c` | 4 bytes | An address: its ride                                                                     |
+
+The words at `0x24`, `0x28`, `0x58`, `0x60`, `0x68`, `0x84`, `0xa0` (a float) and `0xa4` are not decoded.
+**The game's loader keeps every word but these**: the three addresses and `0x94` are made again, the arena
+from where the car floats (or from the chunk's centre where nothing holds that point); `0x7c` is found again
+from the chunk's buoy place, -1 where the chunk names no ride and nought where no buoy of the named ride lies
+there; and `0x8c` is set to nought on a car that is chasing. **A rider** (type 9) goes on the car its ride
+read last. The riders of a car and the people of each list are written head first and each is put back on
+its list's head, so each list comes back turned round.
+
+In a Hot Pot's go saved by the original, four boats and a rider in each, the first car reads flags
+`0x340c009`, mesh 1, models 94 and 95, clip 5, at (`0x20b9f`, `0x12fad`) with velocity (-134, -94), headings
+345 and 336, radius `0x300`, buoy 5, timer 319 of the ride's 750, and its chunk ends on the arena's centre
+(`0x20a00`, `0x13200`), the ride's own handle and the buoy's place (`0x20187`, `0x12987`).
 
 **A handle is the ride's slot in its low byte and the item's `BumperType` above it**, the same number the
 object record's `mTrackRideHandle` holds: `0xfffffc00` for a Dino Karts (`BumperType` -4) in slot 0.

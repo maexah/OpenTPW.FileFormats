@@ -665,7 +665,10 @@ name the managers, and name the same things in all nine park files: `mStaffHQ` t
 `mMechanicHQ` 2 (model 10), `mTagSystem` 4 (12), `mParkAnalyser` 5 (13), `mResearchLab` 6 (14), `mWeather`
 7 (15), `mBankAccount` 8 (16) and `mUIMsgReceiver` 9 (17); things 3 (model 11) and 10 (model 19) are named
 by no header field, though 10 is the challenge manager (below). There is no model 18 in a park file: the writer refuses it, "Should not be able to save
-online persons". With those sizes, the walk closes exactly on `DLRW` in all nine park files.
+online persons". **Model 10 is the mechanics' HQ**, eighteen bytes: the sixteen every thing begins with and
+then `mNextObject`, two bytes, the id of the object the mechanics' search for a ride to fix last began on, or
+`0`. Each search moves it one object down the object list, so it is `18` in the shipped Lost Kingdom park and
+`17` in a park saved by the original a little later; a search that moves it off the list's end leaves `0`. With those sizes, the walk closes exactly on `DLRW` in all nine park files.
 
 **The offsets below are file offsets, and they are not the offsets a decompiler shows.** A thing is
 written field by field in the order its reader asks for them, so a field's place in the record is the sum
@@ -1326,7 +1329,9 @@ saved walking with `712`, left from their last idle. Of the kinds' own fields, `
 `mTimeStartedEntertaining` and `mTimeStartedResearching` are readings of the same clock, taken as the job began;
 **`mDurationOfRepair` and `mProsecutionTimestamp` are not readings at all**, whatever the second's name says. Each
 holds the sweeps left, loaded from its kind's `WorkDuration` (the mechanic's scaled by what the ride needs) and
-taken down by one a sweep.
+taken down by one a sweep. `mObjectToRepair` is the id of the object the mechanic's last search found, `0` for none: it
+is set while he walks to the ride and repairs it, and also left set when no route reached the ride. The object
+names him back in its `mAssignedStaffMember`.
 
 A patrol region is a rectangle, stored as two **packed cell ids** - `y * 128 + 1 + x`, the same one-based
 packing the destination setter takes - naming the bottom-left and top-right corners. Nought means no area

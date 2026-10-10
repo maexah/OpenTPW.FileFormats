@@ -1396,6 +1396,8 @@ be named from the code that fills them are:
 | `0xB8` | 4 bytes | Which frame of that set |
 | `0xBC` | 4 bytes | The frames per direction of the set the sprite was **made** on, the third byte of that set in its bank's `.esp` (below) |
 | `0xC0` | 4 bytes | Which of eight ways round it was last drawn facing |
+| `0xC8` | 4 bytes | A bank's state group's third byte, on a sprite **made** on a state: the frame a state animation's later rounds start on. `0` on every person's sprite to hand |
+| `0xCC` | 4 bytes | That group's fourth byte: how many turns more frame 0 is held between rounds. `0` on every person's sprite to hand |
 | `0x114` | 4 bytes | Whether it is showing a frame: `1` once a frame has been shown, `0` as made and again at its end word |
 
 The three floats at `0x88`, `0x8C` and `0x90` are where the sprite stands, in world units at ten to a
@@ -1425,6 +1427,18 @@ twelve park files to hand that the game itself wrote, 1,018 hold `20` and an emp
 1714 in the last place (on program 1704, whose count is at `0x74`, a second counter this page does not explain:
 these are the riders' heads hung on rides, below) and
 14 hold `19` with word 1730 there and `1` at `0x78` (on program 1760).
+
+**A person's own sprite inside a loop.** Those 14 are entertainers performing, which is the one animation of a
+person's that loops: a bank's state animation, program 1760, whose loop starts at word 1729 and shows the set's
+frames one a turn. Counted again over ten files the game wrote (1,172 sprites), all 14 rest alike: `0x08` at
+1732, just past the loop's frame instruction, `0x1C` at `19`, word 1730 at `0x6C`, `1` at `0x78`, nought at `0x70`
+and `0x74`, state `2`, shown, `0xB4` set 4, `0xB8` the frame they were on (1 to 14), `0xBC` `8` or `17`, and
+nought at `0xC8` and `0xCC`. One more is on program 1760 with an empty stack, at its first word: started again and not yet run. The
+stack is needed to go on: the game's loop-end instruction does nothing but log when `0x78` is nought, so a record
+resting at word 1732 with an empty stack falls out of the loop on its first turn and starts the round again at
+frame 0. The game's own memory shows both: given a file with the stack it showed the saved frame 2 and then 3, 4,
+5; given one with `20` at `0x1C` and nought at `0x78` it showed the saved frame 3 and then 0, 1, 2, with `19`,
+1730 and `1` in the record from that turn on.
 
 **A balloon let go is a record nobody names.** The game puts the balloon's own sprite on the program at word
 1666 and clears its guest's `mBalloonScript`: the alpha is set to 250, then frame 1 (the burst) is shown and 20

@@ -109,6 +109,9 @@ looks like in `cat_kids` alone (`0x00060404` for the four held screams, 0 for on
   from its variation (below). There are 18 of these: kids 71-74, staff 188 and several ambient beds.
 - **Bits `0x4` and `0x2`** mark a different repeating voice (135 records, music effect 2 among them).
 - **Bit `0x1`** marks 30 records the game queues before playing.
+- **Bit `0x8`** is a voice whose one sample is looped until it is stopped: the 83 records that are `8` alone,
+  the global ambient's waterfall (8) and river (7) among them, which a park's `scape.omp` places
+  ([omp](../omp/)). The game gives such a voice's channel a loop count of 9999.
 
 The byte at `+0x12` is non-zero on exactly the 45 records that have bit `0x400`. It names the
 parameter a game call sets to steer the voice: 6 for the screams, 4 for music, 7 for kids 91. The

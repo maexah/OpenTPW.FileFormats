@@ -1542,6 +1542,23 @@ byte for byte, but for slots 101 and 102 in the four jungle files, which hold th
 The particles themselves (`0x34` bytes each) are never saved: the pool size is always 0, and a load starts
 each emitter with no particles.
 
+### A live emitter and its handle
+
+Three fields of an emitter's `0x140` bytes are known. The byte at `+0x00` is 1 while the emitter is in use.
+The word at `+0x0c` is the template it was started from, its slot in the effect library. The word at `+0x0a`
+is the emitter's count, which makes a handle with the emitter's slot: a ride script's started effect
+([the ride script module](#the-ride-script-module-essr)) keeps `count << 16 | slot`. In thirteen park files all 55 particle
+records name an emitter in use whose count is the handle's high word; the Drinks Shop's bubbles are handle
+`0x7a0014`, emitter slot 20 with a count of `0x7a`, started from template 58.
+
+Not every emitter in use is named by a record: 73 of the 128 in those files are not. A script's one-shot
+event keeps no record, so a park saved with a Loudspeaker standing holds the two puffs it had in the air
+(template 36) with nothing naming them.
+
+An item's own `.emt` files are templates, not emitters. They are read into the first unnamed template slots
+as the park's catalogue is read, whatever stands in the park: a file saved with a Loudspeaker bought and
+the file it was loaded from hold the same bytes in slots 101 and 102.
+
 ## The message centre module (`SSEM`)
 
 Which things hear which message: one listener set for each of the game's 29 message types, between the

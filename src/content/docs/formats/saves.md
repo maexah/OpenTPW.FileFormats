@@ -1544,12 +1544,46 @@ each emitter with no particles.
 
 ### A live emitter and its handle
 
-Three fields of an emitter's `0x140` bytes are known. The byte at `+0x00` is 1 while the emitter is in use.
-The word at `+0x0c` is the template it was started from, its slot in the effect library. The word at `+0x0a`
-is the emitter's count, which makes a handle with the emitter's slot: a ride script's started effect
+An emitter in use is its template's `0x140` bytes with the words below written over them as it is started
+(`Particles_Spawn`, `0x00521e60`), and a handful more that run on afterwards.
+
+| Offset | Size | What a start writes |
+|---|---|---|
+| `+0x00` | 2 | 1: in use |
+| `+0x06` | 2 | Its first particle, -1 for none. The loader sets it to -1 in every emitter in use |
+| `+0x08` | 2 | How many particles it has alive. The loader sets it to nought |
+| `+0x0a` | 2 | The emitter's count: the live header's word at `+0x18`, which is then one more |
+| `+0x0c` | 2 | The template it was started from, its slot in the effect library |
+| `+0x14`, `+0x18`, `+0x1c` | 4 each | Where it stands: across, height and down, the park's units times 64 |
+| `+0x2c`, `+0x30`, `+0x34` | 4 each | Its velocity: the template's, each plus one draw of the system's generator under the template's range at `+0x12` (no draw where the range is nought; a range of -1, the library's commonest, adds nothing) |
+| `+0x60`, `+0x64`, `+0x68` to `+0x6b` | 4, 2, 1 each | The burst, the most particles and the four rates. Where the template's byte at `+0xc0` is nought each is the template's times the particle density over 1024, and never scaled down to nought |
+| `+0x6f` | 1 | 1 where any of the three words at `+0x84` is not nought |
+| `+0xab` | 1 | Nought; 1 on an emitter another one links and carries with it |
+| `+0xb4` | 4 | Where the template links another effect: the handle of the emitter started for it |
+| `+0xd0`, `+0xd2` | 2 each | The next and the previous emitter of its chain, -1 at an end |
+| `+0xd4` | 4 | The life it started with, the template's `+0x20` |
+| `+0x128` to `+0x13c` | 4 each | The box its particles have reached: `0x7fffffff` three times and `0x80000000` three times as it starts, where the byte at `+0x05` is nought, and six noughts where it is not |
+
+The word at `+0x0a` makes a handle with the emitter's slot: a ride script's started effect
 ([the ride script module](#the-ride-script-module-essr)) keeps `count << 16 | slot`. In thirteen park files all 55 particle
 records name an emitter in use whose count is the handle's high word; the Drinks Shop's bubbles are handle
 `0x7a0014`, emitter slot 20 with a count of `0x7a`, started from template 58.
+
+**Measured:** in eighteen park files, every one of the 61 emitters a script's record names is the bytes above
+made from its template at its place, outside the words that run on: the two particle words, the life at `+0x20`
+of an effect that has one (it counts down a tick, and -2 is an emitter killed, freed once it holds no
+particle), the emitting countdown at `+0x66`, the box, and the three velocity words at `+0x38` of a particle
+started with a direction.
+
+**The place is in whole units.** An emitter a script's record names with a node is put where that node stands
+on every sweep, each coordinate cut to a whole number first: all 61 hold multiples of 64. The
+Drinks Shop's node stands at (440.15, 6.60, 312.02) and its bubbles at (440, 6, 312).
+
+The live image's header holds what a start reads: the on-screen-only switch at `+0x08` (nought in every file),
+the generator's seed at `+0x10`, the next emitter's count at `+0x18` (a word; the next effector's follows it) and
+the particle density at `+0x20`: 500 in the shipped park and the nine files saved from it under Proton, 1500 in the eight played saves. The
+chains' heads are 16-bit slots, -1 for an empty chain. An emitter is started in the slot at the head of the free
+chain and put at the head of the used one.
 
 Not every emitter in use is named by a record: 73 of the 128 in those files are not. A script's one-shot
 event keeps no record, so a park saved with a Loudspeaker standing holds the two puffs it had in the air

@@ -1428,6 +1428,14 @@ twelve park files to hand that the game itself wrote, 1,018 hold `20` and an emp
 these are the riders' heads hung on rides, below) and
 14 hold `19` with word 1730 there and `1` at `0x78` (on program 1760).
 
+**A sprite's drawing flags, `0xC4`.** The word is the program's local 16, which the game's draw reads. The
+constructor leaves it nought and the first word of every program a person runs sets it to `0x1200`, so it is
+nought only on a sprite made and not yet run a turn: all 902 people's sprites of the ten files hold `0x1200` (a
+rider's head holds `0x3000080`, below). A load reads it back. The game's own memory shows it: given a file whose
+thirteen newest people's sprites held nought there, it held nought on all thirteen through the 5.6 s of its
+loading and set each to `0x1200` within 0.9 s of its clock starting, as each program came round to its first
+word; given the same park with `0x1200` written, it held `0x1200` from its first reading.
+
 **A person's own sprite inside a loop.** Those 14 are entertainers performing, which is the one animation of a
 person's that loops: a bank's state animation, program 1760, whose loop starts at word 1729 and shows the set's
 frames one a turn. Counted again over ten files the game wrote (1,172 sprites), all 14 rest alike: `0x08` at

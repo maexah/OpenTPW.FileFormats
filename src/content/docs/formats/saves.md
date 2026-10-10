@@ -2206,6 +2206,28 @@ In a Hot Pot's go saved by the original, four boats and a rider in each, the fir
 345 and 336, radius `0x300`, buoy 5, timer 319 of the ride's 750, and its chunk ends on the arena's centre
 (`0x20a00`, `0x13200`), the ride's own handle and the buoy's place (`0x20187`, `0x12987`).
 
+**A car's two model records.** The handles at `0x08` and `0x0c` each name a record of the ride system module,
+made as the car is launched and written with it. In the three files of the original's with a Hot Pot's boats
+out, twelve boats and twelve wakes:
+
+| Field | The boat's | The wake's |
+| ----- | ---------- | ---------- |
+| Item | 1142: the ride's item (1140) plus one plus the car's mesh (1) | 1141: mesh nought |
+| Cell and footprint | nought, and none | the same |
+| Flags (`0x15`) | `0x101` | `0x101` |
+| Script handle, angle | nought | nought |
+| Node words | six: `0x40`, nought, then `0x601` four times; the second reads `0x820` while clip 5 plays | one: `0x40` |
+| Lookup records | four: flags `0x21`, `0x21`, `0x29`, `0x29`, each handle -1 | none |
+| Shared flags, count | 3 and nought; 7 and 1 with a rider's head | nought |
+| Channel | at rest role 12 at speed 1.0, nothing queued (role 12), every stamp nought; in a go flags 1 (looped), role 5, clip 0, its three stamps, speed 1.0 | role 12 at speed nought |
+
+Bit `0x40` of a node word is on the first node of every one of the 24 and on no other node of theirs.
+
+**A rider's head** is on the lookup record of their seat's node: seat 1 is record nought, which then reads
+flags `0x23` and the slot of a head's sprite (kind 1, or 3 for a costume, on the rider's bank; "A head on a
+node"). The rider's own person record names no sprite while they ride. The head's sprite record holds what its
+last drawing left: its place at `0x88`, its picture of 56 at `0xb8` and a scale of 0.685 at `0xa4`.
+
 **A handle is the ride's slot in its low byte and the item's `BumperType` above it**, the same number the
 object record's `mTrackRideHandle` holds: `0xfffffc00` for a Dino Karts (`BumperType` -4) in slot 0.
 **Positions** are map cells times `0xc00`. **A section's type** is its low 16 bits - 5 to 8 a bend,

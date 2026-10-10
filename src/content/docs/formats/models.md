@@ -76,6 +76,7 @@ gap of unknown content, not a claim that nothing is there.
 | 0x7C   | 4 bytes  | Node-lookup table: 0x48 records, 20 bytes each (engine-confirmed)                     |
 | 0x80   | 24 bytes | The model's box: six floats, read as min x, y, z then max x, y, z. Of the 173 models with an [.hmp](/formats/hmp/) of the same name, 167 have min ≤ max on every axis. The engine copies the `.hmp`'s own box over this as it loads it (`FUN_00451640`); the two match in 53 of the 173. See Open questions |
 | 0x98   | 4 bytes  | Animation data block offset. Animation files only, see **Animation** below           |
+| 0xA0   | 4 bytes  | A float: what the engine adds to a height it takes on this model, and, where it is not nought, the sign that the height is the landscape's. See [The surface a point stands on](#the-surface-a-point-stands-on) |
 | 0xAC   | 4 bytes  | Path table: 0x40 records, 16 bytes each, or 0 when the model has none (engine-confirmed). See [Paths](#paths) |
 
 The engine relocates pointers at 0x4C, 0x50, 0x54, 0x58, 0x5C, 0x60, 0x64, 0x68, 0x6C, 0x70,
@@ -328,6 +329,41 @@ is 0.26 off.
 - The word at 0x08, the turn the face anchor steps back to, and what the flag bits this page does
   not name select.
 
+### The surface a point stands on
+
+A ride asks the engine how high the scene is under a point: a bumper car's four corners every frame, and a
+walker on a ride whose walk does not take its height from its two nodes. The engine finds the object the point's
+cell belongs to and reads three things of its model (`FUN_00450ea0`, `FUN_004511a0`, `FUN_00451290`,
+`FUN_00451390`; OpenTPW's `docs/exe/park.md`, "The scene's height under a point"):
+
+- **A lookup record whose flags carry `0x2`** makes its node a mesh to stand on. The height is then taken from
+  that mesh's faces whose first word carries `0x8000`: the highest such face the point is inside, seen from
+  above, on the plane its face normal gives. A record that also carries `0x4` ends the search at its first
+  such face. 47 records in the game carry `0x2`, in 32 models, and every one carries `0x4` as well: the kart
+  tracks' bridges (`gk_trckH`, `gk_trckH_d`, `gk_trckH_u`), the water rides' raised pieces (`wr_trckh` and its
+  two slopes), two themes' `gokarts.md2`, and the upgrades a kart or a log drives over (`lavajump`, `mammtunn`,
+  `beejump`, `teleport`, `chopper`, `firepit`).
+- **The float at header `0xA0`**, where no record carries `0x2`: when it is not nought the height is the
+  landscape's under the point (the park's [heightfield](#heightfield)) plus this float. 83 of the 847 static
+  models carry one: each theme's bumper ride (jungle's Hot Pot 29.8, its water's height; hallow 15.005, space
+  10.924, fantasy's `Bbugs` 19.071), the kart and water rides with their track pieces (3.1 and 3.254 in jungle),
+  and a few upgrades.
+- **Neither**: the height is taken from one mesh the loaded model keeps for it. Which mesh that is has not
+  been read.
+
+Whatever the way, the float at `0xA0` is added to the answer.
+
+Measured over all 2,129 files (`md2surf.py --sweep`): 2,182 faces carry `0x8000`, in 32 models, and every one
+is on a mesh whose lookup record carries `0x2`. Five of the 83 floats are not heights anyone wrote (`2.2e-44`,
+`1.4e-45`, `8.4e-45`, `2.5e-38`, and `supbog.MD2`'s `3.0e32`); four of them are on models with a `0x2` record,
+where the float only adds.
+
+#### Open questions
+
+- The mesh a model with neither a `0x2` record nor a float keeps for the height.
+- Header flag `0x80`, which also sends the height to the landscape (`FUN_00450ea0`): no file stores it, so the
+  engine sets it, and where has not been read.
+
 ### Paths
 
 A model can carry one or more **paths**: the routes that vehicles and ride cars follow. The ushort at
@@ -436,6 +472,13 @@ In all five, the vertex count is `(across + 1) * (down + 1)` and the cell count 
 park is 96 by 85 cells (8,342 heights, 8,160 cell records), and the lobby is 111 by 110. Each of
 these files also carries a mesh named `heightfield` with no vertices and no faces, whose flag word is
 `0x2`.
+
+**A cell's flags `0x800` and `0x4`.** The engine's height under a point (`FUN_004527f0`) is nought off the
+map. On a cell it is the plane through the cell's near corner and that corner's two neighbours, across the
+whole cell, unless the cell's flags (the record's low 16 bits) carry `0x800`: then the cell is two triangles,
+split along the diagonal from the near corner, or along the other one where the flags also carry `0x4`, and the
+height is the plane of the triangle the point is in. No cell of the four parks carries `0x800` (32,640 cells
+counted), so every park cell takes the first rule, though 1,743 of them are not flat.
 
 ### Textures
 
@@ -574,7 +617,7 @@ The face table (offset given in the mesh record) is *face count* records of 8 by
 
 | Size    | Description                                          |
 | ------- | ----------------------------------------------------- |
-| 2 bytes | Low 15 bits: the face's normal, an index into the face normals at mesh 0x64. Top bit unknown |
+| 2 bytes | Low 15 bits: the face's normal, an index into the face normals at mesh 0x64. Top bit (`0x8000`): a point can stand on this face. See [The surface a point stands on](#the-surface-a-point-stands-on) |
 | 2 bytes | Vertex index A (into the reordered vertex list)        |
 | 2 bytes | Vertex index B                                         |
 | 2 bytes | Vertex index C                                         |
@@ -584,7 +627,6 @@ correctly with a standard right-handed culling convention.
 
 #### Open questions
 
-- The top bit of each face record's leading `ushort`.
 
 ### Materials
 

@@ -147,7 +147,7 @@ That is the whole rest of the file.
 | `+0x1a` | 2 bytes | **Second controller's parameter id**, one byte and a zero, or 0 for none |
 | `+0x1c` | 2 bytes | **Second controller's mask**, the same bits |
 | `+0x1e` | 4 bytes | **Weight** among the effect's variations |
-| `+0x22` | 4 bytes | A float: 95.0 in every scream variation. Not named |
+| `+0x22` | 4 bytes | **Range**, a float, in the world's units: how far off a voice of this variation is heard. 95.0 in every scream variation |
 | `+0x26` | 4 bytes | Zero. The game writes a pointer to the zones here |
 
 **The wait** is drawn fresh for each sample, from the shortest up to but not including the longest,
@@ -173,6 +173,25 @@ boat's speed / 3. The 645 speech variations carry `+0x1c` = 100 with no id, whic
 
 A pitch of `p` plays the sample at 2^((p + 1) / 96) of its own rate above nought and 2^((p − 1) / 96) below, by the
 game's own tables.
+
+**The range** is the voice's own unless the game gives the voice another as it starts it (a park's placed
+sounds, [omp](../omp/)). The game plays nothing of a voice further off than its range and turns it down inside
+it. Over all 1,595 variations in the 31 category files it is one of eighteen numbers:
+
+| Range | Variations | Where |
+| --- | --- | --- |
+| 0 | 645 | Every speech variation |
+| 0.1 | 29 | Music, four ui variations, and one ride effect each in hallow (2) and jungle (120) |
+| 10, 20, 30, 45, 50 | 13 | Ride effects |
+| 60, 70, 75, 80, 85 | 51 | Staff, kids and ride effects |
+| 90 | 80 | |
+| 95 | 34 | The kids' screams, effects 71 to 90, and two of fantasy's ride effects |
+| 100 | 738 | |
+| 150, 170 | 4 | Global ride effects |
+| 1500 | 1 | Global ambient 32, thunder |
+
+All but two of the variations under 1 belong to effects whose flags have `0x200`, a voice with no place, which
+the range does not reach.
 
 **The weight** is a running total across the effect's variations when the common header's `0x10` is
 0, and a variation's own share when it is 1. The game turns running totals into shares as it loads.

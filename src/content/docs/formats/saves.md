@@ -2119,11 +2119,47 @@ is the module's length, and every other chunk is its child:
 | Type | Size | Description                                                                         |
 | ---- | ---- | ----------------------------------------------------------------------------------- |
 | 2    | 32   | A stamp: the time and date of the build that wrote it                               |
-| 3    | 52   | One ride: after the header its handle, x, y, orientation flags and item id, then five more dwords |
+| 3    | 52   | One ride (below)                                                                    |
 | 4    | 28   | One track section: after the header the ride's handle, the section type, x and y   |
-| 5    | 208  | One car                                                                             |
-| 9    | 24   | A record belonging to a car                                                         |
-| 6    | 16   | Closes a ride                                                                       |
+| 5    | 208  | One car (below)                                                                     |
+| 9    | 24   | One rider of the car before it: the ride's handle, the rider's thing id, the seat's id |
+| 7    | 20   | One person who has come off and not yet been let go: the ride's handle, their thing id |
+| 8    | 20   | One person waiting to board the next car: the ride's handle, their thing id        |
+| 6    | 16   | Closes a ride: its handle                                                           |
+
+A ride's chunks are together and in that order: the ride, its sections, each car followed by its riders,
+the two lists, the close. The rides are in the order of their slots.
+
+**A ride** (type 3), after the header:
+
+| Offset | Size    | Description                                                                 |
+| ------ | ------- | --------------------------------------------------------------------------- |
+| 12     | 4 bytes | The handle                                                                  |
+| 16     | 8 bytes | Where it was placed, x then y, in map cells times `0xc00`                   |
+| 24     | 4 bytes | The orientation code: 0, 5, 6 and 1 for a turn of 0, 90, 180 and 270 degrees |
+| 28     | 4 bytes | The item's id                                                               |
+| 32     | 4 bytes | Performance, 0 to 100: the ride's operating speed                           |
+| 36     | 4 bytes | The first of the item's supplemental meshes a car is drawn as               |
+| 40     | 4 bytes | How many of them the cars cycle through                                     |
+| 44     | 4 bytes | Duration: what a car's timer is set to, in ticks of 31 ms                   |
+| 48     | 4 bytes | State: 0 closed, 1 loading, 2 running                                       |
+
+**A car** (type 5), after the header:
+
+| Offset | Size      | Description                                                               |
+| ------ | --------- | ------------------------------------------------------------------------- |
+| 12     | 4 bytes   | The ride's handle                                                         |
+| 16     | 172 bytes | The car's record as the game held it in memory, its addresses with it    |
+| 188    | 8 bytes   | The centre of the arena or section it was in, x then y                   |
+| 196    | 4 bytes   | The handle of the ride whose buoy it steers at, nought with none         |
+| 200    | 8 bytes   | That buoy's place, x then y                                              |
+
+Of the car's record: its flags at `+0x00` (bit 0 in use), the supplemental mesh it is drawn as at `+0x04`,
+**the model table handle of its own model at `+0x08` and of its wake's at `+0x0c`** (each a slot of the ride
+system module, with a record there), where it floats at `+0x34` and `+0x38`, its velocity at `+0x3c` and
+`+0x40`, its headings at `+0x50` and `+0x54`, its radius at `+0x64`, the point it steers at at `+0x6c` and
+`+0x70`, its buoy's index at `+0x7c`, the ticks left in its go at `+0x88`, and three addresses the loader
+replaces: its rider list at `+0x30`, its arena at `+0x98` and its ride at `+0x9c`.
 
 **A handle is the ride's slot in its low byte and the item's `BumperType` above it**, the same number the
 object record's `mTrackRideHandle` holds: `0xfffffc00` for a Dino Karts (`BumperType` -4) in slot 0.
@@ -2137,6 +2173,11 @@ The shipped park's module is 44 bytes, the root and the stamp only (inflated 1,5
 (`9 9 9 12 12 9 5 10 10 8 11 9 7 10 6 9 5 10 10 8 9 12 9 9 7 10 6 8 5 9 7 10 6`), four cars and a close.
 The played fantasy park holds one bumper arena with no sections. Walked as a tree, the module lands
 exactly on its tag in all nine park files read (the shipped park and eight played ones).
+
+A Hot Pot (`BumperType` -1) bought in the shipped park and saved before its queue reaches a path is the
+ride and its close alone, 112 bytes with the root and the stamp: `ffffff00 20400 12c00 0 474 3c 1 1 10fe 0`.
+Saved open it holds four cars, each a model of item 1142 with a wake of item 1141 in the model table, and
+a type 9 after each car with a rider.
 
 ## The flying rides module (`RYLF`)
 

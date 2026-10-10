@@ -1556,6 +1556,7 @@ An emitter in use is its template's `0x140` bytes with the words below written o
 | `+0x0c` | 2 | The template it was started from, its slot in the effect library |
 | `+0x14`, `+0x18`, `+0x1c` | 4 each | Where it stands: across, height and down, the park's units times 64 |
 | `+0x2c`, `+0x30`, `+0x34` | 4 each | Its velocity: the template's, each plus one draw of the system's generator under the template's range at `+0x12` (no draw where the range is nought; a range of -1, the library's commonest, adds nothing) |
+| `+0x38`, `+0x3c`, `+0x40` | 4 each | Its own velocity. A plain start leaves the template's. A start with a direction (`Particles_SpawnFull`, `0x00521930`, a ride script's type 2 record) writes each as the direction's component times 1024, cut to a whole number, times the template's speed at `+0xb0`, over 1024 toward nought; it makes no draw for `+0x2c`. The sweep writes the three again on every tick from the way the record's node points (`Particles_SetVelocity`, `0x0051fd90`) |
 | `+0x60`, `+0x64`, `+0x68` to `+0x6b` | 4, 2, 1 each | The burst, the most particles and the four rates. Where the template's byte at `+0xc0` is nought each is the template's times the particle density over 1024, and never scaled down to nought |
 | `+0x6f` | 1 | 1 where any of the three words at `+0x84` is not nought |
 | `+0xab` | 1 | Nought; 1 on an emitter another one links and carries with it |
@@ -1572,8 +1573,13 @@ records name an emitter in use whose count is the handle's high word; the Drinks
 **Measured:** in eighteen park files, every one of the 61 emitters a script's record names is the bytes above
 made from its template at its place, outside the words that run on: the two particle words, the life at `+0x20`
 of an effect that has one (it counts down a tick, and -2 is an emitter killed, freed once it holds no
-particle), the emitting countdown at `+0x66`, the box, and the three velocity words at `+0x38` of a particle
-started with a direction.
+particle), the emitting countdown at `+0x66` and the box.
+
+**A particle started with a direction** is aimed along the third row of its node's matrix, a unit long. Six of
+the 61 are such records, and each holds the words the rule gives: the Jungle Spray's jet (template 37, speed 40)
+on its node 2 is (0, 25, 30) with the Spray turned nought and (-30, 25, 0) turned 270, where the direction is
+(-0.0113, 0.6414, 0.7672): -11 times 40 over 1024 is cut to nought, not down to -1. Its node 1 is (-34, 19, 0)
+turned 270, and the Laughing Hyenas' node 5 (template 73, speed 31) is (0, 23, -19) turned 180.
 
 **The place is in whole units.** An emitter a script's record names with a node is put where that node stands
 on every sweep, each coordinate cut to a whole number first: all 61 hold multiples of 64. The

@@ -2021,6 +2021,14 @@ game shows the heads and takes them off as its own. The node's own flag word is 
 without. A ride's script keeps a table of the same riders by head node ([the ride script module](#the-ride-script-module-essr)),
 in another order; some rides hang heads and keep no such table (a coaster's cars, the Aztec Mayhem).
 
+**The Aztec Mayhem's heads are named by its script's walk slots ([the ride script module](#the-ride-script-module-essr))**: a slot whose action is 4 and
+whose state is 2, a rider carried, has a head on the lookup record of its head node, the slot's second word looked
+up among the model's head nodes. A played park's Mayhem holds five such slots, on head nodes 1 to 5, and its model
+record holds `0x2b` and a sprite on records 5, 7, 8, 9 and 12, which the model's file gives those five ids; no
+other slot in use in that file has action 4. The two must agree: loading a file with the slot carried and no head on
+the record, the game takes one off the count at `0x33` as each such rider walks off, below nought, and the count
+stays short from then on.
+
 **A lookup record's runtime flags** say whether the game keeps its node's position
 ([Models](/formats/models/#which-records-have-a-position)): `0x1` it has one, `0x20` its node has no children, `0x8`
 it is posed all the same, `0x2` something is attached to it, `0x4` the ride view is on it, `0x10` its node carries

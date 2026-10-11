@@ -1590,7 +1590,7 @@ turned 270, and the Laughing Hyenas' node 5 (template 73, speed 31) is (0, 23, -
 on every sweep, each coordinate cut to a whole number first: all 61 hold multiples of 64. The
 Drinks Shop's node stands at (440.15, 6.60, 312.02) and its bubbles at (440, 6, 312).
 
-The live image's header holds what a start reads: the on-screen-only switch at `+0x08` (nought in every file),
+The live image's header holds what a start reads: the switch at `+0x08` that refuses an effect marked at `0xC1` (nought in every file),
 the generator's seed at `+0x10`, the next emitter's count at `+0x18` (a word; the next effector's follows it) and
 the particle density at `+0x20`: 500 in the shipped park and the nine files saved from it under Proton, 1500 in the eight played saves. The
 chains' heads are 16-bit slots, -1 for an empty chain. An emitter is started in the slot at the head of the free

@@ -296,6 +296,28 @@ costumes hide. His right hand is 21, which costume 14 (his spatula) hides. His h
 are 5 to 13. None of those nodes is hidden in the file (the hidden bit is never set in any node the
 game ships), so which pieces show is entirely the code's decision.
 
+| Node | Name | Flags | Id |
+|---|---|---|---|
+| 11 | `Right Antennae` | `0x401` | 20 |
+| 12 | `Left Antennae` | `0x401` | 19 |
+| 13 | `Right hand` | `0x411` | 21 |
+| 14 | `Spatula` | `0x401` | 14 |
+| 15 | `Left Hand` | `0x411` | 22 |
+| 16 | `Ticket Hat` | `0x411` | 9 |
+| 17 | `Kiosk Hat` | `0x411` | 8 |
+| 18 | `Bowler Hat` | `0x411` | 11 |
+| 19 | `Security Hat` | `0x411` | 6 |
+| 20 | `Handyman Hat` | `0x411` | 7 |
+| 21 | `Research Hat` | `0x411` | 10 |
+| 22 | `Fast Food Hat` | `0x411` | 13 |
+| 23 | `Hardhat` | `0x411` | 5 |
+| 24 | `Bowler_BTie` | `0x411` | 12 |
+
+Each of his fifteen animations (`Advisorm1.MD2` to `Advisorm15.MD2`) carries the same
+[hide list](#the-hide-list): nodes 14 and 16 to 24, the ten pieces with an id under 19. So a clip's start takes
+every add-on off, and the game puts the ones a spoken line names back on after it (ids 4 and below name no node
+of this model; the level's own `Advisor_JUN.MD2` is a second model with its own pieces).
+
 #### Which records have a position
 
 A ride script asks for a node's position by id and flag (a walk node `0x800`, a head `0x80`, a sound

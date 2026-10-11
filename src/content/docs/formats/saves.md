@@ -123,26 +123,49 @@ byte[recording_size]  recording      -> the block is 8 + recording_size bytes
 In the shipped park those read `0` and `1171`, so the recording occupies bytes 0 to 1,178 and the World
 module begins at **`0x49B`**; where World starts is always derived from that length rather than assumed.
 
-After the last tag comes an untagged UI block. It is four bytes, nought, in seven of the nine park files -
-in the shipped park it ends the stream on 1,608,309. In the two saves of Alexah's played jungle park its
-first dword is `1` and 540 more bytes follow, among them the UTF-16 text of an advisor line about the
-ticket price. The dword is a count: the writer (`FUN_0048ee50`) counts the entries in use among the ten of a
-table at `0x7c26b0` and writes 540 bytes (`0x21c`) for each:
+### The interface block: the aerial's tags
+
+After the last tag comes an untagged block the loader logs as `UI`: the tags standing on the gadget's aerial,
+the small pictures a said advisor line leaves there. It is a count and 540 bytes (`0x21c`) a tag. The count is
+nought, so the block is four bytes, in the shipped park (where it ends the stream on 1,608,309) and in six
+other files of the nine first read; it is 1 in the two saves of Alexah's played jungle park and in three files
+the original wrote under Proton with a tag standing.
+
+The writer (`FUN_0048ee50`) counts the records in use among the ten of a table at `0x7c26b0`, then writes one
+record for each in use, in the table's order, from the properties of its control (the getter `FUN_0065e705`):
 
 ```text
-u32        count
-per entry:
-  u32        a property of the entry's window (the getter FUN_0065e705, property 1)
-  u16[256]   the message's text, UTF-16
-  u32        property 7
-  u16        property 4, then two bytes of padding
-  u32        property 5
-  u32        property 6
-  u16        property 3, then two bytes of padding
-  u32        property 8
+u32        count                                0 to 10
+per tag (0x21c bytes):
+  0x000  u32        id        the tag's row in the executable's tag table (property 1)
+  0x004  u16[256]   text      UTF-16, terminated; at most 255 characters
+  0x204  i32        life      milliseconds, the WHOLE life and not what was left of it (property 7)
+  0x208  u16        picture   the part of msgtag.md2 the tag shows (property 4), then two bytes of padding
+  0x20c  u32        button 1  the message bar's first button type (property 5)
+  0x210  u32        button 2  its second (property 6)
+  0x214  u16        thing     the thing the line was about, nought for none (property 3), then two bytes of padding
+  0x218  i32        item      that thing's item id, nought for none (property 8)
 ```
 
-What the seven properties are is not decoded.
+**The record is built on the writer's stack and only these fields are stored**, so the text's bytes after its
+terminator and the two paddings are whatever stood there: in every record read the paddings are `6f 00` and
+`41 00`, and between 195 and 231 of the bytes after the terminator are not nought. The loader reads none of
+them.
+
+The loader (`FUN_0048ef70`) takes every standing tag off, then hands each record to the tag list as a new tag
+(`FUN_0048eb20`) with the record's id, text, life, picture, buttons, thing and item. The list starts the tag's
+timers at the life, so **a loaded tag stands for its whole life again**.
+
+The five records read:
+
+| File | id | life | picture | buttons | thing | item | text |
+|---|---|---|---|---|---|---|---|
+| Alexah's jungle `autosave.TPWS` and `New Save.TPWS` | 94 | 30000 | 2 | 24, 0 | 0 | 0 | "Interestingly, some visitors believe your ticket price is cheap. Is there room for you to raise it?" |
+| a park saved just after a sale (Proton) | 148 | 30000 | 1 | 4, 0 | 46 | 2984 | "A prankster is littering your park. Get your janitors to the scene to clear up the mess." |
+| a park saved with a broken Hot Pot, and again after its repair (Proton) | 72 | 30000 | 1 | 3, 0 | 43 | 1140 | "Your The Hot Pot ride has broken down, and a mechanic is on his way to fix it." |
+
+Each agrees with its id's row of the tag table in the life, the picture and the buttons, and item 1140 is The
+Hot Pot. What item 2984 is, on a guest's tag, is not decoded.
 
 ## The world block (`WRLD`)
 

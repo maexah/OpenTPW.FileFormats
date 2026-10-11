@@ -1167,7 +1167,7 @@ head and 390-byte person base a staff member has. It is **135 bytes**, making th
 | Offset | Size | Name | Shipped park |
 | --- | --- | --- | --- |
 | 398 | 4 bytes | `mArrivalDate` | `648` to `660`, one apart in id order: the world's `mGameTick` (755 in this file) as the guest was made |
-| 402 | 4 bytes | `mArrivalIndex` | `0` on all thirteen, none yet through the gate: the guest's number among the park's visitors, the world's `mNumberOfVisitorsToDate` as the gate let them in. `1` to `13`, each once, in a save made with thirteen visitors |
+| 402 | 4 bytes | `mArrivalIndex` | `0` on all thirteen, none yet through the gate: the guest's number among the park's visitors, the world's `mNumberOfVisitorsToDate` as they were counted in, at the gate for one made outside the park and as they were made for one made on a park cell. `1` to `13`, each once, in a save made with thirteen visitors |
 | 406 | 4 bytes | `mBalloonScript` | `0` on all thirteen: the one-based slot of the guest's balloon in the `TPCS` sprite table, or none (below) |
 | 410 | 4 bytes | `mBeenAdmitted` | |
 | 414 | 4 bytes | `mCash` | `684`, `510`, `654`, ... twelve different amounts across thirteen guests |
@@ -2007,7 +2007,7 @@ the game wrote (7,688 records of 95 items) ten of them appear:
 | `0x4` | Not described; set in no record |
 | `0x8` | The node's mesh has been morphed and its face normals are out of date; the game works them out again when it next poses the mesh |
 | `0x20` | A clip bound to one of the model's channels has a track for this node |
-| `0x40` | Set as the model's file is loaded, on one node of seven track and scenery items (62 words); not described further |
+| `0x40` | Set as the model's file is loaded, on one node of seven track and scenery items (62 words); held too by the first node of a track car's model and of its wake's, on all 24 measured ("A car's two model records", below), where what sets it is not traced; not described further |
 | `0x80` | That track is a morph (its flags hold `0x1000`) |
 | `0x100` | That track moves the mesh's texture coordinates (`0x10000`) |
 | `0x800` | That track places, turns, scales or routes the node (any of `0x289`) |

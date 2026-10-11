@@ -46,7 +46,7 @@ Deleting a player removes their whole folder, skipping any name that starts with
 
 ## gms.dat
 
-`gms.dat` holds a player's progress and their own options. It is written when the player is made, when a new *Full Simulation* player is given their first golden key, after every park save, and when the player is saved on *Select New Player* or on quitting. On those last two the game writes `Config.tcf` straight after it.
+`gms.dat` holds a player's progress and their own options. It is written when the player is made, when a new *Full Simulation* player is given their first golden key, at the start of every park save (before the park file is opened), and when the player is saved on *Select New Player* or on quitting. On those last two the game writes `Config.tcf` straight after it.
 
 | Size     | Description                                                     |
 | -------- | --------------------------------------------------------------- |

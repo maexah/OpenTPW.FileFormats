@@ -754,7 +754,7 @@ The ride this reaches is not the one [`COAST`](#coast) reaches, although the two
 
 `COAST <id> <value>` - Read or change one property of the coaster this script drives.
 
-The `<id>` is fetched **without being resolved**, so it has to be a literal: a variable operand keeps its tag and falls outside the 1-8 the engine accepts, which the engine reports as `RSSE: Unknown bumper ride command`. All 144 uses in the shipped scripts are literals.
+The `<id>` is fetched **without being resolved**, so it has to be a literal: a variable operand keeps its tag and falls outside the 1-8 the engine accepts, which the engine answers by handing `RSSE: Unknown bumper ride command` to its logging call, an empty function in the shipped game, so nothing is printed. All 144 uses in the shipped scripts are literals.
 
 That message is not a mistake in this page: `COAST` and [`BUMP`](#bump) share a single error handler, which carries one string between them, and it names only the bumper ride.
 

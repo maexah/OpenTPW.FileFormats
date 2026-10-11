@@ -67,7 +67,7 @@ The kind byte takes these values:
 - `0x40` — Variable (an index into this script's own variables)
 - `0x80` — Opcode
 
-A word in opcode position whose kind is not `0x80` is refused with `RSSE: Bad instruction - missing parameter ?`, and one whose remaining 24 bits are not below 106, the number of opcodes, with `RSSE: Unknown instruction`. Either way the program counter is parked at `0xFFFFD8F0` (−10000), the script's turn ends, and the tick then kills the script (`FUN_00559060`): a stray word does not skip one instruction, it stops the whole script.
+A word in opcode position whose kind is not `0x80` is refused with `RSSE: Bad instruction - missing parameter ?`, and one whose remaining 24 bits are not below 106, the number of opcodes, with `RSSE: Unknown instruction`. Neither message is printed, because the logging call they go to is an empty function in the shipped game. Either way the program counter is parked at `0xFFFFD8F0` (−10000), the script's turn ends, and the tick then kills the script (`FUN_00559060`): a stray word does not skip one instruction, it stops the whole script.
 
 When an instruction resolves an operand as a value (through `FUN_005573a0`, or the same test written inline in the handler), it does it one of two ways, and nothing else: if the kind is `0x40` it reads that entry of the script's variables, and otherwise it sign-extends the low 16 bits. So a resolved literal is signed 16-bit — `FF FF 00 00` is −1, not 65535 — and bits 16 to 23 of a value operand are not part of the number.
 

@@ -4,7 +4,7 @@ title: Information
 
 Theme Park World uses a stack-based VM in order to give rides and sideshows their functionality. This VM reads from the [RSSE](https://github.com/ThemeParkWorld/OpenTPW/wiki/RSSE-(Ride-&-Sideshow-Script-Engine)) format, and includes exactly 106 instructions.
 
-The dispatcher accepts an instruction only while its opcode is below `0x6A`, which is 106, and refuses anything else with `RSSE: Unknown instruction`. All 106 are listed on the [Instruction Set](/vm/instructions/) page, in the order the engine's own name table gives them. Of those, 84 are used by at least one of the 308 scripts the game ships.
+The dispatcher accepts an instruction only while its opcode is below `0x6A`, which is 106, and refuses anything else as `RSSE: Unknown instruction`, a message its logging call, an empty function in the shipped game, never prints. All 106 are listed on the [Instruction Set](/vm/instructions/) page, in the order the engine's own name table gives them. Of those, 84 are used by at least one of the 308 scripts the game ships.
 
 ## Common Variable Set
 

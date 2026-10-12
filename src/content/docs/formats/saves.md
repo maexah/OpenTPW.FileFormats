@@ -931,7 +931,41 @@ fourteen objects in the shipped park, where nobody is assigned to anything.
 
 ### The advisor (model 11)
 
-Thing 3 in every park file, 5,846 bytes, named by no header field. From `0xcc` of its record it holds 351
+Thing 3 in every park file, 5,846 bytes, named by no header field. The game names each field as it writes it:
+
+| Offset | Size | Name | Description |
+| ------ | ---- | ---- | ----------- |
+| 0      | 16 bytes | | What every thing begins with |
+| 16     | 4 bytes | `mTimeSig` | `0` in 21 park files |
+| 20     | 4 bytes | `mSoundId` | `0` in 21 park files |
+| 24 + 21*n*, *n* 0 to 7 | 21 bytes each | | The eight slots: the messages waiting to be said (below) |
+| 192    | 4 bytes | `mNextAvailableQueuePos` | `0` in 21 park files |
+| 196    | 4 bytes | `mLastActionStarted` | When his last line began, a reading of the clock module's second stopwatch, in milliseconds |
+| 200    | 4 bytes | `mLastActionDuration` | That line's length and a second more, in milliseconds; 0 when a line was cut off |
+| 204 + 16*i*, *i* 0 to 350 | 16 bytes each | `mHistory[`*i*`]` | The message records (below) |
+| 5820   | 21 bytes | | One more message, laid out as a slot: a copy of the last message of a kind the game keeps aside as it is given (which kind is not described here) |
+| 5841   | 1 byte | `mRequestedLastTutorial` | `CD` in the shipped file and files saved from it, 0 in five Full Simulation parks |
+| 5842   | 4 bytes | `mMessagePlaying` | The message he last said |
+
+**A slot** is one message he has been given and has not said yet:
+
+| Offset | Size    | Name | Description |
+| ------ | ------- | ---- | ----------- |
+| `0x0`  | 2 bytes | `mThingId` | The thing the message is about; 0 for none |
+| `0x2`  | 4 bytes | `mSecondary` | That thing's item (1100 for a Belly Bounce); 0 for none |
+| `0x6`  | 4 bytes | `mMessage` | The message's id |
+| `0xa`  | 4 bytes | `mScore` | Its score: the highest-scoring taken slot over 25 is said next |
+| `0xe`  | 1 byte  | `mValid` | 1 while the slot is taken. When the message is said only this byte is cleared, and the rest stays |
+| `0xf`  | 4 bytes | `mResponseNo` | The line asked for; -1 to take the next in turn |
+| `0x13` | 1 byte  | `mOverrideOnlyOnce` | 1 for a message that is said even if it was said before |
+| `0x14` | 1 byte  | `mScoreOverridden` | 1 when the score was given with the message and not worked out from it |
+
+A slot never used is `CD` in every byte but `mValid`. In 21 park files twenty hold exactly one taken slot, always
+the same: message `0x80` ("the park is open") at a score of 20, in slot 2 or slot 0. Its score is under 25, so it
+is never said and stays in every save made from the shipped park. `Easymode.TPWI`'s slots 0 and 1 hold messages
+`0xbc` and `0x15a` at 1000, both already said.
+
+**The message records.** From 204 (`0xcc`) the record holds 351
 message records of sixteen bytes, one for each message the advisor can be given, in the order of their ids:
 
 | Offset | Size    | Description                                                                              |
@@ -945,7 +979,6 @@ message records of sixteen bytes, one for each message the advisor can be given,
 A record he has never used is (0, -1, 0, 0). In eighteen park files, 6,318 records, the tick is never past the
 file's own, the said byte is 0 or 1, the line -1 to 2 and the cuts 0 to 3. `Easymode.TPWI` holds six records
 used: messages 0 (tick 1), `0xb9` (257), `0xbd` (55, cut off once), `0x11a` (605), `0x135` (89) and `0x143` (16).
-The 204 bytes before the records and the 26 after them are not described here.
 
 ### The staff HQ (model 9): strikes and training budgets
 

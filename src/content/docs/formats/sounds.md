@@ -133,6 +133,12 @@ frame, the first 408 samples are a short blip, not silence (peak 0.18). The entr
 241, 246 to 281, 300, 301, 314 to 323, 367, 374, 378, 379, 382, 386, 411 to 413, 447, 448, 451, 455, 456, 458,
 472, 474, 475, 477, 480, 496 to 498, 503, 567, 568, 570 and 577.
 
+The same bank's last four entries are not numbered lines. Entry 638 is `z_error.mp2`: 3,485 bytes, 0.435 s, a
+burst of noise at full scale (peak 1.0, rms 0.47, where a spoken line's rms is 0.12 to 0.14). It is the stand-in
+for a line that was never recorded: the executable's response table names it for fourteen responses (OpenTPW's
+`docs/exe/advisor-park.md`, "A shut staff room"). Entries 639 to 641 are `z_z_ouch1.mp2`, `z_z_ouch2.mp2` and
+`z_z_Ouch3.mp2`, the advisor's three cries.
+
 336 of the 3,659 decode past full scale in a floating-point decoder (NLayer); the loudest,
 `levels/space/Sound/RideHD.sdt`'s `sevo002b2B.mp2`, reaches 1.4032. The game clamps each voice to 16 bits as
 it decodes it, as ffmpeg does, so those peaks are clipped rather than wrapped. Where the game does that is

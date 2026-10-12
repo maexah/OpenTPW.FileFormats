@@ -947,6 +947,13 @@ Thing 3 in every park file, 5,846 bytes, named by no header field. The game name
 | 5841   | 1 byte | `mRequestedLastTutorial` | `CD` in the shipped file and files saved from it, 0 in five Full Simulation parks |
 | 5842   | 4 bytes | `mMessagePlaying` | The message he last said |
 
+**His wait.** He says nothing new until the clock module's second stopwatch (the second dword of `KOLC`) passes
+`mLastActionStarted + mLastActionDuration`, so a file whose sum is above its own stopwatch was saved while he was
+still inside the wait, and a load goes on waiting for the difference. Two of 21 park files were saved so (959 ms
+and 28,196 ms left); in the other nineteen the wait was over by 134 ms to fifteen minutes. Five of the 21 hold a
+duration of 0. `mMessagePlaying` is `0x11a` in the shipped file, and 0 in one Full Simulation park whose wait
+was still running.
+
 **A slot** is one message he has been given and has not said yet:
 
 | Offset | Size    | Name | Description |

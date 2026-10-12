@@ -687,7 +687,7 @@ to 73,544 (11: 5,846; 12: 16; 13: 73,544; 14: 4,190; 15: 99; 16: 300; 17: 16; 19
 name the managers, and name the same things in all nine park files: `mStaffHQ` thing 1 (model 9),
 `mMechanicHQ` 2 (model 10), `mTagSystem` 4 (12), `mParkAnalyser` 5 (13), `mResearchLab` 6 (14), `mWeather`
 7 (15), `mBankAccount` 8 (16) and `mUIMsgReceiver` 9 (17); things 3 (model 11) and 10 (model 19) are named
-by no header field, though 10 is the challenge manager (below). There is no model 18 in a park file: the writer refuses it, "Should not be able to save
+by no header field, though 3 is the advisor and 10 the challenge manager (both below). There is no model 18 in a park file: the writer refuses it, "Should not be able to save
 online persons". **Model 10 is the mechanics' HQ**, eighteen bytes: the sixteen every thing begins with and
 then `mNextObject`, two bytes, the id of the object the mechanics' search for a ride to fix last began on, or
 `0`. Each search moves it one object down the object list, so it is `18` in the shipped Lost Kingdom park and
@@ -928,6 +928,24 @@ a reading of `mGameTick`. The game stamps it as a handyman takes a toilet to cle
 it to forget the member: more than 100 ticks on, an assignment whose member has since taken other work is cleared,
 and the stamp with it. A finished clean clears the member and the request and leaves the stamp. It is `0` on all
 fourteen objects in the shipped park, where nobody is assigned to anything.
+
+### The advisor (model 11)
+
+Thing 3 in every park file, 5,846 bytes, named by no header field. From `0xcc` of its record it holds 351
+message records of sixteen bytes, one for each message the advisor can be given, in the order of their ids:
+
+| Offset | Size    | Description                                                                              |
+| ------ | ------- | ---------------------------------------------------------------------------------------- |
+| `0x0`  | 4 bytes | The game tick he last said the message on; 0 if never                                    |
+| `0x4`  | 4 bytes | The line he said, counted from 0; -1 before any                                          |
+| `0x8`  | 1 byte  | 1 once the message has been said, 0 again when he is cut off saying it                   |
+| `0x9`  | 3 bytes | Not written by the game: `CD CD CD` in the shipped file and files saved from it, 0 in five Full Simulation parks        |
+| `0xc`  | 4 bytes | How many times he has been cut off saying it                                             |
+
+A record he has never used is (0, -1, 0, 0). In eighteen park files, 6,318 records, the tick is never past the
+file's own, the said byte is 0 or 1, the line -1 to 2 and the cuts 0 to 3. `Easymode.TPWI` holds six records
+used: messages 0 (tick 1), `0xb9` (257), `0xbd` (55, cut off once), `0x11a` (605), `0x135` (89) and `0x143` (16).
+The 204 bytes before the records and the 26 after them are not described here.
 
 ### The staff HQ (model 9): strikes and training budgets
 

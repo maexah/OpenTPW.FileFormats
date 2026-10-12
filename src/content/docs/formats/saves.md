@@ -2474,7 +2474,11 @@ bytes, and then, when both dwords are set, records written one by one through a 
 bytes of them in `Easymode.TPWI`, 666 to 5,186 in the others. Not decoded.
 
 **Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
-nought in three of the played files and 113 to 258 in the rest.
+nought in three of the played files and 113 to 258 in the rest. It is the advisor's poll cursor: the row of his
+351-row message table that the next tick's poll starts from. Each tick scores the first polled row from there (155
+of the rows are polled) and leaves the cursor on the row after, so it reads 0 to 351; a load reads it back
+(`FUN_0059c860`). `Easymode.TPWI`'s 277 is the row after the last its makers' park scored on tick 754: with it, a
+park begun from that file scores row 185 on tick 877. OpenTPW reads it at a load and writes its own.
 
 ## The cheats module (`STHC`)
 

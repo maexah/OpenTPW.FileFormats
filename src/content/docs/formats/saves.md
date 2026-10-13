@@ -1039,7 +1039,11 @@ The six stamps are times on the park's calendar, each a `FILETIME` as a member o
 the calendar's start, 2000-01-01, plus 3,750 seconds for each tick of `mGameTick` in the jungle's files. **`mLastStaffHired`
 equals the newest `mTimeHired` among the file's staff in all eight files that hold staff**, and in the ninth, a park
 saved on tick 4 with nobody hired, all six stamps are the calendar's start. What the game does with the stamp is
-OpenTPW's `docs/exe/advisor-park.md`, "More rides than the mechanics can keep".
+OpenTPW's `docs/exe/advisor-park.md`, "More rides than the mechanics can keep". **`mLastObjectBuilt` is the
+build date of the newest object the park has had** (an object's own is the eight dwords at 22 of its record): in
+ten of twelve files the original wrote it equals the newest standing object's, and in the two saves of the
+longest-played jungle park it is a month newer than every one of the 124 objects standing, a thing built and since
+sold. What writes it is OpenTPW's `docs/exe/advisor-park.md`, "The newest build".
 
 ### The challenge manager (model 19)
 

@@ -301,7 +301,7 @@ the last two against the running game's memory (the game's reader of them is its
 | `0x04` | i32 | What buying one costs, the item's `Upgrades[0].CostOfUpgrade` - Belly Bounce 500, Drinks Shop 650 |
 | `0x0C` | i32 | The item's `UsageInfo.RipOffOK` - 100 for the six shops, 250 for the four sideshows (each from its folder's `Shops.sam` or `SideShow.sam`), 0 for the rest |
 | `0x10` | u8 | Researched: 1 on 26 records, exactly the 26 whose item's file (with its `Easy_` layer) sets `Upgrades[0].CostOfResearch` 0. Among them the rides Belly Bounce, Crazy Ape, Rocky Racers and Aztec Mayhem, the shops Balloon, Burger and Drinks, and the sideshows Jungle Spray and Strength Bird; the other 24 read 0 |
-| `0x14` | i32 | The upgrade tier researched, 0 to 2: 2 on 17 of the 26 researched records, 0 on every other record |
+| `0x14` | i32 | The upgrade tier researched, 0 to 2: 2 on 17 of the 26 researched records, 0 on every other record. In a new Full Simulation park's `restart.INTS` (70 records) it is 2 on 13 of the 28 researched ones, those whose item has no upgrade to research, and 0 on the rest |
 | `0x18` | i32 | How many of the item stand in the park. Lost Kingdom's save: 3 for the Small Toilet, 2 for the Security Camera, 1 for each of nine more kinds, 0 for the rest, 14 in all, its fourteen objects |
 | `0x1C` | u32 | `mGameTick` when the first of the item was built, kept after the last is sold: 15 on nine records in Lost Kingdom's save, the Balloon Shop among them with a count of 0, and 604 for the bus. The game writes it only while it reads 0, so the gates and the traffic lights, made on tick 0, keep 0 |
 
@@ -1092,6 +1092,14 @@ the jungle), all 37 of kind 1 the shops' (12xx), all 20 of kind 2 the sideshows'
 the features' (14xx). The 67 of kind 4 are 54 of the rides' hundred, 44 at upgrade level 1 and 10 at level 2,
 and 13 of the next hundred (15xx) at level 0; every project of kinds 0 to 3 is at level 0. **A project that is
 done stays in the list**: in 80 of the 352 the points are at or over the cost, all in the Full Simulation saves.
+
+**A park the game has just made** (the jungle `restart.INTS` of a new Full Simulation park, tick nought, one
+written on Windows and one under Proton) holds 48 projects, none begun: 11 of kind 0, 5 of kind 1, 3 of kind 2,
+20 of kind 3 and 9 of kind 4, in the order of the object controls. The kinds' `effort` is 100, 15, 30, 15 and
+10, `output` 49, 6, 14, 6 and 4, `currentProject` 4, 41, 46, 17 and 0; `mWorkLoad` 85, `mMostExpensiveProject`
+3, `mLabActive` 0. The two files' used projects, kinds and closing fields are the same byte for byte; they
+differ only in the 208 unused projects, from byte 784 of the record on. The fantasy and hallow `restart.INTS`
+hold 44 and 48 projects with the same efforts and outputs.
 
 In `Easymode.TPWI` the 24 are 8 rides, 3 shops, 2 sideshows and 11 features, none done; three have points
 (30 of 600, 4.5 of 450 and 9 of 700) and the features' current one, project 8, has 7.5 of 250. What the game

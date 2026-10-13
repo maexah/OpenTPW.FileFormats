@@ -1016,11 +1016,30 @@ its end are **twenty rings of bytes, one per kind of opinion**, each 60 bytes: `
 `mNumEntries` (4, 50), `mWrappedAround` (1), `mTemp` (1) and 50 `mData` (1 each), kind 0 first; after them the
 record's last 76 bytes hold `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver`,
 `mLifetimeVisitors`, `mLastStrike`, `mLastPuke`, `mLastPrank`, `mParkLastOpened`, `mLastObjectBuilt`,
-`mLastStaffHired`, `mMostPaidForTicket`, `mLargestBusLoad` and `mLongestStay`, not measured one by one. In
+`mLastStaffHired`, `mMostPaidForTicket`, `mLargestBusLoad` and `mLongestStay` (the table below). In
 `Easymode.TPWI` the rings start 72,268 bytes into the record (the only run of twenty such rings in the whole
 stream): kind 0 holds eight samples of 50, the rest are empty, and `mLifetimeVisitors` reads 8. A played park
 fills kinds 1 to 4, 6, 7, 9 to 13, 15, 16 and 18 too. What each kind is, and that only kind 0 is ever read back,
 is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
+
+**The record's last 76 bytes**, measured in `Easymode.TPWI`, three jungle files the original wrote under Proton
+and Alexah's five Full Simulation saves (jungle, fantasy and hallow):
+
+| Offset | Size | Field | |
+|---|---|---|---|
+| 73,468 | 4 × 3 | `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver` | 0, 0, 0 in seven of the nine; 0, 0, 3 in the two saves of the longest-played park |
+| 73,480 | 4 | `mLifetimeVisitors` | 8 in `Easymode.TPWI`, 759 in the longest-played park's two |
+| 73,484 | 8 × 3 | `mLastStrike`, `mLastPuke`, `mLastPrank` | the calendar's start in all nine |
+| 73,508 | 8 | `mParkLastOpened` | 2000-01-01 15:37:30 in `Easymode.TPWI`, tick 15 |
+| 73,516 | 8 | `mLastObjectBuilt` | 2000-01-27 05:10:00 in `Easymode.TPWI`, tick 604 |
+| 73,524 | 8 | `mLastStaffHired` | 2000-01-29 03:00:00 in `Easymode.TPWI`, tick 648 |
+| 73,532 | 4 × 3 | `mMostPaidForTicket`, `mLargestBusLoad`, `mLongestStay` | 25, 0, 0 in `Easymode.TPWI`; 20, 0, 0 in four Full Simulation saves and 0, 0, 0 in the fifth, saved on tick 4 |
+
+The six stamps are times on the park's calendar, each a `FILETIME` as a member of staff's `mTimeHired` is (below):
+the calendar's start, 2000-01-01, plus 3,750 seconds for each tick of `mGameTick` in the jungle's files. **`mLastStaffHired`
+equals the newest `mTimeHired` among the file's staff in all eight files that hold staff**, and in the ninth, a park
+saved on tick 4 with nobody hired, all six stamps are the calendar's start. What the game does with the stamp is
+OpenTPW's `docs/exe/advisor-park.md`, "More rides than the mechanics can keep".
 
 ### The challenge manager (model 19)
 

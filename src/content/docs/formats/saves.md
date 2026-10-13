@@ -267,6 +267,17 @@ bus driving in, its script as it ran and this handle 15, loaded with the bus cur
 with the handle nought and a guest waiting at the stop to go home, it loaded with another vehicle sent for at
 once (measured under Proton, 2026-10-08 and 2026-10-09).
 
+**A vehicle made is an ordinary object on the corner cell.** In three files the original wrote after a ferry
+or a seaplane was first sent for, its record reads `mX` and `mY` `0x0080` (the middle of cell (0,0)), angle
+nought, its item (1602, 1604), the date it was sent for, flags nought, `mState` 3, `mTopLeft`, `mEntryPos` and
+`mExitPos` all 1, `mCanLoad` 1, as the bus's does. Its name holds one line ("Seaplane", "Ferry"), and the words
+between its characters and after its end are whatever the stack held, where the bus's are `0xcdcd`. It heads
+the object list, and cell (0,0)'s chain: `mWho` there is the newest vehicle and the chain runs newest first
+(ferry 32, seaplane 44, bus 15, then 12, 11 and down to 1 in one file). Its model's record is a fixed item's
+("The ride system module"). The original loads such a file written by another program with the vehicle current
+on its thing and makes none again; a file whose slot is nought has it make the vehicle afresh the first time
+that kind is sent for (measured under Proton, 2026-10-13).
+
 So the slots say what a park has *done*, not what it owns: an empty slot means that kind has never been sent
 for, whatever the size of the crowds. The shipped Lost Kingdom park holds the bus, thing `15`, in
 `mArrivalVehicle_Size1` and nought in the other two, which is why its thing list contains a bus and neither a
@@ -2007,7 +2018,7 @@ more slots than things stays small. A present record is:
 | -------- | -------- | --------------------------------------------------------------- |
 | `0x00`   | 1 byte   | Tag — `01` for present                                          |
 | `0x01`   | 4 bytes  | The **item** id, not a thing id                                 |
-| `0x05`   | 4 bytes  | The cell it stands on, across: an object's `mTopLeft` cell       |
+| `0x05`   | 4 bytes  | The cell it stands on, across: an object's `mTopLeft` cell; a fixed item's (flags `0x361`) is its description's `Info.EngineMapOffsetOverrideX` and `Y` (the gates' 45 and 16), or 48 and 17 where it sets none, as the lights and all three arrival vehicles read in every Lost Kingdom file, whose objects stand on cell (0,0) |
 | `0x09`   | 4 bytes  | The cell, down                                                  |
 | `0x0d`   | 4 bytes  | Its footprint in cells, across                                  |
 | `0x11`   | 4 bytes  | Its footprint, down                                             |

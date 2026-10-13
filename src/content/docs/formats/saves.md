@@ -1056,6 +1056,47 @@ ten of twelve files the original wrote it equals the newest standing object's, a
 longest-played jungle park it is a month newer than every one of the 124 objects standing, a thing built and since
 sold. What writes it is OpenTPW's `docs/exe/advisor-park.md`, "The newest build".
 
+### The research lab (model 14)
+
+Thing 6 in `Easymode.TPWI`, 4,190 bytes, named by the header's `mResearchLab`. After the sixteen bytes every
+thing's record begins with it holds **256 projects of 16 bytes**, used or not, then **five records of 13 bytes,
+one per kind of research**, then thirteen bytes that close it. The names are the reader's own.
+
+| Offset | Size | Field | |
+|---|---|---|---|
+| 16 | 256 × 16 | the projects | the first `mNumProjects` are used; the others hold whatever was there, 928 of 1,952 unused ones not all nought |
+| +0 | 2 | `mObjId` | the catalogue id of the item the project researches |
+| +2 | 4 | `mCat` | the kind of research: 0 a ride, 1 a shop, 2 a sideshow, 3 a feature, 4 any other |
+| +6 | 1 | `mResearchGroup` | 0 to 4 |
+| +7 | 1 | `mUpgradeLevel` | 0 to 2 |
+| +8 | 4 | `mCost` | a float: the research points the project takes |
+| +12 | 4 | `mResearchDone` | a float: the points put to it |
+| 4,112 | 5 × 13 | the kinds, 0 to 4 | |
+| +0 | 4 | `effort` | 100, 15, 30, 25 and 0 in `Easymode.TPWI`, which sum to 170 |
+| +4 | 4 | `output` | 49, 6, 14, 11 and 0 there |
+| +8 | 4 | `currentProject` | the index of the project the kind is working on, −1 for none: 1, 20, 22, 8 and −1 there |
+| +12 | 1 | `highestGroupAvailable` | 1 in every kind there |
+| 4,177 | 4 | `mNumProjects` | 24 in `Easymode.TPWI` |
+| 4,181 | 4 | `mWorkLoad` | 85 there |
+| 4,185 | 4 | `mMostExpensiveProject` | 3 there |
+| 4,189 | 1 | `mLabActive` | 1 there |
+
+**Measured in nine files**: `Easymode.TPWI`, the reference player's copy of it, two jungle files the original
+wrote under Proton and Alexah's five Full Simulation saves (jungle, fantasy and hallow). The record is 4,190
+bytes in each; `mNumProjects` is 24 in the four Instant Action files and 44, 44, 48, 60 and 60 in the Full
+Simulation ones; `mLabActive` is 0 or 1; and every one of the 352 used projects has a kind from 0 to 4, a cost
+above nought and points at or above nought.
+
+**A project's kind follows its item**: all 87 of kind 0 are items of the rides' hundred of their theme (11xx in
+the jungle), all 37 of kind 1 the shops' (12xx), all 20 of kind 2 the sideshows' (13xx) and all 141 of kind 3
+the features' (14xx). The 67 of kind 4 are 54 of the rides' hundred, 44 at upgrade level 1 and 10 at level 2,
+and 13 of the next hundred (15xx) at level 0; every project of kinds 0 to 3 is at level 0. **A project that is
+done stays in the list**: in 80 of the 352 the points are at or over the cost, all in the Full Simulation saves.
+
+In `Easymode.TPWI` the 24 are 8 rides, 3 shops, 2 sideshows and 11 features, none done; three have points
+(30 of 600, 4.5 of 450 and 9 of 700) and the features' current one, project 8, has 7.5 of 250. What the game
+asks of the list is OpenTPW's `docs/exe/advisor-park.md`, "Every feature built, and more to research".
+
 ### The challenge manager (model 19)
 
 Thing 10 in every park file, 937 bytes, named by no header field. The writer is the executable's `FUN_004d2320`, from

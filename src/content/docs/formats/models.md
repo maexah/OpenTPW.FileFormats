@@ -316,7 +316,25 @@ game ships), so which pieces show is entirely the code's decision.
 Each of his fifteen animations (`Advisorm1.MD2` to `Advisorm15.MD2`) carries the same
 [hide list](#the-hide-list): nodes 14 and 16 to 24, the ten pieces with an id under 19. So a clip's start takes
 every add-on off, and the game puts the ones a spoken line names back on after it (ids 4 and below name no node
-of this model; the level's own `Advisor_JUN.MD2` is a second model with its own pieces).
+of this model).
+
+Lost Kingdom's own advisor, `Advisor_JUN.MD2` in `levels\jungle\advisor.wad`, is a second whole model: 29 nodes,
+18 of them meshes, with no antennae, and ten lookup records from node 14:
+
+| Node | Name | Flags | Id |
+|---|---|---|---|
+| 14 | `Right hand` | `0x411` | 21 |
+| 15 | `Left Hand` | `0x411` | 22 |
+| 16 | `Pith Helmet` | `0x411` | 4 |
+| 17 | `Mutant Eye` | `0x411` | 18 |
+| 18 to 20 | `T_Particle1` to `T_Particle3` | `0x111` | 1 to 3 |
+| 21 to 23 | `Rotate1` to `Rotate3` | `0x111` | 4 to 6 |
+
+Id 4 is there twice, in two spaces: the helmet under `0x400` and `Rotate1` under `0x100`. Its animations 1 to 15
+each hide the same twelve nodes: 5 `Ticket`, 6 `MAP`, 12 `Ticket2`, 16 to 23 and 28 `Wave01`. Animations 16 to
+20 hide other sets (16 leaves the map and the helmet on, 18 hides only the map, the helmet and the eye, 19 and
+20 hide 22 nodes, the fly itself among them). The jungle's `Standard.sam` names the helmet as the theme's
+costume: `ThemeAdvisorCostumes[0].AddOns 4`, with `SubOffs` 19 and 20, the other model's antennae.
 
 #### Which records have a position
 

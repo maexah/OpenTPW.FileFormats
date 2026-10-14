@@ -9,7 +9,7 @@ title: Texture (*.wct)
 | Size    | Description                              |
 | ------- | ---------------------------------------- |
 | 1 byte  | Compression type: 0x12: zlib, 0x13: lzss |
-| 1 byte  | An alpha flag, not the one that counts (below) |
+| 1 byte  | The graded-alpha flag: over an alpha chunk, graded rather than cut out (below) |
 | 1 byte  | bit count: 32 when there is an alpha chunk, 24 when not |
 | 1 byte  | version                                  |
 | 2 bytes | width                                    |
@@ -44,7 +44,9 @@ member of the 312 wads, dumped one folder a wad, 8,375, and the 21 loose files' 
 chunk (block 1 size over 0) and 24 in every file without one. The byte at offset 1 disagrees in 237: 236 have it 0
 with a 32-bit count and an alpha chunk (3 of type `0x12`: `stexture\s_top.wct`, `smallguage.wct` twice; 233 of type `0x13`),
 and `stexture\b_NEWwin.wct` has it 1 with a 24-bit count and no alpha chunk. The original reads the alpha chunk by the bit
-count (OpenTPW `docs/exe/textures.md`). No header scale has its top bit set.
+count, and takes the byte at offset 1 as the choice between a graded alpha (set) and a cut-out one (0) for the
+image it draws (OpenTPW `docs/exe/textures.md`, "The loader"; Q358): the 236 draw cut out. No header scale has its top
+bit set.
 
 | Type | Colour chunk | Files |
 |---|---|---|

@@ -9,8 +9,8 @@ title: Texture (*.wct)
 | Size    | Description                              |
 | ------- | ---------------------------------------- |
 | 1 byte  | Compression type: 0x12: zlib, 0x13: lzss |
-| 1 byte  | Has an alpha channel - 1 when the alpha chunk is non-empty |
-| 1 byte  | bit count                                |
+| 1 byte  | An alpha flag, not the one that counts (below) |
+| 1 byte  | bit count: 32 when there is an alpha chunk, 24 when not |
 | 1 byte  | version                                  |
 | 2 bytes | width                                    |
 | 2 bytes | height                                   |
@@ -38,6 +38,19 @@ as Y, offset 12, offset 10, and decodes the second channel (the one turned into 
 `docs/exe/textures.md`, Q354). Read the other way round, `ui.wad`'s `textures\ridestatbar.wct` (32 x 32, version 4,
 zlib, no alpha; Y 6, offset 10 = 10, offset 12 = 2) decodes olive to yellow; read this way, red to green, as the
 original draws it. Of `ui.wad`'s 921 `.wct`, the 473 whose two scales are equal decode the same either way.
+
+**The bit count says whether there is an alpha chunk; the byte before it does not always** (OpenTPW Q355; every `.wct`
+member of the 312 wads, dumped one folder a wad, 8,375, and the 21 loose files' names: 8,396). The bit count is 32 in every file with an alpha
+chunk (block 1 size over 0) and 24 in every file without one. The byte at offset 1 disagrees in 237: 236 have it 0
+with a 32-bit count and an alpha chunk (3 of type `0x12`: `stexture\s_top.wct`, `smallguage.wct` twice; 233 of type `0x13`),
+and `stexture\b_NEWwin.wct` has it 1 with a 24-bit count and no alpha chunk. The original reads the alpha chunk by the bit
+count (OpenTPW `docs/exe/textures.md`). No header scale has its top bit set.
+
+| Type | Colour chunk | Files |
+|---|---|---|
+| `0x12` | starts `BILZ` (zlib) | 986 |
+| `0x12` | LZSS | 3 (the 8 x 8 `stexture` copies of `Bowler_Btie.wct`, `Fan_stalk.wct`, `s_disc.wct`) |
+| `0x13` | LZSS | 7,407 |
 
 ## Decoding Image
 
@@ -91,5 +104,10 @@ while true:
 
 5. Decode channels using quantization scales
 Cb/Cr use size / 2
+
+Type `0x12` (the original's zlib codec, OpenTPW `docs/exe/textures.md`): the decompressed colour chunk is the values
+of Y's `n x n` plane (`n` the larger aligned side), then Cb's `n/2 x n/2`, then Cr's, row by row; the alpha chunk is
+the alpha's `n x n`. A value is a signed byte, or the byte `0x80` and then a little-endian int16. Each row's first
+half is its smooth values and its second its detail, and each column's the same, for an inverse plain D4.
 
 6. Convert YCbCr values to RGB

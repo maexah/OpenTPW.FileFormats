@@ -210,7 +210,9 @@ The two chunks can be handed to a `.wct` decoder directly. `BILZ` begins at `+0x
 
 **No lettering is baked into the artwork.** Jungle's is cracked bark, fantasy's a mint wall,
 hallow's a framed maroon panel, space's a starfield; the name is composited on top at runtime with
-the fonts and ink above. The plainest evidence is that the 61 signs carrying no artwork at all still
+the fonts and ink above. Those are the colours the codec gives (Y, Cb, Cr to red, green, blue); the game
+draws a board with red and blue exchanged, so on screen jungle's is blue-grey stone, fantasy's cream and
+space's a violet starfield (OpenTPW `docs/exe/textures.md`, "A sign's artwork"). The plainest evidence is that the 61 signs carrying no artwork at all still
 show their names.
 
 > An earlier note offered a different argument — that the colour chunk's *compressed* size tracks

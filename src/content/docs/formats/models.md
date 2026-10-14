@@ -499,6 +499,8 @@ The block has a 0x30-byte header:
 | ------ | ------- | ----------- |
 | +0x04  | 2 bytes | Vertex count |
 | +0x06  | 2 bytes | Cell count |
+| +0x08  | 4 bytes | Where cell (0, 0)'s near corner lies in X, a float (0.0 in all five; the jungle's, fantasy's, hallow's and space's stored as -0.0) |
+| +0x0C  | 4 bytes | The same in Y (0.0 in all five). The item loader measures a model's base vertices against it and the cell size (`FUN_00469a80`; OpenTPW `docs/exe/textures.md`, "Which materials the loader makes opaque") |
 | +0x10  | 4 bytes | Cell size X, a float (10.0 in all five) |
 | +0x14  | 4 bytes | Cell size Y, a float (10.0 in all five) |
 | +0x18  | 4 bytes | Cells across |

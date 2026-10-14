@@ -710,14 +710,32 @@ Measured across the 12,951 material uses in the 838 material-bearing mesh files 
 | ------ | ----- | --------------------------------------------------------------------------------- |
 | `0x01` | all   | Set on every material in the game; carries no information                        |
 | `0x02` | 2,621 | Marks a material meant to be drawn see-through. See below                         |
-| `0x10` | 3,849 | Unknown. Independent of `0x20`                                                    |
-| `0x20` | 3,886 | Unknown. Independent of `0x10`                                                    |
+| `0x10` | 3,849 | The frame's textures wrap (engine-confirmed). Independent of `0x20`. See below    |
+| `0x20` | 3,886 | The frame's textures wrap (engine-confirmed). Independent of `0x10`. See below    |
 | `0x40` | 159   | Propagated into the model-wide flags at header 0x30 (engine-confirmed)            |
 | `0x80` | 0     | Also propagated into header 0x30 (engine-confirmed), but no shipped material sets it |
 
 The word never exceeds `0x73` anywhere in the game. Only the low byte is ever used, and just 15
 distinct values occur across all 12,951 uses. `0x10` and `0x20` are **not** a pair: they occur
 alone 1,209 and 1,246 times respectively, and together 2,640 times.
+
+#### Bits 0x10 and 0x20 - the textures wrap
+
+As each texture of a frame loads, the engine gives it texture flag `0x10000` for `0x10` and `0x20000` for `0x20`
+(`FUN_00575e10`), and a texture holding either is drawn with its coordinates wrapping; every other texture is clamped
+to its edge. Separate as the two bits are, the renderer sets one address mode for both directions, so either bit
+wraps both. The engine also ORs `0x8030` into the word of every material of a mesh its animation scrolls, before the
+textures load. What the executable does with them is OpenTPW's `docs/exe/render-states.md`, "Texture addressing".
+
+The data agrees without exception. Of the 12,951 material uses, 2,573 have a texture coordinate past 0 or 1 by more
+than 0.01 on one of their faces, and 2,572 of those carry `0x10` or `0x20`; the other names no texture (`Spa_isle`'s
+`Hoarding`, run 13). Lost Kingdom's river banks show both ways: `jri_bnk1` to `3` tile their rocks along the river
+(`u` from -5 to -1, word `0x11`), and `jri_bnk4` to `6`, whose bottom row is clear, stay inside the texture under
+`0x3` and are clamped, so their top edge never takes in the clear row.
+
+Since the bits are put on the loaded texture, and the engine keeps one texture per folder and name, a texture one
+model wraps is wrapped for every model using it while it is loaded: the 62 textures flagged one way by one model and
+another way by another are drawn by whichever bits reached them.
 
 #### Bit 0x02 - drawn see-through
 

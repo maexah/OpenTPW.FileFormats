@@ -194,7 +194,7 @@ The artwork is a [`.wct`](/formats/texture/) image with its header fields rearra
 | `+0x00` | 4 bytes | Width — `256` in every shipped sign |
 | `+0x04` | 4 bytes | Height — `128` in every shipped sign |
 | `+0x08` | 4 bytes | Type — `4` in every shipped sign, meaning a colour chunk and an alpha chunk |
-| `+0x0C` | 4 x float | Y, Cb, Cr and A quantisation scales (`6, 10, 2, 6` in every shipped sign) |
+| `+0x0C` | 4 x float | Y, Cb, Cr and A multipliers, used as they are (`6, 10, 2, 6` in every shipped sign; OpenTPW `docs/exe/textures.md`) |
 | `+0x1C` | 4 bytes | Colour chunk size |
 | `+0x20` | 4 bytes | Alpha chunk size |
 | `+0x24` | | Colour chunk, then alpha chunk — each in the same `BILZ` container a `.wct` uses |

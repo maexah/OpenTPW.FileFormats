@@ -1037,15 +1037,27 @@ is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
 144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
 jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
-fill. The third, fourth and sixth are the month's money:
+fill. The third to ninth are the month's money:
 
 | Ring | At | What its months are | `Easymode.TPWI` |
 |---|---|---|---|
 | 3rd | 63,776 | every withdrawal made | one month closed, 13175; 538 so far |
 | 4th | 64,365 | the staff's wages and severances | 0; 538 so far |
+| 5th | 64,954 | the staff's training | 0; 0 so far |
 | 6th | 65,543 | every deposit | 1500; 200 so far |
+| 7th | 66,132 | the gate's admission fees | 0; 200 so far |
+| 8th | 66,721 | what the shops have charged | 0; 0 so far |
+| 9th | 67,310 | what the sideshows have charged | 0; 0 so far |
 
-The hire and training screens' account reads each ring's newest month. What feeds them and when a month is closed is
+**Every ring is closed at once, so all sixteen stand on one slot**, and the gate's, shops' and sideshows' are part of
+the deposits: measured in 612 of the 616 park files on hand (the shipped one, Alexah's Full Simulation saves, every
+file the original wrote under Proton and OpenTPW's), the sixteen `mCurrentEntry` are equal and in every closed month
+and the month so far the 7th, 8th and 9th together are at most the 6th. The four that are not are OpenTPW's own,
+written before it kept the 5th and 7th to 9th. Training is under way in 9 files, gate takings in 613, shops' and
+sideshows' takings in 44.
+
+The hire and training screens' account reads the 3rd, 4th and 6th rings' newest month; the finances screen graphs
+the 1st to 4th and 6th to 9th, every money ring but training among them. What feeds them and when a month is closed is
 OpenTPW's `docs/exe/hud.md`, "The mini-balance is a MONTHLY ACCOUNT".
 
 **The record's last 76 bytes**, measured in `Easymode.TPWI`, three jungle files the original wrote under Proton

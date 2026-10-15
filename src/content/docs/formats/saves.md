@@ -1037,11 +1037,12 @@ is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
 144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
 jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
-fill. The first and the third to ninth are the month's money:
+fill. The first and the third to ninth are the month's money, the second the park's value:
 
 | Ring | At | What its months are | `Easymode.TPWI` |
 |---|---|---|---|
 | 1st | 62,598 | the bank's balance as each month was closed; its `mTemp` is 0 in every file | one month closed, 88325 |
+| 2nd | 63,187 | the park value as each month was closed; its `mTemp` is 0 in every file | one month closed, 23977 |
 | 3rd | 63,776 | every withdrawal made | one month closed, 13175; 538 so far |
 | 4th | 64,365 | the staff's wages and severances | 0; 538 so far |
 | 5th | 64,954 | the staff's training | 0; 0 so far |
@@ -1058,7 +1059,10 @@ written before it kept the 5th and 7th to 9th. **Each closed month of the 1st is
 less its 3rd**, the bank's balance carried through the deposits and withdrawals: measured in 572 of the 573 files on hand (of
 579) whose rings stand on one slot; the one that is not, a save of the original's, holds as its second month
 the shipped file's month so far unchanged (6th 200, 3rd 538) where its balance fell 494 more: by every sign the month it
-took over from a file OpenTPW wrote before it kept the 3rd and 6th, which wrote the balance and the file's rings. Training is under way in 9 files, gate takings in 613, shops' and
+took over from a file OpenTPW wrote before it kept the 3rd and 6th, which wrote the balance and the file's rings. **The 2nd is a sum over the park as it stood at the close**: every cell inside the park by
+its `mType` and its track record, every object not condemned by its item's upgrade costs and its State of repair (the
+rule is OpenTPW's `docs/exe/hud.md`, "The park value"). From `Easymode.TPWI` alone it sums to 23977, its own month:
+cells 19527, objects 4450; of the 581 files on hand 186 sum to their newest month, the rest worn or built on since. Training is under way in 9 files, gate takings in 613, shops' and
 sideshows' takings in 44.
 
 The hire and training screens' account reads the 3rd, 4th and 6th rings' newest month; the finances screen graphs

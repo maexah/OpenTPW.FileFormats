@@ -1037,7 +1037,7 @@ is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
 144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
 jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
-fill. The first and the third to ninth are the month's money, the second the park's value:
+fill. The first and the third to ninth are the month's money, the second the park's value, the eleventh the visitors:
 
 | Ring | At | What its months are | `Easymode.TPWI` |
 |---|---|---|---|
@@ -1050,6 +1050,7 @@ fill. The first and the third to ninth are the month's money, the second the par
 | 7th | 66,132 | the gate's admission fees | 0; 200 so far |
 | 8th | 66,721 | what the shops have charged | 0; 0 so far |
 | 9th | 67,310 | what the sideshows have charged | 0; 0 so far |
+| 11th | 68,488 | `mLifetimeVisitors` (73,480, below) as each month was closed; its `mTemp` is 0 in every file | one month closed, 0 |
 
 **Every ring is closed at once, so all sixteen stand on one slot**, and the gate's, shops' and sideshows' are part of
 the deposits: measured in 612 of the 616 park files on hand (the shipped one, Alexah's Full Simulation saves, every
@@ -1062,12 +1063,17 @@ the shipped file's month so far unchanged (6th 200, 3rd 538) where its balance f
 took over from a file OpenTPW wrote before it kept the 3rd and 6th, which wrote the balance and the file's rings. **The 2nd is a sum over the park as it stood at the close**: every cell inside the park by
 its `mType` and its track record, every object not condemned by its item's upgrade costs and its State of repair (the
 rule is OpenTPW's `docs/exe/hud.md`, "The park value"). From `Easymode.TPWI` alone it sums to 23977, its own month:
-cells 19527, objects 4450; of the 581 files on hand 186 sum to their newest month, the rest worn or built on since. Training is under way in 9 files, gate takings in 613, shops' and
+cells 19527, objects 4450; of the 581 files on hand 186 sum to their newest month, the rest worn or built on since.
+**The 11th never falls and its newest month is at most `mLifetimeVisitors`**, in all 584 files on hand; in all 578
+where it stands on the 7th's slot, the 7th's month so far is `mLifetimeVisitors` less the 11th's newest month, times one
+admission fee (25 in 561 files, 20 in 4, none since in 13), never above `mMostPaidForTicket`: one visitor is counted for
+each fee the gate takes. Training is under way in 9 files, gate takings in 613, shops' and
 sideshows' takings in 44.
 
 The hire and training screens' account reads the 3rd, 4th and 6th rings' newest month; the finances screen graphs
 the 1st to 4th and 6th to 9th, every money ring but training among them. What feeds them and when a month is closed is
-OpenTPW's `docs/exe/hud.md`, "The mini-balance is a MONTHLY ACCOUNT".
+OpenTPW's `docs/exe/hud.md`, "The mini-balance is a MONTHLY ACCOUNT"; what counts the visitors, and what reads them,
+its "The lifetime visitors".
 
 **The record's last 76 bytes**, measured in `Easymode.TPWI`, three jungle files the original wrote under Proton
 and Alexah's five Full Simulation saves (jungle, fantasy and hallow):
@@ -1075,12 +1081,12 @@ and Alexah's five Full Simulation saves (jungle, fantasy and hallow):
 | Offset | Size | Field | |
 |---|---|---|---|
 | 73,468 | 4 × 3 | `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver` | 0, 0, 0 in seven of the nine; 0, 0, 3 in the two saves of the longest-played park |
-| 73,480 | 4 | `mLifetimeVisitors` | 8 in `Easymode.TPWI`, 759 in the longest-played park's two |
+| 73,480 | 4 | `mLifetimeVisitors` | 8 in `Easymode.TPWI`, 759 in the longest-played park's two; one for each admission fee taken, so `Easymode.TPWI`'s 8 are its gate's 200 so far at 25 |
 | 73,484 | 8 × 3 | `mLastStrike`, `mLastPuke`, `mLastPrank` | the calendar's start in all nine |
 | 73,508 | 8 | `mParkLastOpened` | 2000-01-01 15:37:30 in `Easymode.TPWI`, tick 15 |
 | 73,516 | 8 | `mLastObjectBuilt` | 2000-01-27 05:10:00 in `Easymode.TPWI`, tick 604 |
 | 73,524 | 8 | `mLastStaffHired` | 2000-01-29 03:00:00 in `Easymode.TPWI`, tick 648 |
-| 73,532 | 4 × 3 | `mMostPaidForTicket`, `mLargestBusLoad`, `mLongestStay` | 25, 0, 0 in `Easymode.TPWI`; 20, 0, 0 in four Full Simulation saves and 0, 0, 0 in the fifth, saved on tick 4 |
+| 73,532 | 4 × 3 | `mMostPaidForTicket`, `mLargestBusLoad`, `mLongestStay` | 25, 0, 0 in `Easymode.TPWI`; 20, 0, 0 in four Full Simulation saves and 0, 0, 0 in the fifth, saved on tick 4; the first is the dearest admission fee taken |
 
 The six stamps are times on the park's calendar, each a `FILETIME` as a member of staff's `mTimeHired` is (below):
 the calendar's start, 2000-01-01, plus 3,750 seconds for each tick of `mGameTick` in the jungle's files. **`mLastStaffHired`

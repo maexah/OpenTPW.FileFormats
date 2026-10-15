@@ -1443,14 +1443,20 @@ Five of the six person models are staff - **4** mechanic, **5** handyman, **6** 
 | 402 | 4 bytes | *unnamed float* - happiness | `89`, `89`, `92`, `91`, `97` |
 | 406 | 4 bytes | `mJobsDone` | `0` on all five |
 | 410 | 66 bytes | `mName[0..32]` | The name as text: 33 characters of 16 bits, ended by a nought. `Duke Mighten`, `Mike Cooper`, `Pierre Hintze`, `Mike Man`, `Nicholas Ricks` |
-| 476 | 2 bytes | `mPatrolRegionBL` | packed cell id |
-| 478 | 2 bytes | `mPatrolRegionTR` | packed cell id |
+| 476 | 2 bytes | `mPatrolRegionBL` | packed cell id: `2728`, `2728`, `2352`, `2728`, `1` |
+| 478 | 2 bytes | `mPatrolRegionTR` | packed cell id: `3641`, `3641`, `3249`, `3641`, `16384` |
 | 480 | 1 byte | `mPercentageThroughGrade` | `0` on all five |
 | 481 | 2 bytes | `mRestArea` | `0` on all five |
 | 483 | 4 bytes | `mState` | `1`, `1`, `1`, `0`, `1` |
 | 487 | 4 bytes | `mTimeStartedIdling` | `0`, `0`, `712`, `752`, `0` |
 | 491 | 8 bytes | `mTimeHired` | a `FILETIME` (hundreds of nanoseconds since 1601): `1.1.2000 15:37:30` on four and `29.1.2000 03:00:00` on the researcher (below) |
 | 499 | 4 bytes | *unnamed float* - tiredness | `75`, `75`, `82`, `79`, `93` |
+
+**The patrol corners** are two packed cell ids, `y * 128 + x + 1`, the bottom-left and the top-right of the
+rectangle the member keeps to: `2728` and `3641` are (39,21) and (56,28). **`1` and `16384` are the whole map**, (0,0)
+to (127,127), which the game's staff constructor writes for every hire. Measured: of the 130 members in the four
+park files with staff that the game saved itself (eight files in all), 20 carry them and the rest are fenced in; none
+carries `0` and `0`, and neither does a member of the shipped park.
 
 Then, at **+503**, whatever the kind adds:
 

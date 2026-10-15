@@ -1033,6 +1033,21 @@ stream): kind 0 holds eight samples of 50, the rest are empty, and `mLifetimeVis
 fills kinds 1 to 4, 6, 7, 9 to 13, 15, 16 and 18 too. What each kind is, and that only kind 0 is ever read back,
 is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 
+**Sixteen rings of dwords** lie 62,598 bytes into the record, one after another, 589 bytes each: `mCurrentEntry` (4,
+−1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
+144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
+jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
+fill. The third, fourth and sixth are the month's money:
+
+| Ring | At | What its months are | `Easymode.TPWI` |
+|---|---|---|---|
+| 3rd | 63,776 | every withdrawal made | one month closed, 13175; 538 so far |
+| 4th | 64,365 | the staff's wages and severances | 0; 538 so far |
+| 6th | 65,543 | every deposit | 1500; 200 so far |
+
+The hire and training screens' account reads each ring's newest month. What feeds them and when a month is closed is
+OpenTPW's `docs/exe/hud.md`, "The mini-balance is a MONTHLY ACCOUNT".
+
 **The record's last 76 bytes**, measured in `Easymode.TPWI`, three jungle files the original wrote under Proton
 and Alexah's five Full Simulation saves (jungle, fantasy and hallow):
 

@@ -1114,8 +1114,8 @@ and Alexah's five Full Simulation saves (jungle, fantasy and hallow):
 |---|---|---|---|
 | 73,468 | 4 × 3 | `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver` | 0, 0, 0 in seven of the nine; 0, 0, 3 in the two saves of the longest-played park; the first two are this month's, the third is never read back (below) |
 | 73,480 | 4 | `mLifetimeVisitors` | 8 in `Easymode.TPWI`, 759 in the longest-played park's two; one for each admission fee taken, so `Easymode.TPWI`'s 8 are its gate's 200 so far at 25 |
-| 73,484 | 8 × 3 | `mLastStrike`, `mLastPuke`, `mLastPrank` | the calendar's start in all nine |
-| 73,508 | 8 | `mParkLastOpened` | 2000-01-01 15:37:30 in `Easymode.TPWI`, tick 15 |
+| 73,484 | 8 × 3 | `mLastStrike`, `mLastPuke`, `mLastPrank` | the calendar's start in all nine, and in all 612 park files on hand: the game never moves them from its constructor's |
+| 73,508 | 8 | `mParkLastOpened` | 2000-01-01 15:37:30 in `Easymode.TPWI`, tick 15; the calendar at the newest request to open the park, later than the start in 609 of 612 files |
 | 73,516 | 8 | `mLastObjectBuilt` | 2000-01-27 05:10:00 in `Easymode.TPWI`, tick 604 |
 | 73,524 | 8 | `mLastStaffHired` | 2000-01-29 03:00:00 in `Easymode.TPWI`, tick 648 |
 | 73,532 | 4 × 3 | `mMostPaidForTicket`, `mLargestBusLoad`, `mLongestStay` | 25, 0, 0 in `Easymode.TPWI`; 20, 0, 0 in four Full Simulation saves and 0, 0, 0 in the fifth, saved on tick 4; the first is the dearest admission fee taken |
@@ -1136,6 +1136,9 @@ build date of the newest object the park has had** (an object's own is the eight
 ten of twelve files the original wrote it equals the newest standing object's, and in the two saves of the
 longest-played jungle park it is a month newer than every one of the 124 objects standing, a thing built and since
 sold. What writes it is OpenTPW's `docs/exe/advisor-park.md`, "The newest build".
+**`mParkLastOpened` is the calendar at the newest request to open the park**, the park already open or not, and the
+three stamps before it never move from the calendar's start; nothing the game does reads any of the four. What
+writes them is OpenTPW's `docs/exe/hud.md`, "The analyser's other stamps".
 
 ### The research lab (model 14)
 
@@ -1874,7 +1877,9 @@ as they stand, so a set is the file's word on who is told, and in what order. Se
 is things 1, 4, 5 and 8 and then every member of staff in all nine park files: `1, 4, 5, 8, 25, 26, 27, 28,
 30` in the shipped park, and `1, 4, 5, 8` in the four park files with no staff. Set `0xb`, the day's change, is
 the fourteen catalogue objects and thing 10; set `0xd`, the year's change, is thing 8, the economy thing,
-alone.
+alone. Set `0x13`, the park door's, is things 3, 4, 5, 8 and 9 in the shipped park, and holds the analyser
+(thing 5) in all 612 park files on hand; set `0x17`, the strike's, is thing 3, the advisor, alone, and holds the
+analyser in none.
 
 Four sets follow the thing list by model, in all ten park files: set `0xa` holds every guest (model 1), every
 member of staff (models 4 to 8) and the one model-17 thing; `0xb` every catalogue object (model 3) and the

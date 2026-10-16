@@ -1037,7 +1037,7 @@ is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
 144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
 jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
-fill. The first and the third to ninth are the month's money, the second the park's value, the tenth to thirteenth the guests inside, the visitors, the rides and the arrivals, the fourteenth their happiness, its months **floats** where every other ring's are dwords, the fifteenth the guests' stay:
+fill. The first and the third to ninth are the month's money, the second the park's value, the tenth to thirteenth the guests inside, the visitors, the rides and the arrivals, the fourteenth their happiness, its months **floats** where every other ring's are dwords, the fifteenth the guests' stay, the sixteenth a score of the park:
 
 | Ring | At | What its months are | `Easymode.TPWI` |
 |---|---|---|---|
@@ -1056,6 +1056,7 @@ fill. The first and the third to ninth are the month's money, the second the par
 | 13th | 69,666 | the guests the arrival vehicles dropped off, one by one, in each month; `mTemp` the month's so far | one month closed, 13 (its thirteen guests); 0 so far |
 | 14th | 70,255 | the mean happiness of the guests inside the park as each month was closed, a 4-byte float (0.0 with none inside or the park shut); its `mTemp` is 0 in every file | one month closed, 0.0 |
 | 15th | 70,844 | the mean of the last fifty stays below as each month was closed, whole days truncated (0 with none); its `mTemp` is 0 in every file | one month closed, 0 |
+| 16th | 71,433 | the park's score out of 100 as each month was closed, eleven counts each capped (the guests inside, the rides, shops, sideshows and features, the rides upgraded twice, each kind of staff); its `mTemp` is 0 in every file | one month closed, 18 |
 
 **After the sixteen, at 72,022, a ring of the last fifty stays**, 213 bytes of the same shape: `mCurrentEntry` (4, −1
 before the first), `mNumEntries` (4, 50), `mWrappedAround` (1), `mTemp` (4, 0 in every file) and 50 `mData` (4 each):
@@ -1088,7 +1089,10 @@ of the 593 files on hand (the 27 others three months of one Full Simulation park
 none reads 0.0; every month lies from 0 to 255. **Each closed month of the 15th is the mean of the stays the ring of
 fifty held at that close**: in all 34 of the 596 files on hand whose ring of stays holds any and has not wrapped, each
 month is the truncated mean of its oldest k stays for some k (those that left after the close later in the ring); the
-553 with no stay read 0, and the 9 whose ring has wrapped cannot be checked. The stays seen run from 18 to 587 days. Training is under way in 9 files, gate takings in 613, shops' and
+553 with no stay read 0, and the 9 whose ring has wrapped cannot be checked. The stays seen run from 18 to 587 days. **The 16th's newest month is the score of the
+file's own park**, reckoned from the 10th's newest month and the file's things (`Easymode.TPWI`'s 18: one ride, one
+shop, one sideshow, eight features and one of each kind of staff), in 180 of the 197 of the 598 files on hand whose 2nd
+ring's newest month is their own park value; each of the 17 others has hired or lost staff since its close. Training is under way in 9 files, gate takings in 613, shops' and
 sideshows' takings in 44.
 
 The hire and training screens' account reads the 3rd, 4th and 6th rings' newest month; the finances screen graphs
@@ -1096,7 +1100,7 @@ the 1st to 4th and 6th to 9th, every money ring but training among them; the par
 beside the 13th to 16th, the 13th its first series; nothing reads the 12th. What feeds them and when a month is closed is
 OpenTPW's `docs/exe/hud.md`, "The mini-balance is a MONTHLY ACCOUNT"; what counts the visitors, and what reads them,
 its "The lifetime visitors"; what counts the guests inside and the rides, its "The guests inside and the rides at a close";
-what counts the arrivals, its "The arrivals"; how a stay is reckoned, its "The leavers' stays".
+what counts the arrivals, its "The arrivals"; how a stay is reckoned, its "The leavers' stays"; how the score is counted, its "The park score".
 
 **The record's last 76 bytes**, measured in `Easymode.TPWI`, three jungle files the original wrote under Proton
 and Alexah's five Full Simulation saves (jungle, fantasy and hallow):

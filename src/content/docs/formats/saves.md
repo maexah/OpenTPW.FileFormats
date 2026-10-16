@@ -2619,17 +2619,23 @@ measured in that park:
 | Offset | Size    | Description                                                                              | Temple Of Gloom |
 | ------ | ------- | ---------------------------------------------------------------------------------------- | --------------- |
 | `0x00` | 4 bytes | Flags: bit 0 the circuit is closed, bit 1 a gap is open in it; bits 2 to 8 are the coaster's own flags | `0x101` |
-| `0x04` | 4 bytes | Not described                                                                            |                 |
+| `0x04` | 4 bytes | Its state word                                                                           | `0x14`, open    |
 | `0x08` | 2 bytes | Its model, the coaster's type                                                          | 19              |
 | `0x0a` | 2 bytes | Its model instance - the number its object record's `MeshInstanceID` holds, and how the game finds the coaster of an object | 330 |
 | `0x0c` | 2 bytes | Its handle - the number its script's `+0xe0` holds in the ride scripts module             | 1               |
 | `0x0e` | 8 bytes | Not described                                                                            |                 |
-| `0x16` | 2 bytes | How many 34-byte (`0x22`) piece records follow the header                                 | 38              |
-| `0x18` | 4 bytes | Not described                                                                            |                 |
-| `0x1c` | 4 bytes | How many pairs of its sections intersect; the game offers no coaster with any            | 0               |
+| `0x16` | 2 bytes | How many 34-byte (`0x22`) piece records it holds                                         | 38              |
+| `0x18` | 2 bytes | How many trains are running                                                              |                 |
+| `0x1a` | 2 bytes | Its capacity                                                                             |                 |
+| `0x1c` | 4 bytes | How many crossings it has: a crossing adds 1 to each side, so a section crossing its own coaster counts 2. The game offers no coaster with any | 0 |
 
-The pieces follow, and then the track and the trains, which are not described here: 510 bytes of them after
-that coaster's pieces, so only the first coaster's header sits at a known place. A guest is offered a coaster
+A u32 count follows, and that many u16s, the coaster's third node's crossing partners; then the pieces, each
+34 bytes and its own crossing partners after it (a u8 count in its last byte, then that many u16s); then every
+train slot up to the coaster's `uiMaxTrains`, 27 bytes each, used or not; then every car slot, 11 bytes each,
+its two rider counts in bytes 4 and 5 and the riders' ids after it, 4 bytes each (the saver `FUN_00437300`, the
+loader `FUN_00437b60`). In both of Alexah's played jungle parks the module is 1,850 bytes, and adds up: 16 + 32
++ 4 + 38 × 34 + 6 × 27 + 24 × 11 + 20 × 4, the Temple Of Gloom being the Minecart (six trains of four cars) with
+20 riders on board. A guest is offered a coaster
 only with bit 0 set, bit 1 clear and no clash. The module holds no rating of the ride: the game works the ride's
 excitement out again after a load.
 

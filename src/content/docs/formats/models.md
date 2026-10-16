@@ -515,18 +515,23 @@ park is 96 by 85 cells (8,342 heights, 8,160 cell records), and the lobby is 111
 these files also carries a mesh named `heightfield` with no vertices and no faces, whose flag word is
 `0x2`.
 
-**A cell's flags `0x800` and `0x4`.** The engine's height under a point (`FUN_004527f0`) is nought off the
-map. On a cell it is the plane through the cell's near corner and that corner's two neighbours, across the
-whole cell, unless the cell's flags (the record's low 16 bits) carry `0x800`: then the cell is two triangles,
-split along the diagonal from the near corner, or along the other one where the flags also carry `0x4`, and the
-height is the plane of the triangle the point is in. No cell of the four parks carries `0x800` (32,640 cells
-counted), so every park cell takes the first rule, though 1,743 of them are not flat.
+**A cell's diagonal: flags `0x2` and `0x4`.** Every ground cell (the record's low 16 bits without `0x1`) carries
+exactly one of `0x2` and `0x4`, in all five files: jungle 4,293 and 2,708 (7,001, beside 1,159 holes), fantasy
+4,527 and 2,889, hallow 5,164 and 2,206, space 4,674 and 2,620, the lobby's four ground cells all `0x2`. They name the
+diagonal the cell's two triangles meet on: `0x2` the one from the near corner (x, y) to (x + 1, y + 1), `0x4` the
+other, (x + 1, y) to (x, y + 1). The engine draws the cell by `0x2` and takes heights by `0x4`, the same split
+(OpenTPW `docs/exe/park-engine.md`, "The triangle diagonal").
+
+No cell in the files carries `0x800` (32,640 park cells counted). The engine sets it at load on a cell whose two
+triangles are not in one plane, and its general height under a point (`FUN_004527f0`) splits only those cells by
+`0x4`, taking the plane through the near corner and its two neighbours on the rest.
 
 ### Textures
 
 The frame table (offset at 0x50) is an array of *frame count* (0x36) 8-byte entries, immediately
-followed by that many 20-byte null-padded ASCII texture filenames: one string per entry, in the
-same order. A material's `FrameOffset` (see **Materials** below) is a byte offset that lands
+followed by the 20-byte null-padded ASCII texture filenames: each entry's own frames in order, so as many
+names as the frame data table's 0x0A counts add up to. That is one name per entry in all but 60 of the 847
+files that have textures; in those 60, an entry with several frames carries several names. A material's `FrameOffset` (see **Materials** below) is a byte offset that lands
 inside this 8-byte-entry array. Dividing `(FrameOffset - frameTableOffset)` by 8 gives that
 material's index into it.
 
@@ -538,8 +543,8 @@ records, indexed the same way:
 | 0x00    | 4 bytes | Flags. Bit 0 is tested by the engine (engine-confirmed)                  |
 | 0x04    | 4 bytes | Zeroed at load time, so runtime scratch rather than file data (engine-confirmed) |
 | 0x08    | 2 bytes | Padding                                                                  |
-| 0x0A    | 2 bytes | Set to 1 by the engine under one load option (engine-confirmed)          |
-| 0x0C    | 4 bytes | Offset of this frame's 20-byte texture filename string (engine-confirmed pointer) |
+| 0x0A    | 2 bytes | Frame count: how many textures the entry has, their names one after another from 0x0C. 1 in 7,167 of the 7,291 entries of all 2,129 files, 2 to 36 in the other 124. The engine loads that many (`FUN_00575c60`, `FUN_00575e10`), and a clip's texture frame tracks pick one (see [Locating the tracks](#locating-the-tracks)) (engine-confirmed) |
+| 0x0C    | 4 bytes | Offset of the entry's first 20-byte texture filename string (engine-confirmed pointer) |
 
 In practice this points at the very same filename strings that follow the frame table. The
 two tables describe the same textures, reached two different ways. A material resolves its
@@ -559,7 +564,7 @@ authored.
 
 The 8-byte frame table entries also begin with a **flags byte**. The engine tests bits `0x40`
 and `0x80` of byte 0 and propagates them into the model-wide flags at header 0x30
-(engine-confirmed). When it loads an item's model (`FUN_004629d0`), it sets bit `0x1000` of header
+(engine-confirmed). `0x40` is stored on exactly the 124 entries with more than one frame. When it loads an item's model (`FUN_004629d0`), it sets bit `0x1000` of header
 0x30 if either bit is set.
 
 That byte is the same one a material reads as its flags word. A material's `FrameOffset` points
@@ -820,17 +825,25 @@ The uint at 0x98 points at a 72-byte **animation block**. That pointer is valid 
 
 | Offset (from block start) | Size    | Description                                       |
 | -------------------------- | ------- | --------------------------------------------------- |
+| 0x00                        | 4 bytes | Flags. Bit `0x2`: the block has texture frame tracks (set in exactly the 229 blocks whose 0x18 is not 0) (engine-confirmed) |
 | 0x04                        | 4 bytes | First frame of the animation, an integer. 0 in every block in the game |
 | 0x08                        | 4 bytes | Last frame of the animation, an integer             |
 | 0x10                        | 2 bytes | Sum of every track's rotation keyframe count (a cross-check, not needed to parse) |
 | 0x12                        | 2 bytes | Track count                                          |
+| 0x18                        | 2 bytes | Texture frame track count                            |
 | 0x1A                        | 2 bytes | Hide-list entry count. See [The hide list](#the-hide-list) |
 | 0x2C                        | 4 bytes | Track table offset                                   |
+| 0x30                        | 4 bytes | Texture frame track table offset (engine-confirmed pointer) |
 | 0x38                        | 4 bytes | Hide-list offset (engine-confirmed pointer)          |
 
-The engine relocates five more pointers in the block: 0x20, a table of 16-byte records counted by
-the ushort at 0x0C, with a pointer at +0x08 and +0x0C of each; 0x24; 0x28; 0x30, a table of 8-byte
-records counted by the ushort at 0x18, with a pointer at +0x04 of each; and 0x3C. What they hold is
+**Texture frame tracks.** The table at 0x30 holds 0x18 records of 8 bytes: a u16 frame table entry (the
+material slot), a u16 key count, and the offset of that many u32 keys, each a time in its low 16 bits and a
+frame of that entry in its high 16, in rising time. The engine (`FUN_00470c90`) shows, for each track, the
+frame of the last key at or before the clip's time, and keeps the frame it had before the first key. 229 files
+carry them, 459 tracks in all, every key's offset inside its file.
+
+The engine relocates four more pointers in the block: 0x20, a table of 16-byte records counted by
+the ushort at 0x0C, with a pointer at +0x08 and +0x0C of each; 0x24; 0x28; and 0x3C. What they hold is
 not decoded.
 
 The track table offset is trustworthy on its own terms. That matters because there's nothing

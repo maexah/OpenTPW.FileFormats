@@ -650,7 +650,7 @@ None
 
 #### Commands
 
-- `1`: Create the tour ride at the model's walk node 99 (`0x00554318`), the parameter a style flag. The engine makes a tour record from the node's position and the model's facing and keeps it for the other commands; a non-zero parameter sets one of the record's fields to 2500 where nought sets 5000 (what the field does is not decoded). With no node 99 it creates nothing. Every shipped use is `TOUR 1 0`
+- `1`: Create the tour ride at the model's walk node 99 (`0x00554318`), the parameter a style flag. The engine makes a tour record from the node's position and the model's facing and keeps it for the other commands; a non-zero parameter sets the record's approach distance from the pad to 2500 where nought sets 5000. With no node 99 it creates nothing. Every shipped use is `TOUR 1 0`
 
 - `2`: Destroy the tour ride (`0x0055441b`), as the script's own death does. It calls the engine without reading its parameter, so the next word the engine reads is that parameter, which it refuses as an instruction, and the script ends. No shipped script uses it
 
@@ -664,7 +664,7 @@ None
 
 - `7`: Unused ("Unknown tour ride command")
 
-- `8`: Set time to fly for (in milliseconds)
+- `8`: Set time to fly for, in the engine's 62 ms ticks: it stores n × 1000 / 64 (`0x0055d950`), so about n seconds, and cuts every car's flight timer to it. The shipped scripts pass `VAR_DURATION`
 
 - `9`: Set ride wear status
   
@@ -676,7 +676,7 @@ None
   
   - `4`: Condemned
 
-- `10`: Check if there is a car in the station; the answer goes to the result register.
+- `10`: Answer the ride's ready latch into the result register (`0x0055dd20`): set when the first car is made and when a car lands, cleared by `11`. It does not look for a car in the station.
 
 - `11`: Activate launch / start flight; it also writes the result register.
 
@@ -692,7 +692,7 @@ None
 
 - `17`: Set size of car (1024 == 1)
 
-- `18`: Unknown
+- `18`: Set how steeply the cars pitch and bank (1024 == 1): it scales the pitch from the climb and the bank from the turn (`0x0055de10`). No shipped script uses it
 
 ## BUMP
 

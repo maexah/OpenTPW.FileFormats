@@ -79,8 +79,8 @@ header — shorter than the corresponding total above.
 | --- | --- | --- |
 | `+0x000` | 64 bytes | Display name, NUL-padded ASCII (e.g. `Young Itch AOE`) |
 | `+0x040` | 260 bytes | TrueType file name (e.g. `YOUNIA__.TTF`) — the file itself is in `fonts.wad` |
-| `+0x144` | 4 bytes | Unknown |
-| `+0x148` | 4 bytes | Unknown |
+| `+0x144` | 4 bytes | Width percent: each character's width is multiplied by it and divided by 100, truncating (`FUN_005eab70`). 82 to 141; 77 of the 84 signs have a record that is not 100, among them 16 of Lost Kingdom's 17 ride boards (engine-confirmed) |
+| `+0x148` | 4 bytes | The line's y on the sign's canvas, where its text is drawn. -72 to 169 (engine-confirmed) |
 | `+0x14C` | 60 bytes | A Windows **`LOGFONTA`** (engine-confirmed) |
 | `+0x188` | 44 bytes | Read as a block by a separate helper; contents not established |
 
@@ -275,7 +275,12 @@ directory and the two models, and ends with two numbers that look like a heading
 > text matches its board. `THEMENAMES.str` holds a set of park names, and is the likelier source for
 > what is actually lettered. Which of the two the compositor reads has not been established here.
 
-A ride's board takes its name from the ride's own [`.sam`](/formats/sam/) item description instead.
+A ride's board takes its name from the item's object text (a `<language>.txt` in the item's wad), which
+no shipped wad carries, and otherwise from the item's two `OBJECT_NAMES` rows joined with a space, a first row
+ending in `-` losing the dash and joining with none (`FUN_00412fb0`, `FUN_004146b0`). It is not the
+[`.sam`](/formats/sam/)'s `Name`: in English Lost Kingdom the two differ only for Dino Karts, whose rows make
+"DinoKarts", lettered on one line. Once a park is loaded, a placed board is lettered from its thing's own two
+lines instead (`FUN_00468500`).
 The engine splits a two-word name across the two lines by searching outward from the middle of the
 string for a space, so the break lands as near the centre as the name allows.
 

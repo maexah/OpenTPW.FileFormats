@@ -70,7 +70,7 @@ for the fourth and every setting above it.
 | Offset | Size | Description |
 | --- | --- | --- |
 | `0x00` | 4 bytes | Magic, `F4FB` — the only thing the loader checks |
-| `0x04` | 1 byte | Version — `1` in the anti-aliased fonts checked, `2` in `GAME8` and `GAME9` |
+| `0x04` | 1 byte | Version — `2` in `CONSOLE6`, `COURIER8`, `GAME6`, `GAME7`, `GAME8`, `GAME9`, `GAME10` and `GAME12` (in both languages' folders), `1` in the other 29 |
 | `0x05` | 1 byte | Line height in pixels — `22` for `TITLEBIG`, `55` for `MENUBIG`, `11` for `GAME8` |
 | `0x06` | 2 bytes | Glyph count — `249` in every English font |
 | `0x08` | 4 bytes each | Offset of each glyph record |

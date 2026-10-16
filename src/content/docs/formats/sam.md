@@ -88,8 +88,13 @@ That is 56 loose files and 344 inside WADs: 274 item descriptions, 50 `Easy_` fi
 **A `coaster.sam`'s tables.** All twelve carry `asCarTypes`, `asTextureData`, `asCrossSections`,
 `asCrossSectionSelects`, `asCrossSectionEdges1`, `asCrossSectionPoints1` and `asPylonControls`; eight also carry
 `asCrossSectionEdges2` (`b_drip`, `candy_c`, `c_hade`, `coasta`, `c_scat`, `coaster1`, `minecart`, `megacost`), two
-`asCrossSectionPoints2` (`coaster1`, `megacost`) and one `Points3` and `Edges3` (`coaster1`). The schema is not decoded
-from the executable; what the files show:
+`asCrossSectionPoints2` (`coaster1`, `megacost`) and one `Points3` and `Edges3` (`coaster1`). The executable carries
+the schema, 0x3c-byte entries each naming a field and its type, read by the coaster loader `FUN_0042f390`: the
+coaster's own fields at `0x0073ef48`, the pylon controls' at `0x0073d850`. Each gives the field's place in the
+loaded definition (`fTrackHeightAdjust` +0x40, `fWinchSpeed` +0x44, `fMinSpeed` +0x48, `fFrictionMultiplier` +0x54,
+`fBendElevationLow` and `High` +0x58 and +0x5c), and two fields with no effect: no code reads `fAutoBankDivisor`, and
+`bVisibleEndPylon` sets a definition bit, `0x20`, the loader has just set on every coaster (`0x0042fa4a`). What the
+files show:
 
 - `asCarTypes[n]` names the car: `pcMeshFilename` (Chak Atak's, `coaster1`, is `CrocCar`, with `uiCarTypeUniqueID`
   1188 and `fYOffset` 0.5). The car's `M1`..`M3` files beside it are its animation channels, as any model's are.

@@ -1061,8 +1061,13 @@ fill. The first and the third to ninth are the month's money, the second the par
 **After the sixteen, at 72,022, a ring of the last fifty stays**, 213 bytes of the same shape: `mCurrentEntry` (4, −1
 before the first), `mNumEntries` (4, 50), `mWrappedAround` (1), `mTemp` (4, 0 in every file) and 50 `mData` (4 each):
 each one a guest's whole days in the park, put there as a guest who paid at the gate stands at the stop to go home. In
-`Easymode.TPWI` it is empty. After it, at 72,235, a ring of five (33 bytes, `mNumEntries` 5) the arrival vehicles' loads
-are put in; then, at 72,268, the twenty rings of bytes above.
+`Easymode.TPWI` it is empty. **After it, at 72,235, a ring of the last five loads the arrival vehicles were called
+for**, 33 bytes of the same shape: `mCurrentEntry` (−1 before the first), `mNumEntries` (5), `mWrappedAround`, `mTemp`
+(0 in every file) and five dwords, each a load's headcount as the load was called. A slot no load has reached holds
+whatever the game's memory held: `0xcdcdcdcd` in `Easymode.TPWI`, whose one load is its 13, and 0 in the parks the game
+made fresh. While the ring has not gone round, its loads sum to the guests the 13th ring counts dropped (its months and
+its month so far): measured in 584 of the 599 such files on hand, the 15 others OpenTPW's own, written before it kept the
+ring. Then, at 72,268, the twenty rings of bytes above.
 
 **Every ring is closed at once, so all sixteen stand on one slot**, and the gate's, shops' and sideshows' are part of
 the deposits: measured in 612 of the 616 park files on hand (the shipped one, Alexah's Full Simulation saves, every

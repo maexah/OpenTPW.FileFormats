@@ -1037,7 +1037,7 @@ is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
 144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
 jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
-fill. The first and the third to ninth are the month's money, the second the park's value, the tenth to thirteenth the guests inside, the visitors, the rides and the arrivals, the fourteenth their happiness, its months **floats** where every other ring's are dwords:
+fill. The first and the third to ninth are the month's money, the second the park's value, the tenth to thirteenth the guests inside, the visitors, the rides and the arrivals, the fourteenth their happiness, its months **floats** where every other ring's are dwords, the fifteenth the guests' stay:
 
 | Ring | At | What its months are | `Easymode.TPWI` |
 |---|---|---|---|
@@ -1055,6 +1055,13 @@ fill. The first and the third to ninth are the month's money, the second the par
 | 12th | 69,077 | the objects whose item is a ride's kind (`Info.WhichUIType` 0, an upgrade's too) as each month was closed, whatever their state; its `mTemp` is 0 in every file | one month closed, 1 (the Belly Bounce) |
 | 13th | 69,666 | the guests the arrival vehicles dropped off, one by one, in each month; `mTemp` the month's so far | one month closed, 13 (its thirteen guests); 0 so far |
 | 14th | 70,255 | the mean happiness of the guests inside the park as each month was closed, a 4-byte float (0.0 with none inside or the park shut); its `mTemp` is 0 in every file | one month closed, 0.0 |
+| 15th | 70,844 | the mean of the last fifty stays below as each month was closed, whole days truncated (0 with none); its `mTemp` is 0 in every file | one month closed, 0 |
+
+**After the sixteen, at 72,022, a ring of the last fifty stays**, 213 bytes of the same shape: `mCurrentEntry` (4, −1
+before the first), `mNumEntries` (4, 50), `mWrappedAround` (1), `mTemp` (4, 0 in every file) and 50 `mData` (4 each):
+each one a guest's whole days in the park, put there as a guest who paid at the gate stands at the stop to go home. In
+`Easymode.TPWI` it is empty. After it, at 72,235, a ring of five (33 bytes, `mNumEntries` 5) the arrival vehicles' loads
+are put in; then, at 72,268, the twenty rings of bytes above.
 
 **Every ring is closed at once, so all sixteen stand on one slot**, and the gate's, shops' and sideshows' are part of
 the deposits: measured in 612 of the 616 park files on hand (the shipped one, Alexah's Full Simulation saves, every
@@ -1078,7 +1085,10 @@ so far is never below 0 in the 589 files on hand; the header's `mNumberOfVisitor
 and the month so far sum to it in 24 of the 42 files whose 13th has moved). **Each closed month of the 14th times the
 10th's month is a whole number**, the guests' happiness bytes summed: in 243 of the 270 closed months with guests inside
 of the 593 files on hand (the 27 others three months of one Full Simulation park in nine copies), and every month with
-none reads 0.0; every month lies from 0 to 255. Training is under way in 9 files, gate takings in 613, shops' and
+none reads 0.0; every month lies from 0 to 255. **Each closed month of the 15th is the mean of the stays the ring of
+fifty held at that close**: in all 34 of the 596 files on hand whose ring of stays holds any and has not wrapped, each
+month is the truncated mean of its oldest k stays for some k (those that left after the close later in the ring); the
+553 with no stay read 0, and the 9 whose ring has wrapped cannot be checked. The stays seen run from 18 to 587 days. Training is under way in 9 files, gate takings in 613, shops' and
 sideshows' takings in 44.
 
 The hire and training screens' account reads the 3rd, 4th and 6th rings' newest month; the finances screen graphs
@@ -1086,7 +1096,7 @@ the 1st to 4th and 6th to 9th, every money ring but training among them; the par
 beside the 13th to 16th, the 13th its first series; nothing reads the 12th. What feeds them and when a month is closed is
 OpenTPW's `docs/exe/hud.md`, "The mini-balance is a MONTHLY ACCOUNT"; what counts the visitors, and what reads them,
 its "The lifetime visitors"; what counts the guests inside and the rides, its "The guests inside and the rides at a close";
-what counts the arrivals, its "The arrivals".
+what counts the arrivals, its "The arrivals"; how a stay is reckoned, its "The leavers' stays".
 
 **The record's last 76 bytes**, measured in `Easymode.TPWI`, three jungle files the original wrote under Proton
 and Alexah's five Full Simulation saves (jungle, fantasy and hallow):

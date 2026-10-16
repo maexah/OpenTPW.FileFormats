@@ -1107,13 +1107,20 @@ and Alexah's five Full Simulation saves (jungle, fantasy and hallow):
 
 | Offset | Size | Field | |
 |---|---|---|---|
-| 73,468 | 4 × 3 | `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver` | 0, 0, 0 in seven of the nine; 0, 0, 3 in the two saves of the longest-played park |
+| 73,468 | 4 × 3 | `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver` | 0, 0, 0 in seven of the nine; 0, 0, 3 in the two saves of the longest-played park; the first two are this month's, the third is never read back (below) |
 | 73,480 | 4 | `mLifetimeVisitors` | 8 in `Easymode.TPWI`, 759 in the longest-played park's two; one for each admission fee taken, so `Easymode.TPWI`'s 8 are its gate's 200 so far at 25 |
 | 73,484 | 8 × 3 | `mLastStrike`, `mLastPuke`, `mLastPrank` | the calendar's start in all nine |
 | 73,508 | 8 | `mParkLastOpened` | 2000-01-01 15:37:30 in `Easymode.TPWI`, tick 15 |
 | 73,516 | 8 | `mLastObjectBuilt` | 2000-01-27 05:10:00 in `Easymode.TPWI`, tick 604 |
 | 73,524 | 8 | `mLastStaffHired` | 2000-01-29 03:00:00 in `Easymode.TPWI`, tick 648 |
 | 73,532 | 4 × 3 | `mMostPaidForTicket`, `mLargestBusLoad`, `mLongestStay` | 25, 0, 0 in `Easymode.TPWI`; 20, 0, 0 in four Full Simulation saves and 0, 0, 0 in the fifth, saved on tick 4; the first is the dearest admission fee taken |
+
+**The three misbehaving kids' counts.** Of 608 park files on hand, 594 hold 0, 0, 0, the longest-played park's nine
+copies 0, 0, 3, and one file the original wrote 1, 1, 1 (a kid who got away that month). The first two count this
+month and are nought just after a month's close; the third is written but **never read back by the game**: its load
+reads the first two and writes over the third, so a file's third counts only since that session's load (and holds
+whatever the game's memory held at the load: nought in two loads measured, -999 in a third). What counts into them, and
+what reads the first, is OpenTPW's `docs/exe/hud.md`, "The misbehaving kids".
 
 The six stamps are times on the park's calendar, each a `FILETIME` as a member of staff's `mTimeHired` is (below):
 the calendar's start, 2000-01-01, plus 3,750 seconds for each tick of `mGameTick` in the jungle's files. **`mLastStaffHired`

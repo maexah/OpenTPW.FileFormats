@@ -1037,7 +1037,7 @@ is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
 144 `mData` (4 each, signed). Measured in all 513 park files on hand: the shipped `Easymode.TPWI` (the only one, the
 jungle's), Alexah's five Full Simulation saves and a dozen others the original wrote under Proton, and OpenTPW's. A slot never filled holds `0xCDCDCDCD`, the allocator's
-fill. The first and the third to ninth are the month's money, the second the park's value, the tenth to thirteenth the guests inside, the visitors, the rides and the arrivals:
+fill. The first and the third to ninth are the month's money, the second the park's value, the tenth to thirteenth the guests inside, the visitors, the rides and the arrivals, the fourteenth their happiness, its months **floats** where every other ring's are dwords:
 
 | Ring | At | What its months are | `Easymode.TPWI` |
 |---|---|---|---|
@@ -1054,6 +1054,7 @@ fill. The first and the third to ninth are the month's money, the second the par
 | 11th | 68,488 | `mLifetimeVisitors` (73,480, below) as each month was closed; its `mTemp` is 0 in every file | one month closed, 0 |
 | 12th | 69,077 | the objects whose item is a ride's kind (`Info.WhichUIType` 0, an upgrade's too) as each month was closed, whatever their state; its `mTemp` is 0 in every file | one month closed, 1 (the Belly Bounce) |
 | 13th | 69,666 | the guests the arrival vehicles dropped off, one by one, in each month; `mTemp` the month's so far | one month closed, 13 (its thirteen guests); 0 so far |
+| 14th | 70,255 | the mean happiness of the guests inside the park as each month was closed, a 4-byte float (0.0 with none inside or the park shut); its `mTemp` is 0 in every file | one month closed, 0.0 |
 
 **Every ring is closed at once, so all sixteen stand on one slot**, and the gate's, shops' and sideshows' are part of
 the deposits: measured in 612 of the 616 park files on hand (the shipped one, Alexah's Full Simulation saves, every
@@ -1074,7 +1075,10 @@ each fee the gate takes. **The 12th's newest month is the file's things of type 
 of the 587 files on hand whose 2nd ring's newest month is their own park value (untouched since their close); **the 10th's
 is at most the file's guests** in 586 (the one other closed on 30 and holds 27, its guests gone since). The 13th's month
 so far is never below 0 in the 589 files on hand; the header's `mNumberOfVisitorsToDate` is no partner of it (the months
-and the month so far sum to it in 24 of the 42 files whose 13th has moved). Training is under way in 9 files, gate takings in 613, shops' and
+and the month so far sum to it in 24 of the 42 files whose 13th has moved). **Each closed month of the 14th times the
+10th's month is a whole number**, the guests' happiness bytes summed: in 243 of the 270 closed months with guests inside
+of the 593 files on hand (the 27 others three months of one Full Simulation park in nine copies), and every month with
+none reads 0.0; every month lies from 0 to 255. Training is under way in 9 files, gate takings in 613, shops' and
 sideshows' takings in 44.
 
 The hire and training screens' account reads the 3rd, 4th and 6th rings' newest month; the finances screen graphs

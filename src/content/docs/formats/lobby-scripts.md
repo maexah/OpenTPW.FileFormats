@@ -257,7 +257,7 @@ These appear only in `lobby.txt`:
 | `VERTICALOFFSET(n)` | 20 | How far above the island the camera orbits |
 | `GLOBERADIUSOUT(n)` | 475 | Camera distance from the globe, zoomed out |
 | `GLOBERADIUSIN(n)` | 200 | Camera distance from the globe, zoomed in |
-| `ISLANDFOV(n)` | 100 | Field of view. Not degrees - see below. |
+| `ISLANDFOV(n)` | 100 | Field of view in degrees, as handed to the projection; the picture is narrower - see below. |
 
 Selecting a park in the original spins the globe until that island's `ISLAND()` heading faces the
 camera, then pulls in from `GLOBERADIUSOUT` to `GLOBERADIUSIN`.
@@ -274,10 +274,16 @@ Fog is separate and is not driven by any of this. `FUN_005d8b50` sets the lobby'
 constant `0xFF44DDFF` with a near of 50 and a far of 300, and the island view then turns fog
 **off** outright (`FUN_005d9690`, clearing bit `0x2000`). Only the globe views run with it on.
 
+## What `ISLANDFOV` draws
+
+`ISLANDFOV` is degrees, and the game hands it to its projection as the full angle. But every view the game draws is
+then scaled on the screen by 1.5 across and 2 down, so the picture's half-angle has a tangent of `tan(fov/2) / 2` top
+to bottom and `tan(fov/2) / 1.5` side to side. `ISLANDFOV(100)` therefore draws **61.58 degrees top to bottom and
+76.93 across** at 4:3, which is why reading it as a plain 100 degree field gives specks in a bowed horizon. Measured in
+the running original's memory (OpenTPW's `docs/exe/lobby.md`, "The lens"; Q260).
+
 ## Open questions
 
-- `ISLANDFOV(100)` is not a vertical field of view in degrees - read that way the islands become
-  specks in a bowed horizon. It means something else, or reaches the projection another way.
 - `SPINSPEED(0.02)` read as radians per frame is half a radian a second at 25fps, which is much
   brisker than the lobby appears to turn.
 - Whether the flying-mesh `500.0` and the lightning bolt's 500-unit height being the same number

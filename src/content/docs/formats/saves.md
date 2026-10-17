@@ -211,7 +211,7 @@ one is read into, which is what makes this list checkable rather than inferred.
 | 10 | 4 bytes | `mNumberOfVisitorsToDate` | Guests ever admitted - `0` in the shipped park |
 | 11 | 2 bytes | `mParkGates` | Handle - thing `11` |
 | 12 | 2 bytes | `mTrafficLights` | Handle - thing `12` |
-| 13 | 4 bytes | `mRandomSeed` | |
+| 13 | 4 bytes | `mRandomSeed` | The park's one random generator's state as it stood at the save - `0x3f416bba` in the shipped park. A load hands it to the generator as it is: the original's first read after loading a file is the file's dword |
 | 14 | 2 bytes | `mResearchLab` | Handle |
 | 15 | 2 bytes | `mStaffHQ` | Handle |
 | 16 | 2 bytes | `mTagSystem` | Handle |
@@ -258,7 +258,8 @@ one kind of vehicle**: `mArrivalVehicle_Size1` the bus, `_Size2` the seaplane an
 (`FUN_0051a2f0` caches them at `+0x1da72c`, `+0x1da72e` and `+0x1da730`). The size in the names is how the game
 picks a kind when it is told the size of the arriving crowd: fewer than 36 people force the bus, 36 to 60 the
 seaplane and more than 60 the ferry (OpenTPW's `docs/exe/park.md`, "Arrivals"). A call made with no size, which
-the arrival timer makes when no vehicle is current, picks one of the three at random from `mRandomSeed`, and a
+the arrival manager makes for a guest waiting at the stop to go home when no vehicle is current, picks one of the
+three at random: one step of the generator in `mRandomSeed`, then `% 3` unsigned, nought the bus, and a
 kind whose feature cannot be found falls back to the others; both cache by kind as well. However it was picked,
 the engine creates the vehicle thing the first time that kind is sent for, then caches its id in that kind's
 slot. `mCurrentArrivalVehicle` holds whichever is on its way, or nought when none is, and goes with that

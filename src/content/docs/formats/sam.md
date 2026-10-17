@@ -456,6 +456,19 @@ Verified against `coconut.wad`, `junspray.wad` and the Jungle's two category fil
 | `ExitCellAppearPosX` / `Y` | *(absent)* | 0.5 / 0.1 | 0.5 / 0.5 | |
 | `MinCapacity` / `MaxCapacity` | *(absent)* | *(absent)* | 0/0 shops, 1/3 sideshow | |
 
+### `Info.OverwritePriority`: which things may be built over
+
+A number saying how readily a placed thing gives way to another being built on its cells. Every category file declares `5`, so a ride, shop, sideshow or upgrade, which sets none of its own, carries 5. Only features set it. The fork watch of 2026-10-16 measured all 274 item `.sam` files of the four themes: 45 set `1`, 48 set `0` and 181 leave it unset, which means the category's 5. No `Easy_` or `Online_` file sets it.
+
+Lost Kingdom's features that set it:
+
+| Value | Features |
+|---|---|
+| `0` | `2x1log`, `2x2rck`, `4x4rock`, `5x5rck`, `5x5rck2`, `bigpalm`, `camera`, `fountain`, `lavspurt`, `mamfount`, `pelbin`, `sign1` |
+| `1` | `1x1east`, `1x1rck1`, `1x1rck2`, `bush`, `bush02`, `lure`, `speaker1` to `speaker4`, `s_plant`, `statue1`, `statue2` |
+
+The other 11 of its features (the bus, the end, the ferry, the gates, the lights, the seaplane, the staff building, `supbog`, the toilet and the rest) keep 5. The executable's placement check passes a new thing over another's cells only when the new thing's priority is **strictly greater** than the owner's (compare at `0x00535d66` to `0x00535d73`), so a thing of priority 0 gives way to a new thing of any higher priority, and a 5 only to a 6 or more, which no shipped file declares. The path and queue tools write 2 and 3 as their own priorities (`0x00527200`, `0x00527218`).
+
 ## Identifying an item
 
 All but three of each theme's items carry an `Info.Id` of four digits: the theme, the category, then two

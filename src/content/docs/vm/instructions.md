@@ -1186,7 +1186,9 @@ It asks the engine for a fade, but a held scream has no sound channel of its own
 
 **Both branches are reached by shipped content**, so neither may be treated as dead: of the 46 uses across 44 scripts, 44 pass 65535 - which the operand fetch sign-extends to -1 - while `Monkey.rse` passes 90 and `Totem.RSE` passes 100, landing on grid steps 2 and 3 at speed 50, and both on step 3 at a newly built ride's 60.
 
-**The grid's first column cannot be reached at all**, and that is arithmetic rather than an oversight. The step is `(level + speed) / 50`, so at speed 50 or more a step of 0 needs a level below 0 - and a level below 0 is exactly what takes the other branch. `0x4b`, `0x4f`, `0x53` and `0x57` are unreachable for any script that could be written, so long as its speed is 50 or more. The ride window's speed control also sets the speed (see [`WAIT`](#wait)), and how low it goes is not established here, so whether a player can bring that column within reach is an open question.
+**The grid's first column cannot be reached by a `SINGLESCREAM`**, and that is arithmetic rather than an oversight. The step is `(level + speed) / 50`, so at speed 50 or more a step of 0 needs a level below 0 - and a level below 0 is exactly what takes the other branch. `0x4b`, `0x4f`, `0x53` and `0x57` are unreachable for any script that could be written with this opcode, so long as its speed is 50 or more. The ride window's speed control also sets the speed (see [`WAIT`](#wait)), and how low it goes is not established here, so whether a player can bring that column within reach through this opcode is an open question.
+
+**[`REPAIREFFECT 0`](#repaireffect) reaches that column anyway.** It calls the same picker with the script's variable 5 as the band, a level of 1 and a speed of 1, so the step is `(1 + 1) / 50 = 0`: column 0 only, whenever the band is not 0 - band 1 plays `0x4b`, 2-3 or a negative band `0x4f`, 4-7 `0x53`, 8 or more `0x57`, and band 0 is silent (`VAR_ONRIDE` is never negative in practice). 70 shipped scripts use `REPAIREFFECT 0`. (The coaster's own call passes a level and speed of 100, column 3.) Fork watch 2026-10-16, checked in the executable at `0x005563bd` to `0x005563c2`.
 
 ## SCREAMLEVEL
 
@@ -1259,6 +1261,13 @@ Ids reach this instruction through variables rather than literals, having usuall
 ### Operands
 
 `<value>` - 0 or 1: 0 for hide, 1 for show.
+
+It does more than show and hide a particle. The particle is switched on for a non-zero value and off for nought, and sounds follow the value:
+
+- **1 (show)** also plays the global rides effects 111 and 211 at the ride's model.
+- **0 (hide)** also plays a kids scream, chosen as [`SINGLESCREAM`](#singlescream) chooses it from the script's variable 5 (`VAR_ONRIDE`, the number on the ride) with a level of 1 and a speed of 1: silent with nobody aboard, otherwise one of the first column's four screams by the number aboard. It happens only when the script declares at least six variables.
+
+Lost Kingdom's Bouncy declares 14 variables and runs `REPAIREFFECT 1`, then `0`. Fork watch 2026-10-16, executable table entry 93 at `0x0055694c`, handler `0x005562a6`, the nought branch at `0x0055635f`.
 
 ## GETCUSTPTCLCODE
 

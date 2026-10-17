@@ -547,6 +547,13 @@ cells, all of `mType` 7, 0, 2 or 30, and every path, queue and footprint cell is
 it. The meaning is read from that split; nothing in the file names it. Bit `0x20` is the engine's
 NOMODIFY, set on 18 of the 78 path cells.
 
+`mFlags` bit `0x80` **is the cell's attribute `0x10`** (`mStatusFlags`, and `base.map`), carried over as the map
+loads: the two agree on every one of the shipped park's 16,384 cells, 552 with both and none with one. Those 552 are
+the approach before the gates, rows 0 to 16 of columns 28 to 67, `mType` 7 (490) and 30 (62), and every one carries
+`0x40` as well. The game draws the ground of a cell with `0x40` and not `0x80` at half light, so this bit keeps the
+approach lit, though no ground of it is drawn in the shipped park (the scenery covers it); OpenTPW's
+`docs/exe/park-engine.md`, "The park view's colours", has what the executable does with both.
+
 In the **track** sub-record, `mNeighbours` is 0 on all 16,384 cells of the shipped park.
 
 `mTileData` is **three dwords**, not one opaque run:

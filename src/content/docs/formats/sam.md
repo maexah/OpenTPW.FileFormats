@@ -701,7 +701,7 @@ occupies. Jungle's values:
 | Key                                  | Value   |
 | ------------------------------------ | ------- |
 | `MapInfo.HeightfieldXStart` / `YStart` | `0`, `0` |
-| `MapInfo.HeightfieldWidth` / `Height` | `95`, `84` — so 96×85 cells |
+| `MapInfo.HeightfieldWidth` / `Height` | `95`, `84` — the engine holds a picked cell below them, columns 0–94 and rows 0–83, while `base.md2`'s heightfield is 96×85 cells (OpenTPW `docs/exe/park-engine.md`, "The picker never hands the mode a cell off the map") |
 | `MapInfo.FixedItemOriginX` / `OriginY` | `48`, `17` — "the origin from which fixed items (buses, gates) are placed" |
 | `FixedItemInfo.EntranceAPos` / `BPos` | `(47,17)`, `(48,17)` |
 | `FixedItemInfo.TicketBoothAPos` / `BPos` | `(47,13)`, `(48,13)` |

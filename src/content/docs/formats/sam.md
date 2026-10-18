@@ -753,8 +753,9 @@ so far is followed into the executable here:
 | `GraphicalOptions.TEXTUREQUALITY` (0 minimum, 1 low, 2 medium, 3 high) | 1 | 2 | 3 |
 
 At 0 or 1 the engine takes its texture folders' small copies, `stexture` and `ssharete`, and the dynamic meshes'
-`Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32); at 2 or 3 the full ones (OpenTPW
-`docs/exe/boot.md`; `docs/exe/park-engine.md`, "The park's sea"). `NUMKIDS` is [Sprites](../sprites/).
+`Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32; the gates' flags' `gte_lgo1` is the
+same file in both folders, 128 x 128, the SimThemePark logo over Bullfrog Productions'); at 2 or 3 the full ones (OpenTPW
+`docs/exe/boot.md`; `docs/exe/park-engine.md`, "The park's sea" and "The gates' flags"). `NUMKIDS` is [Sprites](../sprites/).
 
 ## `data\_Resolution.sam`
 

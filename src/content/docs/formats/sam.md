@@ -769,7 +769,7 @@ settings and the reverb". (Fork watch 2026-10-18, `verify-other-a.md` and `verif
 ## `data\low.sam`, `med.sam`, `high.sam`
 
 The three detail files, one for each graphics quality the options offer. They set the same keys
-(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Five keys
+(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Six keys
 so far are followed into the executable here:
 
 | Key | `low.sam` | `med.sam` | `high.sam` |
@@ -779,6 +779,7 @@ so far are followed into the executable here:
 | `GraphicalOptions.MIPMAP` (0 off, 1 on) | 1 | 1 | 1 |
 | `GraphicalOptions.TEXTURE32` (0 off, 1 on) | 0 | 0 | 0 |
 | `GraphicalOptions.SPRITESHADOW` (commented "0->Off, 1->Low, 2->Medium, 3->High") | 0 | 1 | 2 |
+| `GraphicalOptions.FIRSTPERSONVIEWDISTANCE` (no comment) | 0 | 1 | 2 |
 
 At 0 or 1 the engine takes its texture folders' small copies, `stexture` and `ssharete`, and the dynamic meshes'
 `Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32; the gates' flags' `gte_lgo1` is the
@@ -799,6 +800,12 @@ format").
 `Data\Generic\Shadow\alphkid` (the `.wct`; [Texture](../texture/)) under everybody, 2 and 3 the person's own picture.
 At 1 the shadow multiplies the ground under it by 152/255 under the shipped parks' sun (OpenTPW `docs/exe/park-engine.md`,
 "A person's shadow").
+
+`FIRSTPERSONVIEWDISTANCE` is where first person's fog lies: 0 from 50 to 60, 1 from 100 to 110, 2 from 135 to 150, 3
+from 230 to 250, in the draw's own depth (about 0.707 of the distance straight ahead of the eye, so medium's is 141 to
+156 units of the park, a cell being 10); any other value leaves the engine's 100 to 130. Nearer than the start nothing
+is fogged, past the end everything but the sky is the theme's `ThemeEngine.FogColour` (OpenTPW
+`docs/exe/park-engine.md`, "First person's fog").
 
 ## `data\_Resolution.sam`
 

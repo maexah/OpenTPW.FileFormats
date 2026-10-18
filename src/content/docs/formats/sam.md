@@ -504,6 +504,18 @@ Ape 8 ("Pirate Ship"), the Aztec Mayhem 9 ("Simulator"), the Jungle Spray 19 ("S
 screen names an item by this row in its help bar, not by `Info.Name` (OpenTPW's `docs/exe/hud.md`, "The buy screen's
 help rows").
 
+### `AddOn.UpgradesId` and `AddOn.UpgradeType`: what an add-on fits
+
+An add-on, the `15xx` band, names the ride it fits by that ride's `Info.Id` (`AddOn.UpgradesId`) and says what kind of
+add-on it is (`AddOn.UpgradeType`): each theme's `upgrades/Upgrades.sam` declares `0` and `1` beside the notes "Info.Id
+of the ride this item upgrades" and "What type of addon is this - track ride add on=1, other ride=2". Of all 311 `.wad`
+files, eleven set them, every one in an `upgrades/` folder, and each sets both: the jungle's `lavajump` (1500) and
+`mammtunn` (1501) on 1150 and `watertun` (1502) on 1160; hallow's `chopper` (2500) and `firepit` (2501) on 2150 and
+`ogre` (2502) on 2160; space's `teleport` (3500) on 3150, `meteor` (3501) on 3160 and `zob2` (3502) on 3109; fantasy's
+`beejump` (4500) and `honeypot` (4501) on 4150. All are type 1 but `zob2`, type 2. No other item file sets either, so
+every other item reads `0`. The game's hover posts no row over a placed add-on unless it is type 2 (OpenTPW's
+`docs/exe/park-engine.md`, "The rows over a queue and an object").
+
 ## Fixed items
 
 A handful of items are placed by the game rather than by the player, and are marked by two keys:

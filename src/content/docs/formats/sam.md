@@ -769,17 +769,23 @@ settings and the reverb". (Fork watch 2026-10-18, `verify-other-a.md` and `verif
 ## `data\low.sam`, `med.sam`, `high.sam`
 
 The three detail files, one for each graphics quality the options offer. They set the same keys
-(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. One key
-so far is followed into the executable here:
+(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Two keys
+so far are followed into the executable here:
 
 | Key | `low.sam` | `med.sam` | `high.sam` |
 |---|---|---|---|
 | `GraphicalOptions.TEXTUREQUALITY` (0 minimum, 1 low, 2 medium, 3 high) | 1 | 2 | 3 |
+| `GraphicalOptions.LIGHTING` (0 off, 1 on) | 0 | 1 | 1 |
 
 At 0 or 1 the engine takes its texture folders' small copies, `stexture` and `ssharete`, and the dynamic meshes'
 `Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32; the gates' flags' `gte_lgo1` is the
 same file in both folders, 128 x 128, the SimThemePark logo over Bullfrog Productions'); at 2 or 3 the full ones (OpenTPW
 `docs/exe/boot.md`; `docs/exe/park-engine.md`, "The park's sea" and "The gates' flags"). `NUMKIDS` is [Sprites](../sprites/).
+
+`LIGHTING` 0 lights nothing: every vertex of the ground and of every model takes the full colour, so each face shows
+its texture's own, and land outside the park is not drawn at half light; 1 lights them by the theme's sun and ambient.
+The file is read once, as the game starts, so a quality chosen on the options screen takes effect at the next start
+(OpenTPW `docs/exe/park-engine.md`, "What `GraphicalOptions.LIGHTING` 0 turns off").
 
 ## `data\_Resolution.sam`
 

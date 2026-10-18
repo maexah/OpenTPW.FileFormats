@@ -745,12 +745,14 @@ Those four groups are also how the game attenuates itself while the advisor talk
 the music and SFX group volumes by a percentage and leaves speech alone, restoring them when the
 sample ends.
 
-**Open question.** `SoundInfo.DUCKINGLEVEL` is `38`, and it is the only ducking-related key in the
-file. The percentage the engine multiplies by lives in memory that is zeroed in the image and has
-no writer the decompiler can see, so it is filled in from configuration at runtime — which makes
-`DUCKINGLEVEL` the only candidate, and would mean the mix drops to 38% while the advisor speaks.
-But that reading contradicts the file's own header comment, under which `38` would instead be the
-detail level at which ducking switches on. Not yet resolved either way.
+**`SoundInfo.DUCKINGLEVEL` is a percentage.** It is `38`, and the executable reads it as one: the
+group's level is multiplied by it and divided by 100, so the music and SFX groups drop to 38% while
+the advisor speaks. The file's header comment says the `SoundInfo.*` keys are detail levels at which a feature
+switches on, and that is true of QSOUND, REAR, CROSSOVER, EAX, MPEGRATE, DROPPABLELEVEL and FADETOGGLE, but not of
+`DUCKINGLEVEL`. `SoundInfo.FADETOGGLE` is `30`: a sound stopped with a fade
+is faded only while the sound detail is above it, and cut at 30 or below, `FADEOBJ` included. The
+executable's globals for every key are in OpenTPW's `docs/exe/audio.md`, "The fade, the SoundInfo
+settings and the reverb". (Fork watch 2026-10-18, `verify-other-a.md` and `verify-audio-fx.md`.)
 
 ## `data\low.sam`, `med.sam`, `high.sam`
 

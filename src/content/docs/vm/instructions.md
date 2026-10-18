@@ -130,13 +130,13 @@ No script the game ships uses this instruction, so the operand meanings here com
 
 ## FADEOBJ
 
-`FADEOBJ <tag>` - Stop every effect carrying that tag, letting a sound fade out rather than cutting it.
+`FADEOBJ <tag>` - Stop every effect carrying that tag, letting a sound fade out rather than cutting it, while the sound detail is above `SoundInfo.FADETOGGLE` (30 in the shipped `sound.sam`; the default detail is 50). At a detail of 30 or below it **cuts**, exactly as `KILLOBJ` does. The fade itself takes 60 percent off the voice's volume on each service pass of the sound library. (Fork watch 2026-10-18, `verify-other-a.md` and `verify-audio-fx.md`.)
 
 ### Operands
 
 `<tag>` - As `KILLOBJ`'s, and the walk over the records is the same one.
 
-**For a particle the two instructions are identical** - both reach the same kill with the same argument - so they differ only for a sound, where this one stops it fading and `KILLOBJ` stops it outright.
+**For a particle the two instructions are identical** - both reach the same kill with the same argument - so they differ only for a sound, where this one stops it fading (at a sound detail above 30) and `KILLOBJ` stops it outright.
 
 ## SETOBJPARAM
 

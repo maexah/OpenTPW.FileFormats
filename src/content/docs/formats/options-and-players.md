@@ -34,7 +34,7 @@ The sound effects, music and speech volumes, and the switches for the advisor, t
 
 **Defaults** (with no file, or a version of `0`): 3D card rendering, 640 x 480, medium graphics, the primary video card, and movie sound on at the volume `data\sound.sam` gives as `DefaultVolume.MOVIE`, with the audio quality it gives as `SoundInfo.DEFAULTQUALITY`.
 
-> The defaults for the sound options come from values that are zero in the executable and filled in at run time. `sound.sam`'s `DefaultVolume` and `SoundInfo` rows are the only ones that match them, by name; the code that reads them into place has not been traced.
+> The defaults for the sound options come from values that are zero in the executable and filled in at run time. `sound.sam`'s `DefaultVolume` and `SoundInfo` rows are the only ones that match them, by name; the game reads `sound.sam` into a settings object at startup, each key to a global by its place in the executable's own key table (not the file's order), and the options screen starts from `DEFAULTQUALITY` and the four `DefaultVolume` rows. (Fork watch 2026-10-18, `verify-other-a.md` and `verify-audio-fx.md`.)
 
 ## Players
 

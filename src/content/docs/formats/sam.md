@@ -769,13 +769,15 @@ settings and the reverb". (Fork watch 2026-10-18, `verify-other-a.md` and `verif
 ## `data\low.sam`, `med.sam`, `high.sam`
 
 The three detail files, one for each graphics quality the options offer. They set the same keys
-(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Two keys
+(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Four keys
 so far are followed into the executable here:
 
 | Key | `low.sam` | `med.sam` | `high.sam` |
 |---|---|---|---|
 | `GraphicalOptions.TEXTUREQUALITY` (0 minimum, 1 low, 2 medium, 3 high) | 1 | 2 | 3 |
 | `GraphicalOptions.LIGHTING` (0 off, 1 on) | 0 | 1 | 1 |
+| `GraphicalOptions.MIPMAP` (0 off, 1 on) | 1 | 1 | 1 |
+| `GraphicalOptions.TEXTURE32` (0 off, 1 on) | 0 | 0 | 0 |
 
 At 0 or 1 the engine takes its texture folders' small copies, `stexture` and `ssharete`, and the dynamic meshes'
 `Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32; the gates' flags' `gte_lgo1` is the
@@ -786,6 +788,11 @@ same file in both folders, 128 x 128, the SimThemePark logo over Bullfrog Produc
 its texture's own, and land outside the park is not drawn at half light; 1 lights them by the theme's sun and ambient.
 The file is read once, as the game starts, so a quality chosen on the options screen takes effect at the next start
 (OpenTPW `docs/exe/park-engine.md`, "What `GraphicalOptions.LIGHTING` 0 turns off").
+
+`TEXTURE32` picks the format every texture is stored in: 0 four bits a channel (A4R4G4B4), so a texel keeps only the top
+four bits of each of the file's eight, alpha too, and 1 eight (A8R8G8B8). No shipped file sets it. `MIPMAP` 1 gives
+each texture four levels where the texture memory allows (OpenTPW `docs/exe/textures.md`, "The texture cache's surface
+format").
 
 ## `data\_Resolution.sam`
 

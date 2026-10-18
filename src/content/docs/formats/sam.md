@@ -708,6 +708,7 @@ occupies. Jungle's values:
 | `FixedItemInfo.CrossingParkSideAPos` / `BPos` | `(47,9)`, `(48,9)` |
 | `FixedItemInfo.CrossingBSSideAPos` / `BPos` | `(47,5)`, `(48,5)` |
 | `FixedItemInfo.BusStopAPos` / `BPos` | `(42,5)`, `(53,5)` |
+| `WaterStartPos.X` / `Y` / `Z` | `380`, `-5`, `-180.0` in all four themes' `Standard.sam` and `Online_Standard.sam`, over the base file's `375`, `-5`, `0.0` — the corner of the moving sea the engine lays over the harbour by the gates, 134 quads of 20 units from it (OpenTPW `docs/exe/park-engine.md`, "The park's sea") |
 
 A cell is 10 world units, so a cell boundary lies at ten times the cell number.
 

@@ -1161,7 +1161,8 @@ Read as a morph descriptor, `droidm2.MD2` appears to aim 3,561 channels at a 16-
 
 ### UV animation (bit 0x10000)
 
-Slides texture coordinates. This is how the game animates water. The slot at descriptor 0x2C points
+Slides texture coordinates. This is how the game animates its rivers, falls and shorelines; the park's sea by the
+gates is not in any model, but a quilt the engine heaves itself (OpenTPW `docs/exe/park-engine.md`, "The park's sea"). The slot at descriptor 0x2C points
 at a 20-byte descriptor:
 
 | Offset  | Size    | Description                                |

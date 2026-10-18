@@ -769,7 +769,7 @@ settings and the reverb". (Fork watch 2026-10-18, `verify-other-a.md` and `verif
 ## `data\low.sam`, `med.sam`, `high.sam`
 
 The three detail files, one for each graphics quality the options offer. They set the same keys
-(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Four keys
+(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. Five keys
 so far are followed into the executable here:
 
 | Key | `low.sam` | `med.sam` | `high.sam` |
@@ -778,6 +778,7 @@ so far are followed into the executable here:
 | `GraphicalOptions.LIGHTING` (0 off, 1 on) | 0 | 1 | 1 |
 | `GraphicalOptions.MIPMAP` (0 off, 1 on) | 1 | 1 | 1 |
 | `GraphicalOptions.TEXTURE32` (0 off, 1 on) | 0 | 0 | 0 |
+| `GraphicalOptions.SPRITESHADOW` (commented "0->Off, 1->Low, 2->Medium, 3->High") | 0 | 1 | 2 |
 
 At 0 or 1 the engine takes its texture folders' small copies, `stexture` and `ssharete`, and the dynamic meshes'
 `Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32; the gates' flags' `gte_lgo1` is the
@@ -793,6 +794,11 @@ The file is read once, as the game starts, so a quality chosen on the options sc
 four bits of each of the file's eight, alpha too, and 1 eight (A8R8G8B8). No shipped file sets it. `MIPMAP` 1 gives
 each texture four levels where the texture memory allows (OpenTPW `docs/exe/textures.md`, "The texture cache's surface
 format").
+
+`SPRITESHADOW` is the shadow each person casts on the ground: 0 none, 1 the one shipped silhouette
+`Data\Generic\Shadow\alphkid` (the `.wct`; [Texture](../texture/)) under everybody, 2 and 3 the person's own picture.
+At 1 the shadow multiplies the ground under it by 152/255 under the shipped parks' sun (OpenTPW `docs/exe/park-engine.md`,
+"A person's shadow").
 
 ## `data\_Resolution.sam`
 

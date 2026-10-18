@@ -22,6 +22,11 @@ title: Texture (*.wct)
 | 4 bytes | block 1 size                             |
 | 4 bytes | unknown                                  |
 
+**A shadow's silhouette.** `data\generic\shadow\alphkid.wct`, a loose file: type `0x13`, header byte 1 = 1 (graded), 32
+bits, 64 x 64. Its colour is white throughout (252 and 253 on every channel, 2,048 texels each) and its alpha a
+child's silhouette, a head over a body: 2,433 texels 0, 1,412 at 16 or more (rows 2 to 62, columns 13 to 47), the most
+255. The game lays it on the ground under every person at the medium detail tier ([SAM](../sam/), `SPRITESHADOW`).
+
 **Measured across the game's files** (OpenTPW Q353; every `.wct` member of the wads under `data/`, 8,375 of
 them, dumped by name with `wadcat --dump`; the 41 loose `.wct` files on disk are not among them):
 

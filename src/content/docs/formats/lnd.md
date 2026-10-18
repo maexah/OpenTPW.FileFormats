@@ -44,9 +44,12 @@ and blue; byte 0 is nought in every file.
 ## The map
 
 Four samples to a cell along each axis: cell column x uses sample columns 4x to 4x + 4, and **the rows run the other
-way from the park's**: map row y uses sample rows 4r to 4r + 4, r = 84 - y. A sample's byte 0 is 255 where the ground
-is composited and nought elsewhere (in the jungle file the approach before the gates and the shipped paths are
-nought); bytes 1, 2 and 3 are the three weights the layers are mixed by.
+way from the park's**: map row y uses sample rows 4r to 4r + 4, r = 84 - y. Cell column 95 is composited too, and
+its fifth sample column is the next sample row's first: the game reads the map as one run of rows. A cell is
+composited only where byte 0 of its four middle samples is 255; in the jungle, fantasy and hallow files byte 0 is only
+255 or nought, and in the space file 58 samples hold 1 to 30, which refuse a cell as nought does. In the jungle file the
+refused cells are 1,153 cells the scenery draws (the river, the approach and the cells of the stock park's mType 7;
+OpenTPW Q488), and every path cell is composited. Bytes 1, 2 and 3 are the three weights the layers are mixed by.
 
 ## The ramps
 

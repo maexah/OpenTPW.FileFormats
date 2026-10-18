@@ -794,6 +794,12 @@ mesh 0x64, twelve bytes each: the same table a face's first word indexes. How ma
 file holds has not been counted across the models. OpenTPW does not read them for lighting yet: it
 accumulates each triangle's face normal onto its three vertices and re-normalizes.
 
+**The entries the faces name are not always their triangles' planes in the file.** In `gates.MD2`'s first mesh
+(jungle `features/gates.wad`), 196 faces name 196 of the table's 596 entries, and 23 of those entries lie more than 8
+degrees off the plane of the face that names them. In the running game those 196 entries hold each triangle's own
+normal and the other 400 hold the file's (measured, OpenTPW `docs/exe/park-engine.md`, "The picker's object march"),
+so a reader that wants a face's plane takes it from the face's three corners. Other files are not counted.
+
 ## Animation
 
 An animation file has a mesh table offset of **exactly 0** at 0x70, the same field that's a

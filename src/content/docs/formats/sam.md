@@ -494,6 +494,16 @@ The Jungle's fixed items are `1600` Bus, `1601` Gates, `1602` Seaplane, `1603` L
 > returns fragments of the surrounding compression tokens rather than the value. Decompress the member
 > first — see [Archives](/formats/wad/).
 
+### `Info.RideTypeStringIndex`: the kind, by name
+
+`Info.RideTypeStringIndex` is a row of `Language/English/ITEMTYPES.str`, the kinds' names (26 rows; row 0 is empty,
+then "Go-kart Track", "Roller Coaster", ... "Giant Walker"). Every ride and sideshow item file of the four themes sets
+it, 89 files with values 1 to 23, but the four `mystery.sam`; no shop, feature or upgrade file, no `Easy_` or `Online_`
+layer and no category file does, so theirs reads 0. In Lost Kingdom the Belly Bounce is 7 ("Bouncy Castle"), the Crazy
+Ape 8 ("Pirate Ship"), the Aztec Mayhem 9 ("Simulator"), the Jungle Spray 19 ("Shooting Gallery"). The game's buy
+screen names an item by this row in its help bar, not by `Info.Name` (OpenTPW's `docs/exe/hud.md`, "The buy screen's
+help rows").
+
 ## Fixed items
 
 A handful of items are placed by the game rather than by the player, and are marked by two keys:

@@ -106,7 +106,10 @@ game draws a head with its own direction switched off and picks the picture itse
 
 Five stored directions cover eight compass headings because the game **reflects** them. When the
 heading it wants runs past the last one stored, it draws `8 - heading` mirrored instead, which is why a
-guest walking away to the left and one walking away to the right are the same pictures.
+guest walking away to the left and one walking away to the right are the same pictures. It mirrors a picture about
+its **origin across**, not its middle: the origin's column stays on the point drawn at, and the picture's left edge
+stands origin-across pixels to the right of it (OpenTPW's `docs/exe/park-engine.md`, "A reflected picture turns about
+its origin").
 
 One shipped set does not survive its own rule: `Jungle\Entertainers\SPR_EX` set 3 stores four
 directions, and heading 4 folds to `8 - 4 = 4`, which is still past the end. The game walks on into the

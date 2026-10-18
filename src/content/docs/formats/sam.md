@@ -742,6 +742,20 @@ no writer the decompiler can see, so it is filled in from configuration at runti
 But that reading contradicts the file's own header comment, under which `38` would instead be the
 detail level at which ducking switches on. Not yet resolved either way.
 
+## `data\low.sam`, `med.sam`, `high.sam`
+
+The three detail files, one for each graphics quality the options offer. They set the same keys
+(`GraphicalOptions.*`, `GameOptions.*`) to different values; each key's meaning is the file's own comment. One key
+so far is followed into the executable here:
+
+| Key | `low.sam` | `med.sam` | `high.sam` |
+|---|---|---|---|
+| `GraphicalOptions.TEXTUREQUALITY` (0 minimum, 1 low, 2 medium, 3 high) | 1 | 2 | 3 |
+
+At 0 or 1 the engine takes its texture folders' small copies, `stexture` and `ssharete`, and the dynamic meshes'
+`Data\Generic\Dynamic\STexture` (the sea's `gby_sur1` to `3` there are 32 x 32); at 2 or 3 the full ones (OpenTPW
+`docs/exe/boot.md`; `docs/exe/park-engine.md`, "The park's sea"). `NUMKIDS` is [Sprites](../sprites/).
+
 ## `data\_Resolution.sam`
 
 EA's resolution override, 424 bytes, CRLF line endings. It ships **inactive**: the game reads only

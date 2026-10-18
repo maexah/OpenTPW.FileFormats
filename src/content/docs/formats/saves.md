@@ -1231,6 +1231,40 @@ Simulation saves the empty slots are zero, and Alexah's jungle save has the syst
 `mValue` 30, and its next event at 2002-05-05 19:22:30. `mChallengeOffered` and `mChallengeLost` are 0 in every slot of
 every file, the won one too.
 
+### The weather (model 15)
+
+The thing `mWeather` names - thing `7` in every park file. Its record is **99 bytes**, read field by field after the
+sixteen every thing opens with (`FUN_00512010`; the forecast's three fields by `FUN_005132a0`):
+
+| Offset | Size | Name | Shipped park |
+| --- | --- | --- | --- |
+| 16 | 4 bytes | `mQuality` | `78` |
+| 20 | 8 bytes | `mLastChanged` | a `FILETIME` |
+| 28 | 8 bytes | `mLastForecasted` | a `FILETIME` |
+| 36 | 8 bytes | the forecast's `mTime` | a `FILETIME` |
+| 44 | 4 bytes | the forecast's `mQuality` | `78` |
+| 48 | 1 byte | the forecast's `mValid` | `0` |
+| 49 | 4 bytes | `mCurrentDrops` | `0` |
+| 53 | 4 bytes | `mTargetDrops` | `0` |
+| 57 | 1 byte | `mLightning` | `0` |
+| 58 | 4 bytes | `mLightningCountdown` | `0` |
+| 62 | 4 bytes | `mLightningNumThisPeriod` | `0` |
+| 66 | 4 bytes | `mThunderCountdown` | `-755` |
+| 70 | 12 bytes | `mLastLightningLocation` | `0xcdcdcdcd` three times |
+| 82 | 4 bytes | `mRainSoundHandle` | `0` |
+| 86 | 4 bytes | `mPType` | `0xcdcdcdcd` |
+| 90 | 4 bytes | `mWindDir`, a float, degrees | `139.0` |
+| 94 | 4 bytes | `mWindForce`, a float | `0.22` |
+| 98 | 1 byte | `mOverridden` | `0` |
+
+The sizes sum to 99, and the next thing's list head starts on byte 99 in all six park files that hold one (the shipped
+Lost Kingdom park and five Full Simulation saves of three themes). The three stamps are the park calendar's (the shipped
+park's 2 February 2000 09:05, 29 January and 2 February 08:12:30). `mWindForce` is `(100 - mQuality) / 100` in five of
+the six (0.22, 0.27, 0.32); the Hallowed Haunting save holds 0.50 beside a quality of 86 (`FUN_00512f00` sets the force
+where it applies a quality; why the two part there is not looked into). `mWindDir` is a whole number of degrees in each, 139, 24, 90 and 350. `0xcdcdcdcd` is the
+debug heap's fill, written where nothing was ever stored: a park where no bolt has struck holds it in the location, and
+`mPType`, which nothing reads, holds it, nought or another value. The executable's behaviour is OpenTPW's `docs/exe/weather.md`.
+
 ### The economy thing (model 16)
 
 This is the thing `mBankAccount` names - thing `8` in the shipped park - and it is where a park's money

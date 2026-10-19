@@ -1022,6 +1022,12 @@ strike fields first and then hands a second writer the training block, which nam
 The five records are in the order handymen, mechanics, entertainers, guards, researchers. `715` is the tick the
 month first turned in the shipped park, 1 February 2000.
 
+A file the game saved in the middle of a strike (from its own menu, every kind's level 3) holds `mForceStrike` `1`,
+`mStaffMemberPickedUp` `0`, and `3`, `1`, `17557` on all five: the flag is written as `1` and the stamp is the
+tick of the month's change that called the strike. Five files the game saved from parks begun in Full Simulation
+hold `0`, `0`, `0` on all five and `mForceStrike` `0`. (OpenTPW Q523; its `docs/exe/saves.md`, "OpenTPW's writer,
+the strike records", says what the game does with them.)
+
 `16 + 4 + 2 + 5 × 12 + 5 × 4 + 1` is `103`, and in the shipped park the record ends exactly on the World
 module's `DLRW`. The five budgets are, in order, the handymen's, the mechanics', the entertainers', the
 guards' and the researchers' - models 5, 4, 6, 7 and 8, which is the order of the rows on the game's Staff

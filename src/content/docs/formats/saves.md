@@ -358,9 +358,21 @@ each field is read:
 | `0x001A3E` | 1 | `mOpeningStaffPoolGenerated` | 1 |
 | `0x001A3F` | 8 | `mFunnyTimeStart`, a Windows FILETIME | 2000-01-01 00:00:00 |
 | `0x001A47` | 8 | `mSessionStart`, a Windows FILETIME | 1999-10-21 20:54:53.29 |
-| `0x001A4F` | 4 | `mMonthAtLastUpdate` | 1 |
-| `0x001A53` | 4 | `mDayAtLastUpdate` | 2 |
+| `0x001A4F` | 4 | `mMonthAtLastUpdate`, nought-based | 1 (February) |
+| `0x001A53` | 4 | `mDayAtLastUpdate`, the day of the month | 2 |
 | `0x001A57` | 4 | `mFunnySecsPerRealSec` | 15000 |
+
+**The month and the day are the date of the file's own `mGameTick`** (Lost Kingdom's 755 is 2 February 2000): the
+park's date is `mFunnyTimeStart` plus `mGameTick` × `mFunnySecsPerRealSec` / 4 seconds, and the game stores the date
+it last compared every time the tick moves. Measured in the 48 park files the game saved on this project's machine
+(its save folder, a player's Full Simulation saves and every file it was asked to save): 41 hold their tick's date; the
+four `restart.INTS`, written at tick 0, hold month 0 and day -1 (`0xFFFFFFFF`), what the clock holds before its first
+update; the other three are files another program wrote. A file whose pair is not its tick's date makes the game
+send the day's and the month's change on its first tick after the load. The year is not saved. `mFunnyTimeStart` is
+2000-01-01 and the rate 15000 in all 741 park files measured; `mSessionStart` is carried from the file a park was
+loaded from (1999-10-21 20:54:53.29 in Lost Kingdom's), and a park made afresh takes the computer's local time as
+the clock is made (2026-09-22 17:51:03.208 in one `restart.INTS`). OpenTPW's `docs/exe/saves.md`, "OpenTPW's writer,
+the calendar's fields", has what the game does with them.
 
 The five pairs are the park's staff as the pool last counted them, one pair a kind in the order of `mType` (handyman,
 mechanic, entertainer, guard, researcher): `mPeopleInCat` is how many of the kind the park employed, and

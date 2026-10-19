@@ -792,7 +792,7 @@ The file is read once, as the game starts, so a quality chosen on the options sc
 (OpenTPW `docs/exe/park-engine.md`, "What `GraphicalOptions.LIGHTING` 0 turns off").
 
 `TEXTURE32` picks the format every texture is stored in: 0 four bits a channel (A4R4G4B4), so a texel keeps only the top
-four bits of each of the file's eight, alpha too, and 1 eight (A8R8G8B8). No shipped file sets it. `MIPMAP` 1 gives
+four bits of each of the file's eight, alpha too, and 1 eight (A8R8G8B8). No shipped file sets it to 1 (all three hold 0). `MIPMAP` 1 gives
 each texture four levels where the texture memory allows (OpenTPW `docs/exe/textures.md`, "The texture cache's surface
 format").
 

@@ -364,11 +364,13 @@ each field is read:
 
 **The month and the day are the date of the file's own `mGameTick`** (Lost Kingdom's 755 is 2 February 2000): the
 park's date is `mFunnyTimeStart` plus `mGameTick` × `mFunnySecsPerRealSec` / 4 seconds, and the game stores the date
-it last compared every time the tick moves. Measured in the 48 park files the game saved on this project's machine
-(its save folder, a player's Full Simulation saves and every file it was asked to save): 41 hold their tick's date; the
-four `restart.INTS`, written at tick 0, hold month 0 and day -1 (`0xFFFFFFFF`), what the clock holds before its first
-update; the other three are files another program wrote. A file whose pair is not its tick's date makes the game
-send the day's and the month's change on its first tick after the load. The year is not saved. `mFunnyTimeStart` is
+it last compared every time the tick moves. Measured in the 48 park files in the game's folders on this
+project's machine (its save folder, a player's Full Simulation saves and the files kept from runs of the original):
+41 hold their tick's date (22 at the shipped tick 755 with its pair, ten of them byte copies of the disc's
+`Easymode.TPWI` and ten of one `restart.INTS`, and 19 at other ticks); the four `restart.INTS` written at tick 0 hold
+month 0 and day -1 (`0xFFFFFFFF`), what the clock holds before its first update; the other three are files another
+program wrote, put there to be loaded. A file whose day differs from its tick's makes the game send the day's change on
+its first tick after the load, and one whose month differs the month's. The year is not saved. `mFunnyTimeStart` is
 2000-01-01 and the rate 15000 in all 741 park files measured; `mSessionStart` is carried from the file a park was
 loaded from (1999-10-21 20:54:53.29 in Lost Kingdom's), and a park made afresh takes the computer's local time as
 the clock is made (2026-09-22 17:51:03.208 in one `restart.INTS`). OpenTPW's `docs/exe/saves.md`, "OpenTPW's writer,
@@ -1278,18 +1280,22 @@ sixteen every thing opens with (`FUN_00512010`; the forecast's three fields by `
 The sizes sum to 99, and the next thing's list head starts on byte 99 in all six park files that hold one (the shipped
 Lost Kingdom park and five Full Simulation saves of three themes). The three stamps are the park calendar's (the shipped
 park's 2 February 2000 09:05, 29 January and 2 February 08:12:30). `mWindForce` is `(100 - mQuality) / 100` in five of
-the six (0.22, 0.27, 0.32); the Hallowed Haunting save holds 0.50 beside a quality of 86 (`FUN_00512f00` sets the force
-where it applies a quality; why the two part there is not looked into). `mWindDir` is a whole number of degrees in each, 139, 24, 90 and 350. `0xcdcdcdcd` is the
+the six (0.22, 0.27, 0.32); the Halloween World save holds 0.50 beside a quality of 86: the constructor's force, over a
+quality it rolled and never applied (`FUN_00511f70` stores the roll at `0x00511fc4` and does not call
+`FUN_00512f00`); its first forecast had not arrived. `mWindDir` is a whole number of degrees in each, 139, 24, 90 and 350. `0xcdcdcdcd` is the
 debug heap's fill, written where nothing was ever stored: a park where no bolt has struck holds it in the location, and
 `mPType`, which nothing reads, holds it, nought or another value. The executable's behaviour is OpenTPW's `docs/exe/weather.md`.
 
 **The stamps are the park calendar's, on whole ticks.** Taken as ticks of the file's own clock (2000-01-01 plus a tick
 of 3,750 seconds at the rate 15000; "The arrival and clock fields"), `mLastChanged` is a whole tick at or before the
-file's `mGameTick` in all 48 park files the original saved on the machine measured (Q528, 741 files); the forecast's
-`mTime` is `mLastForecasted` plus exactly four days (92.16 ticks) in 44 of them, the other four, saved at tick 0, holding
+file's `mGameTick` in 43 of the 48 park files in the original's folders on the machine measured (Q528, 741 files); the
+other 5 hold nought, the constructor's: four saved at tick 0, and a Halloween World autosave on tick 4 whose first
+forecast (made on tick 1) had not yet arrived; three of the 48 are files OpenTPW wrote, kept there to be loaded, and ten
+are byte copies of the disc's park. The forecast's `mTime` is `mLastForecasted` plus exactly four days (92.16 ticks) in 44 of them, the other four, saved at tick 0, holding
 noughts. The shipped park was changed on tick 746, forecast on 653 and due on 745.16. `mThunderCountdown` falls by one
 every weather tick, a storm or not, so between storms it is the ticks since nought taken off: -755 on the shipped
-park's tick 755, and so in 40 of the 48. `mLastLightningLocation` is written only as a bolt arms the thunder: (x, 300, z),
+park's tick 755, and so in 40 of the 48; in five of the original's own files it is the tick of a load or of a later
+bolt, and in the three of OpenTPW's it is the stock -755 carried. `mLastLightningLocation` is written only as a bolt arms the thunder: (x, 300, z),
 the bolt's top, in 3 of the 48, the debug fill in 38, and bytes nothing wrote in the other 7. `mRainSoundHandle` and
 `mOverridden` are nought in all 48 (none was saved raining). A file OpenTPW writes holds its running weather in the same
 layout (its handle always nought), and the original loads it and runs on from it.
@@ -1341,11 +1347,13 @@ One reading falls out of that. Every saved `APR_in_percent` is **nought**, which
 to `mBalance` and to `mProfitThisYear`, and touches neither of the others. `mBatchBalance` is `0`, and
 every `loan_bought` is `0`, in all nine park files.
 
-**A file the game saved with a loan running** (OpenTPW Q524, `Q524ORIG-by-the-original.TPWS`, the original's own save
-of a Lost Kingdom park whose loan 4 was bought): loan 4 holds `loan_bought` `1` and `months_repaid` `6`, the slot's
-other six fields as offered; `mTurnEnteredRed` is `17557`, the tick of the withdrawal that took the balance below
-nought, and `mLastBalance` `-1188`, that withdrawal's balance, while `mBalance` had moved on to `-796` by admission
-fees; `mAdmissionFee` `28`, `mProfitThisYear` `392`. The other seven loans are the offer as shipped.
+**A file the game saved with a loan running** (OpenTPW Q524, `Q524ORIG-by-the-original.TPWS`): the original's own
+save of a Lost Kingdom park that OpenTPW wrote, with loan 4 marked bought by a byte edit (no screen in either game
+buys one) and its red stamp, last balance and months repaid made by OpenTPW. The original carried them through its
+load and save unchanged; only `mBalance` and `mProfitThisYear` moved there, by admission fees. It shows the original's
+layout, not the original's stamping. Loan 4 holds `loan_bought` `1` and `months_repaid` `6`, the slot's other six
+fields as offered; `mTurnEnteredRed` is `17557`, the tick of OpenTPW's withdrawal that took the balance below nought,
+and `mLastBalance` `-1188`, that withdrawal's balance, while `mBalance` had moved on to `-796`; `mAdmissionFee` `28`, `mProfitThisYear` `392`. The other seven loans are the offer as shipped.
 
 ### The person base
 

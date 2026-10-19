@@ -795,10 +795,15 @@ file holds has not been counted across the models. OpenTPW does not read them fo
 accumulates each triangle's face normal onto its three vertices and re-normalizes.
 
 **The entries the faces name are not always their triangles' planes in the file.** In `gates.MD2`'s first mesh
-(jungle `features/gates.wad`), 196 faces name 196 of the table's 596 entries, and 23 of those entries lie more than 8
-degrees off the plane of the face that names them. In the running game those 196 entries hold each triangle's own
-normal and the other 400 hold the file's (measured, OpenTPW `docs/exe/park-engine.md`, "The picker's object march"),
-so a reader that wants a face's plane takes it from the face's three corners. Other files are not counted.
+(jungle `features/gates.wad`), 196 faces name 196 distinct entries of the table (the highest index is 595), 37 of those
+entries lie on the plane of the face that names them (within 0.01 degrees), and 26 lie more than 8 degrees off it (30
+past 7 degrees, 18 past 8.5). In the running game the 196 entries the faces name all hold each triangle's own normal,
+37 of them already so in the file (measured, OpenTPW `docs/exe/park-engine.md`, "The picker's object march"); the
+table's other entries were not compared. A reader that wants a face's plane takes it from the face's three corners.
+
+Counted across the 2,129 `.md2` files (2,118 wad members and 11 loose files; 847 are static models, 4,918 meshes): the
+faces name 213,843 entries, 3,219 of them more than 8 degrees off the plane of a face naming them, in 191 meshes
+(the other themes' `gates.MD2` have none). The count is a script, OpenTPW's review folder `q494/fixB-normals-sweep.py`.
 
 ## Animation
 

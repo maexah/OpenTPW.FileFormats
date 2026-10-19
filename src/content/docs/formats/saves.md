@@ -12,7 +12,7 @@ These extensions are:
   when the player's theme folder has none, and never again while one is there (OpenTPW's `docs/exe/saves.md`,
   "Restart Park: restart.INTS"). In the reference player's folder, Lost Kingdom entered on its `easymode.TPWI`
   wrote one at `mGameTick` 755 with the file's balance, 87,987, and its 13 guests. `Refresh.INTS` is the same,
-  written around a sound-quality change
+  written around a sound-quality change.
 - **LAYS**: Online save (for uploading parks)
 
 ## File format

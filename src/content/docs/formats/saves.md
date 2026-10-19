@@ -1283,6 +1283,17 @@ where it applies a quality; why the two part there is not looked into). `mWindDi
 debug heap's fill, written where nothing was ever stored: a park where no bolt has struck holds it in the location, and
 `mPType`, which nothing reads, holds it, nought or another value. The executable's behaviour is OpenTPW's `docs/exe/weather.md`.
 
+**The stamps are the park calendar's, on whole ticks.** Taken as ticks of the file's own clock (2000-01-01 plus a tick
+of 3,750 seconds at the rate 15000; "The arrival and clock fields"), `mLastChanged` is a whole tick at or before the
+file's `mGameTick` in all 48 park files the original saved on the machine measured (Q528, 741 files); the forecast's
+`mTime` is `mLastForecasted` plus exactly four days (92.16 ticks) in 44 of them, the other four, saved at tick 0, holding
+noughts. The shipped park was changed on tick 746, forecast on 653 and due on 745.16. `mThunderCountdown` falls by one
+every weather tick, a storm or not, so between storms it is the ticks since nought taken off: -755 on the shipped
+park's tick 755, and so in 40 of the 48. `mLastLightningLocation` is written only as a bolt arms the thunder: (x, 300, z),
+the bolt's top, in 3 of the 48, the debug fill in 38, and bytes nothing wrote in the other 7. `mRainSoundHandle` and
+`mOverridden` are nought in all 48 (none was saved raining). A file OpenTPW writes holds its running weather in the same
+layout (its handle always nought), and the original loads it and runs on from it.
+
 ### The economy thing (model 16)
 
 This is the thing `mBankAccount` names - thing `8` in the shipped park - and it is where a park's money

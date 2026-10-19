@@ -1318,6 +1318,12 @@ One reading falls out of that. Every saved `APR_in_percent` is **nought**, which
 to `mBalance` and to `mProfitThisYear`, and touches neither of the others. `mBatchBalance` is `0`, and
 every `loan_bought` is `0`, in all nine park files.
 
+**A file the game saved with a loan running** (OpenTPW Q524, `Q524ORIG-by-the-original.TPWS`, the original's own save
+of a Lost Kingdom park whose loan 4 was bought): loan 4 holds `loan_bought` `1` and `months_repaid` `6`, the slot's
+other six fields as offered; `mTurnEnteredRed` is `17557`, the tick of the withdrawal that took the balance below
+nought, and `mLastBalance` `-1188`, that withdrawal's balance, while `mBalance` had moved on to `-796` by admission
+fees; `mAdmissionFee` `28`, `mProfitThisYear` `392`. The other seven loans are the offer as shipped.
+
 ### The person base
 
 Every person - guest or staff - writes the same 390 bytes after its eight-byte list head, from the person

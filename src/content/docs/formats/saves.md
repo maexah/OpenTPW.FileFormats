@@ -7,7 +7,12 @@ Theme Park World stores saves with three different extensions.
 These extensions are:
 
 - **TPWS**: Standard save
-- **INTS**: Initial save (e.g. for *Instant Action* mode)
+- **INTS**: The park as the theme was first entered, `restart.INTS`, which the park menu's Restart Park loads; in either
+  game mode, the same layout as a `.TPWS` (version `500`). The game writes it as a park is entered from the lobby
+  when the player's theme folder has none, and never again while one is there (OpenTPW's `docs/exe/saves.md`,
+  "Restart Park: restart.INTS"). In the reference player's folder, Lost Kingdom entered on its `easymode.TPWI`
+  wrote one at `mGameTick` 755 with the file's balance, 87,987, and its 13 guests. `Refresh.INTS` is the same,
+  written around a sound-quality change
 - **LAYS**: Online save (for uploading parks)
 
 ## File format

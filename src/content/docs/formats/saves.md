@@ -1055,7 +1055,7 @@ Training Budgets screen. What the game does with them each month is OpenTPW's `d
 
 ### The park analyser (model 13)
 
-Thing 5 in every park file, 73,544 bytes, named by the header's `mParkAnalyser`. Most of it is not decoded. Near
+Thing 5 in every park file, 73,544 bytes, named by the header's `mParkAnalyser`, written by `FUN_004c5d70`. Near
 its end are **twenty rings of bytes, one per kind of opinion**, each 60 bytes: `mCurrentEntry` (4, from −1),
 `mNumEntries` (4, 50), `mWrappedAround` (1), `mTemp` (1) and 50 `mData` (1 each), kind 0 first; after them the
 record's last 76 bytes hold `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWithIt`, `mMisbehavingKidsEver`,
@@ -1065,6 +1065,35 @@ record's last 76 bytes hold `mMisbehavingKids`, `mMisbehavingKidsThatGotAwayWith
 stream): kind 0 holds eight samples of 50, the rest are empty, and `mLifetimeVisitors` reads 8. A played park
 fills kinds 1 to 4, 6, 7, 9 to 13, 15, 16 and 18 too. What each kind is, and that only kind 0 is ever read back,
 is OpenTPW's `docs/exe/ride-operation.md`, "The analyser's samples".
+
+**Its first 62,598 bytes** are the 16 every thing opens with, a grid of 32 × 32 blocks, four small rings and six
+kept answers. Measured in all 539 different park bodies on hand (787 files: the shipped `Easymode.TPWI`, Alexah's Full
+Simulation saves, the parks the original wrote under Proton and OpenTPW's), every one as below:
+
+| At | Size | Field | In every file |
+|---|---|---|---|
+| 16 | 4 × 5 | `mMapSquaresPerCell`, `mGridSizeX`, `mGridSizeY`, `mMapSizeX`, `mMapSizeY` | 4, 32, 32, 128, 128 |
+| 36 | 61 × 1,024 | the blocks, row by row (`FUN_004c85b0`): `mStartX`, `mStartY`, `mSizeX`, `mSizeY` (4 bytes each), then nine kept answers of 5 bytes, `mVal` (4) and `mWorkedOut` (1) | block *k* is ((*k* mod 32) × 4, (*k* div 32) × 4, 4, 4); `mWorkedOut` 0 or 1 |
+| 62,500 | 17 × 4 | four small rings (`FUN_004cdb80`): `mCurrentEntry` (4), `mNumEntries` (4, 3), `mWrappedAround` (1), `mTemp` (2) and three 2-byte `mData` | `mNumEntries` 3 |
+| 62,568 | 5 × 6 | six kept answers, `mVal` (4) and `mWorkedOut` (1) | |
+| 62,598 | | the sixteen rings of dwords, below | |
+
+**A kept answer saves its value and its flag, never the tick it was worked out on** (`FUN_004cd9c0`): the stamp
+before them in memory is not in the file. One never worked out holds `mVal` −999 and `mWorkedOut` 0. The six, in
+order: the guests inside (`Easymode.TPWI` 0), the rides standing (1), the people whose `+0x220` is 3 in the chains of two
+cells (−999, never worked out in any file), the objects with bit 0 of a byte at their `+0x32` (3), the park value (23977, the
+2nd ring's month) and a sixth (−999; 53 in the same two Full Simulation files as the small rings below). What each does with them is OpenTPW's `docs/exe/hud.md`,
+"The park value" and "The guests inside and the rides at a close".
+
+**A block's nine** hold −999 when never worked out, the first two as a 4-byte float (`0xC479C000`), the other seven
+as an int. Only the sixth, seventh and eighth are ever worked out in a file: the eighth in every block of all but
+ten bodies (0 in 528,342 of them, 1 to 16 in the rest), the sixth and seventh together in the same 877 blocks. What
+the nine count is not read.
+
+**The four small rings** read −1, 3, 0, 0 and the allocator's `0xCDCD` (or 0) in their slots in 537 of the 539:
+never pushed. In Alexah's played Full Simulation jungle (its `New Save.TPWS` and `autosave.TPWS`, the same in both)
+they hold catalogue item numbers a hundred to a ring: 1102, 1104, 1108; 1208, 1202, 1206; 1304, 1309, 1307; 1435,
+1407, 1434. What pushes them is not read.
 
 **Sixteen rings of dwords** lie 62,598 bytes into the record, one after another, 589 bytes each: `mCurrentEntry` (4,
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and
@@ -2740,9 +2769,12 @@ excitement out again after a load.
 the advisor's state copied whole, then a length and that many bytes. The length is nought in nine of the ten park
 files (372 bytes in all) and 88 in the played Halloween autosave. Neither part is decoded.
 
-**Sound** (`FUN_0051c350`), between `SVDA` and `NUOS`: two dwords (1 and 1024 in all ten), the dword `0x54`, 84
-bytes, and then, when both dwords are set, records written one by one through a callback (`0x006b5c10`): 1,349
-bytes of them in `Easymode.TPWI`, 666 to 5,186 in the others. Not decoded.
+**Sound** (`FUN_0051c350`), between `SVDA` and `NUOS`: two dwords (1 and 1024), the dword `0x54`, 84 bytes, and
+then, when both dwords are set, records written one by one through a callback (`0x006b5c10`): 1,349 bytes of them
+in `Easymode.TPWI`, 666 to 5,186 over the 539 different park bodies on hand. They open with three dwords and a length L, and end L bytes after
+that length began, at +12+L: a loader with no sound skips them by L less the 4 it has read (`FUN_0051c400`,
+`0x0051c547`). The two dwords are 1 and 1024 and the length is right in all 539.
+What the three dwords and the records hold is not decoded.
 
 **Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
 nought in three of the played files and 113 to 258 in the rest. It is the advisor's poll cursor: the row of his

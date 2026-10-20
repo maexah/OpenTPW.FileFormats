@@ -108,6 +108,10 @@ looks like in `cat_kids` alone (`0x00060404` for the four held screams, 0 for on
 - **`0x0404`** is a voice that keeps playing fresh samples until it is stopped, each after a wait taken
   from its variation (below). There are 18 of these: kids 71-74, staff 188 and several ambient beds.
 - **Bits `0x4` and `0x2`** mark a different repeating voice (135 records, music effect 2 among them).
+- **Bit `0x4` with neither `0x2` nor `0x400`** is a voice that also plays a fresh sample after each wait, drawing its
+  variation among all of the effect's rather than by a parameter: 17 records, 16 of them `4` and the fantasy ambient's
+  114 `0x204`. The rest are Lost Kingdom's rides' 89, 100, 147 and 170, the fantasy rides' 78, 87 and 88 and its lobby
+  sounds' 2, and eight of the Halloween rides'. Every one of the 17 has a single variation (`sfxmap.py`, Q558).
 - **Bit `0x1`** marks 30 records the game queues before playing.
 - **Bit `0x8`** is a voice whose one sample is looped until it is stopped: the 83 records that are `8` alone,
   the global ambient's waterfall (8) and river (7) among them, which a park's `scape.omp` places

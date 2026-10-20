@@ -217,6 +217,12 @@ others' share.
 | `+0x08` | 4 bytes | The sample's length in milliseconds |
 | `+0x0c` | 4 bytes | Bank index, **1-based**, into the BANK file's list |
 
+The walk reaches 3,631 sample records across the thirty-one categories, and every one names a bank of its category
+and a sample inside that bank. Among them are the records of the five MPEG-1 samples (Layer I, `ffff22c0`), whose
+lengths a reader taking every sample as MPEG-2 gets 4/3 too long, global lobby sfx 4 (`keyexplode`, 3,041 ms) and
+global rides 212 (`tp_sideshowwin_`, 1,442 ms) among them: a scan that checks each record's length against such a
+reader's turns them away.
+
 #### Zone record
 
 | Offset | Size | Description |

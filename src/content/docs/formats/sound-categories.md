@@ -197,6 +197,10 @@ it. Over all 1,595 variations in the 31 category files it is one of eighteen num
 All but two of the variations under 1 belong to effects whose flags have `0x200`, a voice with no place, which
 the range does not reach.
 
+An effect's variations nearly always share one range. Of the 48 effects flagged `0x4` without `0x200` in the six
+categories a Lost Kingdom script plays them from (the jungle's ambient and rides, and the global ambient, rides, staff
+and kids), one has two: the staff's 188, whose fourth variation holds 85 and the other six 90.
+
 **The weight** is a running total across the effect's variations when the common header's `0x10` is
 0, and a variation's own share when it is 1. The game turns running totals into shares as it loads.
 **Variations are therefore weighted, not even.** For most effects the shares happen to be equal, but

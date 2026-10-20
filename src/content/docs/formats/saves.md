@@ -2782,7 +2782,10 @@ then, when both dwords are set, records written one by one through a callback (`
 in `Easymode.TPWI`, 666 to 5,186 over the 539 different park bodies on hand. They open with three dwords and a length L, and end L bytes after
 that length began, at +12+L: a loader with no sound skips them by L less the 4 it has read (`FUN_0051c400`,
 `0x0051c547`). The two dwords are 1 and 1024 and the length is right in all 539.
-What the three dwords and the records hold is not decoded.
+The records are the sound manager's live voices as the park was saved: the original's load puts them back
+(`Sound_LoadModule`, `0x0051c400`, through `0x006b5c30`), so the shipped park's gates' held chain of effect 177 comes
+back from `Easymode.TPWI` with a child of its own (OpenTPW's `docs/exe/audio.md`, "A script's sounds"; Q559). What the
+three dwords and each record's fields hold is not decoded.
 
 **Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
 nought in three of the played files and 113 to 258 in the rest. It is the advisor's poll cursor: the row of his

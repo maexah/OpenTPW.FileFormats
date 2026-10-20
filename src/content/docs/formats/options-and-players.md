@@ -76,7 +76,7 @@ A brand-new player's file is 68 bytes: everything zero except the mode, the swea
 | 20 bytes | Four times: 1 byte - this park holds that player-wide record; 4 bytes - the record's value (meaningless while the byte is `0`) |
 | 132 bytes | 33 times: 2 bytes of the park's chosen name, first half, then 2 bytes of the second half (UTF-16, each half ended by a `0`) |
 | 1 byte   | The park has been renamed                                                   |
-| 1 byte   | All research completed                                                      |
+| 1 byte   | All research completed - `1` once every research project of that park has been finished. In *Full Simulation* the game's ending for research waits until every park record has it |
 
 Records are only made once a player is picked - one for each theme - and the game writes them sorted by the bytes of their names. Two records with the same name stop the file loading at the second.
 

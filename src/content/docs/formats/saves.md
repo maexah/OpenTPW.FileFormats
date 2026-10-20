@@ -2762,7 +2762,11 @@ measured in that park:
 | `0x1c` | 4 bytes | How many crossings it has: a crossing adds 1 to each side, so a section crossing its own coaster counts 2. The game offers no coaster with any | 0 |
 
 A u32 count follows, and that many u16s, the coaster's third node's crossing partners; then the pieces, each
-34 bytes and its own crossing partners after it (a u8 count in its last byte, then that many u16s); then every
+34 bytes and its own crossing partners after it (a u8 count in its last byte, then that many u16s); a partner is
+a **position in the coaster's chain of nodes**, counted from the head (the first node is 0): the loader turns each into the node
+itself after the stack pass (`FUN_0043e520`, `0x0043827b`), and it does not bound a count (a u32 here, a byte for a piece;
+the running game holds eight). No park file on hand holds one (the two coasters are the Minecart, counts nought throughout)
+(fork watch 2026-10-20, `verify-world.md` M1); then every
 train slot up to the coaster's `uiMaxTrains`, 27 bytes each, used or not; then every car slot, 11 bytes each,
 its two rider counts in bytes 4 and 5 and the riders' ids after it, 4 bytes each (the saver `FUN_00437300`, the
 loader `FUN_00437b60`). In both of Alexah's played jungle parks the module is 1,850 bytes, and adds up: 16 + 32
@@ -2782,10 +2786,25 @@ then, when both dwords are set, records written one by one through a callback (`
 in `Easymode.TPWI`, 666 to 5,186 over the 539 different park bodies on hand. They open with three dwords and a length L, and end L bytes after
 that length began, at +12+L: a loader with no sound skips them by L less the 4 it has read (`FUN_0051c400`,
 `0x0051c547`). The two dwords are 1 and 1024 and the length is right in all 539.
-The records are the sound manager's live voices as the park was saved: the original's load puts them back
-(`Sound_LoadModule`, `0x0051c400`, through `0x006b5c30`), so the shipped park's gates' held chain of effect 177 comes
-back from `Easymode.TPWI` with a child of its own (OpenTPW's `docs/exe/audio.md`, "A script's sounds"; Q559). What the
-three dwords and each record's fields hold is not decoded.
+The two dwords are the sound's "initialised" word (`0x00802bd4`, which the loader reads into a local only) and its
+"enabled" word (`0x00802bc8`, which the loader writes back; with the first nought it puts back the value from before the load).
+The dword `0x54` is a length, and the 84 bytes are 21 little-endian words, the sound's own state at `0x00803aa0`: four
+volumes (set at `+0x18` to `+0x24`), the three on-flags (set at `+0x38`, `+0x3c`, `+0x40`), the reverb preset (`+0x14`), the crowd level
+(`+0x10`, 0 to 35), a u16 music dip at `+0x30` and a u16 at `+0x32`, and words nothing reads (`+0x34`, `+0x44` to `+0x50`).
+In all 558 different park bodies on hand the volumes read 100, 75, 60 and 75, the three flags 1, 1 and 1, the dip 0, the
+reverb preset 0 (3 in the Halloween Full Simulation autosave) and the word at `+0x32` 1 in most (0 in the restart and autosave files).
+The loader reads that many bytes with no bound.
+
+The records are the voice list: **three dwords** (words of the sound library object, which the loader reads and throws
+away), **L**, the length, which counts **itself** (the list ends L bytes after L began), a **voice count**, a record
+for the library's own state, a dword (the handle counter) and, for each live voice, its handle dword and a record
+(a voice with both `0x10` and `0x400` set in its flags is not written). The reader first stops every live voice, then, with
+sound on, rebuilds each from its handle (low 16 bits) and a type from 1 to 6. All 558 files end the list exactly on
+`NUOS` (fork watch 2026-10-20, `verify-world.md` M2; the code is `FUN_0051c400`, `0x006ba150`, `0x006b6da0`, and
+`docs/exe/saves.md` in OpenTPW has each word's setter).
+The original's load puts the voices back (`Sound_LoadModule`, `0x0051c400`, through `0x006b5c30`), so the shipped
+park's gates' held chain of effect 177 comes back from `Easymode.TPWI` with a child of its own (OpenTPW's
+`docs/exe/audio.md`, "A script's sounds"; Q559).
 
 **Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
 nought in three of the played files and 113 to 258 in the rest. It is the advisor's poll cursor: the row of his
@@ -2804,4 +2823,7 @@ Two bytes, between the sound's `NUOS` tag and the cheats' own `STHC`.
 | `0x01` | 1 byte | Not described: nothing but the reader, the writer and the constructor touches it | 1 |
 
 The eight played park files carry `00 00`, the five Full Simulation saves among them. So a park loaded from
-`Easymode.TPWI` starts with the cheat keys on.
+`Easymode.TPWI` starts with the flag set, **in the byte**: the game re-runs the object's constructor, which clears the flag,
+behind three first-use guards (the load, a rename and the first key), so in a fresh launch the first key that reaches the cheat
+check clears it and the cheat keys work from a later park of the same run (fork watch 2026-10-20, `verify-other-ui-audio.md`
+O-G; read from the bytes, not run in the original).

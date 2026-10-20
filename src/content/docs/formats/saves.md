@@ -2686,10 +2686,15 @@ last drawing left: its place at `0x88`, its picture of 56 at `0xb8` and a scale 
 
 **A handle is the ride's slot in its low byte and the item's `BumperType` above it**, the same number the
 object record's `mTrackRideHandle` holds: `0xfffffc00` for a Dino Karts (`BumperType` -4) in slot 0.
-**Positions** are map cells times `0xc00`. **A section's type** is its low 16 bits - 5 to 8 a bend,
-9 and 10 a straight, 11 a crossing, 12 a straight with an add-on, by the collision the game builds for
-each - and bit 16 is set on the first two straights from the station. The sections are stored in
-circuit order from the station, mostly two cells (`0x1800`) apart.
+**Positions** are map cells times `0xc00`, a section's its 2 × 2's top-left cell. **A section's type** is its
+low 16 bits, by the sides its track joins (north is -y): 5 a bend joining north and east, 6 north and west, 7 south
+and west, 8 east and south; 9 an east-west straight, 10 a north-south one; 11 a crossing; 12 and 13 an east-west and a
+north-south straight with an add-on. Bit 16 is set on the first two, the station's straights, which have no buoy.
+The sections are stored in circuit order from the station, mostly two cells (`0x1800`) apart. Measured in the running
+original (OpenTPW's `docs/exe/park.md`, "The karts' and the water ride's track, buoys and race"): a Dino Karts
+looped from its mouth at (34,25) round to (28,25) held `9 9 7 10 6 9 9 5 10 8`, the first two flagged, at (30,25),
+(32,25), (34,25), (34,27), (34,29), (32,29), (30,29), (28,29), (28,27) and (28,25); a Splish Splash looped the same
+way, the same ten.
 
 The shipped park's module is 44 bytes, the root and the stamp only (inflated 1,595,038 to the tag at
 1,595,082). In Alexah's played jungle park it is 1,964 bytes: one Dino Karts, its 33 sections

@@ -114,7 +114,10 @@ were not identified.
 
 The particle density setting is `GameOptions.PARTICLEDENSITY` in `low.sam`, `med.sam` and `high.sam`
 (500, 1000 and 1500). Unless `0xC0` is set, it scales the rates, the most-alive count and the burst
-by `density / 1024` when the effect starts.
+by `density / 1024` when the effect starts. A park file carries a density of its own, which replaces the
+setting when the park is loaded ([saves](../saves/#a-live-emitter-and-its-handle)): 500 in the shipped park.
+A negative rate is scaled too, rounded down: the trails' `-2` is `-1` at 500, one particle every tick, and `-3`
+at 1500.
 
 ## Effector record
 

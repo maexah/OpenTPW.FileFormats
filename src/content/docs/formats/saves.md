@@ -1972,7 +1972,8 @@ Drinks Shop's node stands at (440.15, 6.60, 312.02) and its bubbles at (440, 6, 
 
 The live image's header holds what a start reads: the switch at `+0x08` that refuses an effect marked at `0xC1` (nought in every file),
 the generator's seed at `+0x10`, the next emitter's count at `+0x18` (a word; the next effector's follows it) and
-the particle density at `+0x20`: 500 in the shipped park and the nine files saved from it under Proton, 1500 in the eight played saves. The
+the particle density at `+0x20`: 500 in the shipped park and the nine files saved from it under Proton, 1500 in the eight played saves.
+The game loads the whole header back, so a park runs at its file's density, not the options' graphics quality. The
 chains' heads are 16-bit slots, -1 for an empty chain. An emitter is started in the slot at the head of the free
 chain and put at the head of the used one.
 

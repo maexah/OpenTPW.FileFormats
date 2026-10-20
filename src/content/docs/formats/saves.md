@@ -2611,7 +2611,7 @@ Of the car's record:
 | `0x4c` | 4 bytes | Its speed                                                                                |
 | `0x50` | 4 bytes | The heading it steers along, in 512ths of a turn                                         |
 | `0x54` | 4 bytes | The heading it is drawn at                                                               |
-| `0x58` | 4 bytes | The heading the drawn one turns to: nought until the ride's first go, then as the last tick of a go left it |
+| `0x58` | 4 bytes | The heading the drawn one turns to: nought until the ride's first go, then as the last tick of a go left it; for a water ride's car the word is its spin instead |
 | `0x5c` | 4 bytes | How far the drawn heading turned in the last tick                                        |
 | `0x60` | 4 bytes | How far that turn changed in the last tick: nought for a bumper ride's car               |
 | `0x64` | 4 bytes | Its radius                                                                               |

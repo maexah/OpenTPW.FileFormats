@@ -551,8 +551,12 @@ comes from these keys alone. The cell count those give agrees with the item's
 Two keys belong to the ride view, the camera put on a model's own camera record (id 1 under `0x1000`,
 [models](/formats/models/)). Of all 312 `.wad` files, `UsageInfo.ConstrainCamera 1` is set by twelve items, three in
 each theme: the `end` feature, the `gates`, and one camera feature (jungle's `camera`, hallow's `horcam`, space's
-`spacam`, fantasy's `seccam`). No file sets it to anything else. `Info.FirstPersonSprites` appears only as `0`, in the
-four tour rides (jungle's and hallow's `tourride`, fantasy's `twetours`, space's `scitour`), so every item reads `0`.
+`spacam`, fantasy's `seccam`); no loose `.sam` declares it, and no file sets it to anything else.
+`Info.FirstPersonSprites` is a category default: every theme's loose `data/levels/<theme>/rides/Rides.sam` declares
+`Info.FirstPersonSprites 1`, and no other loose `.sam` declares it. Inside the wads it appears only as `0`, in the four
+tour rides (jungle's and hallow's `tourride`, fantasy's `twetours`, space's `scitour`). The item's own file wins over its
+category's, so every ride reads `1` except the four tours, which read `0`; the items of `Features.sam`, `Shops.sam`,
+`SideShow.sam` and `Upgrades.sam`, the `end` feature among them, read `0`.
 What the engine does with each, and the end feature's own camera record (End.MD2's node `camera`, its record 0, flag
 word `0x1031`), is OpenTPW's `docs/exe/park-engine.md`, "The End feature's view".
 

@@ -229,6 +229,12 @@ by weight when more than one fits. So zones are two things in the shipped data:
   3 for 51-75 and 4 for 76-100. The game sets the scream's parameter from the ride's own numbers.
 - **A no-repeat rule.** In jungle's ambient effect 177, each of the nine variations lists the other
   eight, over the whole of 0-100.
+- **A state machine.** The global ambient's effect 6, the bus's engine (flags `0x0406`, parameter 20), has seven
+  variations of one sample each: 1 to 4 list the other three for 0-50 and 5 for 51-100; 5 lists 6 for 0-100; 6
+  lists itself for 51-100 and 7 for 0-50; 7 lists 1 to 4 for 0-100. So at 0 it idles on 1 to 4, never the same one
+  twice running, and at 75, which the bus's script sets near each drive's end, it goes through 5 to 6 and holds 6
+  until the parameter drops, then 7 and back to the idles. Variations 1 to 4 tie their pitch (-24 to 36) to
+  controller key 21 (`+0x16`, `+0x18` = `0x2`); 5 to 7 have a pitch of nought and no controller.
 
 1,222 of the 1,595 variations have no zones at all.
 

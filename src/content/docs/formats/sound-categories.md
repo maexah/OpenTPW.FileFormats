@@ -41,9 +41,13 @@ and one byte of `Data4`.
 
 ## The BANK file
 
-After the count come that many **11-byte records** that hold nothing useful — the same handful of
-values recur across every file, which is what a struct written straight out of memory looks like.
-Then the payload: one length-prefixed, NUL-terminated path per bank.
+After the count come that many **11-byte records**, mostly a struct written straight out of memory:
+the same handful of values recur across every file. One byte is read: **byte `+9`**. Bit `0x20` of it
+puts the bank under the data root's `Global\` folder; the byte is kept as the bank's own flags word.
+Across the 31 BANK files it is one of `0x01`, `0x02`, `0x04`, `0x41` and `0x42`, so no shipped record
+sets `0x20` (upstream look 2026-10-19, `verify-sound-ui.md` L5, from the second fork review's
+`verify-audio-lips-video.md` C3, read in Ghidra at `FUN_006bfe40`). Then the payload: one
+length-prefixed, NUL-terminated path per bank.
 
 | Size | Description |
 | --- | --- |
@@ -54,6 +58,11 @@ A path is relative to the **level** folder rather than to the folder the `.map` 
 omits the `HD.sdt` suffix the file actually carries. So `Sound\LobbySfx`, read from
 `data\levels\jungle\Sound\cat_locallobbysfxBANK.map`, means
 `data\levels\jungle\Sound\LobbySfxHD.sdt`.
+
+The loader (`FUN_006c58f0`) tries `<name>HW.sdt` first and then
+`<name>HD.sdt`, in the reverse order only when bits 0 and 1 are both set in the sound manager's flag
+word at `+0x28` (tested at `0x006b9260`); the running game's word is `0x508`, so `HW` comes first. No
+`HW.sdt` ships (47 `.sdt` files, none of them `HW`), so every bank opens as `HD` (upstream look 2026-10-19, `verify-sound-ui.md` L5).
 
 The paths are also not reliably cased: the global category asks for `Sound\Sfx` when the folder is
 called `sound`, and hallow's rides ask for `Sound\ride` when the file is `rideHD.sdt`. On the

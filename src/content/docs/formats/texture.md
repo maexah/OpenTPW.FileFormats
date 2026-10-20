@@ -95,19 +95,23 @@ LZSS:
 ```pseudocode
 result := []
 while true:
-  isDelta := GetBit( 1 )
-  if isDelta:
+  isMatch := GetBits( 1 )
+  if isMatch == 0:                  # a clear bit is the literal
     literalValue := GetBits( 8 )
     push literalValue to result
   else:
     offset := GetBits( 12 )
-    length := GetBits( 7 ) + 1
-    
-    if offset == 0:
+    if offset == 0:                 # tested before the length is read
       break
+    length := GetBits( 7 ) + 1
     for 0..length:
       push result[ current - offset ] to result
 ```
+
+Bits are taken least significant first from consecutive little-endian 16-bit words. A **clear** bit
+introduces a literal byte and a **set** bit a back-reference; 7,406 of the 7,407 `0x13` files decode that
+way (upstream look 2026-10-19, `verify-images.md` L4). A copy may run past the bytes written so far, which
+repeats the last `offset` bytes.
 
 5. Decode channels using quantization scales
 Cb/Cr use size / 2

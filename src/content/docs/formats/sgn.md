@@ -2,8 +2,9 @@
 title: Park signs (*.sgn)
 ---
 
-A `.sgn` holds everything a name board needs: the fonts its name is lettered in, the ink each line
-is lettered in, the pattern the letters are filled with, and — sometimes — the artwork painted on
+A `.sgn` holds everything a name board needs: the fonts its name is lettered in, the ink effect
+(edge colour, grow or shrink, blur and offset) laid under each line, the pattern the letters are
+filled with, and — sometimes — the artwork painted on
 the board behind them. The name itself is not in here.
 
 Both the lobby's park boards and the name boards on rides inside a park use this format. Walking
@@ -107,8 +108,12 @@ record: `LOGFONTA.lfFaceName` sits at `+28` within it, which is `+0x168` from th
 
 ### Line ink
 
-Each line's colour is a four-byte block, followed by four more 4-byte fields that are not yet
-identified — 20 bytes per line.
+Each line's ink is 20 bytes: a four-byte colour and opacity, then four 4-byte shaping fields. The ink
+is the **edge** of the lettering, not the colour of the letters: the letters are filled from the
+line's [fill texture](#fill-textures), and the ink block shapes the mask drawn under them. A photograph
+of the original's Wonder Land board shows "Wonder" lime and "Land" yellow-orange, both edged with the
+same olive; `Fan_gate.sgn`'s two ink blocks are that same olive (`#808000`) while the two fills differ, so
+the ink cannot be the letter colour (upstream look 2026-10-19, `verify-images.md` L1).
 
 | Offset | Size | Description |
 | --- | --- | --- |
@@ -116,7 +121,16 @@ identified — 20 bytes per line.
 | `+0x01` | 1 byte | Green |
 | `+0x02` | 1 byte | Blue |
 | `+0x03` | 1 byte | Opacity |
-| `+0x04` | 4 x 4 bytes | Unknown — an int, a float, then two more ints |
+| `+0x04` | 4 bytes | Int: grow or shrink radius of the mask (negative erodes, positive dilates). Range over the 162 ink blocks that ship: -2 to 6 |
+| `+0x08` | 4 bytes | Float: sigma of a Gaussian blur of the mask. 0 to 4 |
+| `+0x0C` | 4 bytes | Int: x offset of the mask. -4 to 6 |
+| `+0x10` | 4 bytes | Int: y offset of the mask. -6 to 8 |
+
+The four shaping fields come from Ghidra on the shaper (`0x005EBF10`: `0x005EA3F0` offset, `0x005EA6D0`
+and `0x005EA510` erode and dilate, `0x005EA8A0` blur, then `0x005E7F60` blends the colour through the
+shaped mask; from the second fork review, `verify-objects-signs-other.md` M1, not re-read here). 101 of
+the 162 blocks have a non-zero offset. The order in which the shaped ink and the fill are laid down
+for the modes below, and whether the fill blends by coverage or overwrites, are not established.
 
 Three steps in the engine fix that ordering, and none of it has to be guessed. The loader reads the
 four bytes **singly** into consecutive bytes of its sign object. The renderer hands them to the
@@ -132,7 +146,7 @@ board and lets the artwork show through the lettering.
 > it never wrote, so nothing appears. Three shipped signs are in that state — `jelly.sgn`,
 > `zob.sgn` and `C_SCAT.sgn` — and two of those carry artwork with a name already painted into it.
 
-What the four lobby signs ask for:
+What the four lobby signs' ink blocks hold (the edge colour and strength, not the letters' colour):
 
 | File | Mode | Line 0 | Line 1 |
 | --- | --- | --- | --- |

@@ -115,6 +115,27 @@ The engine unpacks packing `1` and `2` into nibbles before drawing (its font obj
 underneath towards the text colour by `coverage / 15`, scaled by the colour's alpha. The destination's
 own alpha is left alone.
 
+## Where the bitmaps came from
+
+The `.bf4` glyphs are TrueType faces from `fonts.wad` rasterised at one whole size each, and the
+advances match. Fitting every `.bf4` against every face of `fonts.wad` (ppem 4.0 to 100.0 in 0.1 steps,
+advance rounded to nearest, the 94 ASCII glyphs) gives:
+
+| Fonts | Face | Size in ppem |
+| --- | --- | --- |
+| `MENUSMALL`, `MENUMED`, `MENUBIG` | `BIGLA___.TTF` (Big Limbo AOE) | 29, 37, 42 |
+| `SESHSMALL`, `SESHMED`, `SESHBIG` | `BIGLA___.TTF` | 18, 24, 32 |
+| `CASHSMALL`, `CASHMED`, `CASHBIG` | `BIGLOA__.TTF` (Big Limbo Outline) | 37, 48, 64 |
+| `MATISSE18` | `BIGLA___.TTF` (identical to `SESHMED`) | 24 |
+| `MATISSE36` | `BIGLOA__.TTF` | 48 |
+
+Each fit matches 93 or 94 of the 94 glyphs (and all 96 mapped Latin-1 glyphs). The few misses sit on
+half-pixel boundaries (`8` at 25.5, `!` at 12.5), where the advance is hinted. The `CASH*` fonts are the
+**outline** face: their `O` is a hollow outlined letter, `MENUMED`'s is solid. The `GAME*`, `TITLE*`,
+`DATE*` and `CONSOLE6` fonts fit no face in `fonts.wad` at any size (the best fit is 26 to 64 of the 94
+glyphs); whether they were rasterised from Windows faces such as Comic Sans or Courier, which do not
+ship, is untested (upstream look 2026-10-19, `verify-images.md` L2).
+
 ## Open questions
 
 - What version `1` against `2` changes beyond which packing the glyphs use.

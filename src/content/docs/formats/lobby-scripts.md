@@ -51,7 +51,12 @@ is a number.
 ### `ISLAND(index, dir, isle, gate, name, heading, cameraHeight)`
 
 The park itself. `index` is its place in the lobby's running order, `isle` and `gate` are `.md2`
-names under `dir`, `heading` is where the island sits around the lobby globe in degrees, and
+names under `dir`, `heading` is an angle in degrees. The original stores it as radians (`heading × π/180`) in the island object
+and hands it to the routine that orients both the isle and its gate model, and the camera homes onto that
+heading plus π before it flies in. The reading that makes the camera face the gate is that the heading is the
+island's and gate's yaw; what the orienting routine does with it has not been read (upstream look 2026-10-19,
+`verify-sound-ui.md` L2).
+
 `cameraHeight` is how far above the island the camera looks (12.5 for the jungle against 38 for
 hallow).
 
@@ -259,8 +264,10 @@ These appear only in `lobby.txt`:
 | `GLOBERADIUSIN(n)` | 200 | Camera distance from the globe, zoomed in |
 | `ISLANDFOV(n)` | 100 | Field of view in degrees, as handed to the projection; the picture is narrower - see below. |
 
-Selecting a park in the original spins the globe until that island's `ISLAND()` heading faces the
-camera, then pulls in from `GLOBERADIUSOUT` to `GLOBERADIUSIN`.
+Selecting a park in the original swings the camera's orbit angle round the island until it reaches that
+island's `ISLAND()` heading plus π (the gate's side), then closes the orbit radius in towards the island. The exe
+does not show this as spinning the globe or as a pull-in from `GLOBERADIUSOUT` to `GLOBERADIUSIN`; the radius that
+closes in starts at `SPINRADIUS` (upstream look 2026-10-19, `verify-sound-ui.md` L2).
 
 ## How the weather is scoped
 

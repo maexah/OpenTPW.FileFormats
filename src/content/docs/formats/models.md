@@ -688,11 +688,18 @@ records:
 | Size    | Description                                                          |
 | ------- | ---------------------------------------------------------------------- |
 | 4 bytes | Frame offset. See **Textures**, above (0 = no texture)                 |
-| 2 bytes | Unknown                                                                 |
-| 2 bytes | Unknown                                                                 |
+| 2 bytes | First face: the first face of this material's run of faces              |
+| 2 bytes | Face count: how many faces are in the run (never 0)                     |
 | 2 bytes | Start index: first reordered vertex index using this material          |
 | 2 bytes | End index: last reordered vertex index using this material (inclusive) |
 | 4 bytes | Unknown                                                                 |
+
+The face run is measured over all 4,923 meshes of the 2,125 version-`0xDD` files: the run never
+passes the mesh's face count, and each of its faces' three corners lies inside the material's
+start..end range. The runs tile the mesh's faces `[0, face count)` when the materials are sorted by
+first face (4,922 of 4,923 meshes; the exception is `costume.MD2`'s mesh 1 in Space's `costume.wad`,
+whose materials 6 and 7 share faces 54 to 57). In the file's own order they do **not** tile in 1,301
+meshes, so a reader must sort first (upstream look 2026-10-19, `verify-models.md` L1).
 
 A material with a non-zero frame offset also has a 4-byte flags word, read directly from that
 frame offset in the file. The frame offset does double duty: it locates both the frame table entry
@@ -782,7 +789,7 @@ are true gradients. A renderer acting on this bit has to serve both.
 
 #### Open questions
 
-- The two unidentified 2-byte fields in the material record, and the 4-byte field at its end.
+- The 4-byte field at the end of the material record (0 in 12,031 of the 12,960 materials, 1 in 929; no other value).
 - What `0x10` and `0x20` select, and what `0x40` means beyond being propagated to header 0x30.
 - Whether anything in the format distinguishes an alpha-tested cut-out material from a blended
   one, or whether the original engine drew both the same way.
@@ -1113,12 +1120,22 @@ archive satisfies that exactly, whichever flag byte its descriptor carries. That
 
 The two trailing channels are the **corners of the box the vertices span** at each keyframe,
 minimum then maximum, in the same packed form as the vertices. The engine reads them as the
-animation's bounding box (engine-confirmed). In all 1,734 tracks, they sit on the corners of the
+animation's bounding box (engine-confirmed). They are **record 0**: record 0 has exactly two channels
+in all 1,736 descriptors, and its channel ids lie above, and are disjoint from, every other record's
+(upstream look 2026-10-19, `verify-models.md` L2). In all 1,734 tracks, they sit on the corners of the
 first keyframe's vertices to within three quantisation steps.
 
 Channels the animation doesn't actually move are still present, in a record holding a single
 keyframe of that channel's rest value. So a full mesh pose is always reconstructible by sampling
 every channel.
+
+**Flag bit `0x2` and record 1.** A descriptor whose flag byte is `0x03` has a **constant record 1**,
+in all 398 of them: one keyframe in 365, two keyframes carrying identical values in the other 33. A
+descriptor with flag `0x01` always has more than one key in record 1 (1,338 of 1,338), though 375 of
+those are constant too, so the bit is a sufficient sign of a constant record 1 and not a necessary
+one. No record other than record 1 has a single key, under either flag. Reading a flag-`0x03` record 1
+as one key at time 0 therefore gives the same pose at every frame as reading its two identical keys
+(upstream look 2026-10-19, `verify-models.md` L2). What the engine does with the bit is not shown.
 
 **Value decoding.** Each 4-byte value is a vertex position quantised into three signed 10-bit
 fields: X in bits 0-9, Y in 10-19, Z in 20-29 (bits 30-31 unused). Each field is a signed value
@@ -1165,7 +1182,11 @@ descriptor:
 | 0x0C   | 4 bytes | Zero in all 30 |
 
 The engine reads vertex `i` of frame `f` at `positions[f * verticesPerFrame + index[i]]`, over the
-target mesh's vertex count. In all 28 of the 30 tracks whose base model resolves, the vertices per
+target mesh's vertex count. The positions hold the track descriptor's `+0x0C` (a frame value) **plus
+one** whole frames, before the next pointer: 30 of 30 tracks, which also fit in the file. In these 30
+`+0x0C` equals the clip's last frame (block `+0x08`), so "`+0x0C` + 1" and "clip end + 1" are the same
+here; which of the two the engine bounds by is not shown (upstream look 2026-10-19, `verify-models.md`
+L3). In all 28 of the 30 tracks whose base model resolves, the vertices per
 frame equal the target mesh's vertex count. In all 30, the index table sits directly before the
 positions. These tracks belong to the jungle speakers' and the Space droid's clips, among others.
 Read as a morph descriptor, `droidm2.MD2` appears to aim 3,561 channels at a 16-vertex mesh.
@@ -1479,7 +1500,7 @@ nearest float to 1000/30, not the exact value.
 
 - What the engine does with a zero-length position segment, which 4 tracks have.
 - The frame-ish value at descriptor +0x0C, and the unknown 4 bytes ending each morph record.
-- What bit `0x02` of a morph descriptor's flag byte selects. It does not change the channel count.
+- What the engine does with bit `0x02` of a morph descriptor's flag byte. It does not change the channel count; in the data it marks a constant record 1 (above).
 - What track bits `0x10`, `0x20`, `0x40`, `0x100`, `0x800`, `0x2000` and `0x8000` select.
 - The five undecoded pointers in the animation block (0x20, 0x24, 0x28, 0x30, 0x3C) and the word at
   its start.

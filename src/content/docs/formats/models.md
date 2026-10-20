@@ -1240,6 +1240,15 @@ at 0x30 has bit `0x4` set, the point is added to the authored position instead (
 coaster parts' clips carry 43 position tracks. Before a track's first key the engine leaves the node
 where it is.
 
+Across the game's clips (1,208 position tracks read, in 447 clips, each measured against its model):
+47 tracks start past frame 0 (the Moon Buggy's construction clip twelve of them), so what the node holds
+before then matters; no track's last key comes before its clip's declared last frame, and 15 keys sit
+past it, so a clip never runs on past its last position key; 669 tracks open on the node's own
+translation and 538 elsewhere (the Jungle Spray's construction clip raises its fence, guns, puddles and
+tubes from below to where the model rests them); 451 move a node that hangs under another the same clip
+moves, and 285 move a node that is no mesh. Six
+clips carry a route (bit `0x200`) as well, never on the same node.
+
 The type's bits choose the curve, and the engine picks its sampler on exactly these bits
 (engine-confirmed):
 

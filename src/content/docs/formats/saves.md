@@ -1074,7 +1074,7 @@ Simulation saves, the parks the original wrote under Proton and OpenTPW's), ever
 |---|---|---|---|
 | 16 | 4 × 5 | `mMapSquaresPerCell`, `mGridSizeX`, `mGridSizeY`, `mMapSizeX`, `mMapSizeY` | 4, 32, 32, 128, 128 |
 | 36 | 61 × 1,024 | the blocks, row by row (`FUN_004c85b0`): `mStartX`, `mStartY`, `mSizeX`, `mSizeY` (4 bytes each), then nine kept answers of 5 bytes, `mVal` (4) and `mWorkedOut` (1) | block *k* is ((*k* mod 32) × 4, (*k* div 32) × 4, 4, 4); `mWorkedOut` 0 or 1 |
-| 62,500 | 17 × 4 | four small rings (`FUN_004cdb80`): `mCurrentEntry` (4), `mNumEntries` (4, 3), `mWrappedAround` (1), `mTemp` (2) and three 2-byte `mData` | `mNumEntries` 3 |
+| 62,500 | 17 × 4 | four small rings, the recently researched of the buy list's four tabs (`FUN_004cdb80`): `mCurrentEntry` (4), `mNumEntries` (4, 3), `mWrappedAround` (1), `mTemp` (2) and three 2-byte `mData`, item ids | `mNumEntries` 3 |
 | 62,568 | 5 × 6 | six kept answers, `mVal` (4) and `mWorkedOut` (1) | |
 | 62,598 | | the sixteen rings of dwords, below | |
 
@@ -1093,7 +1093,14 @@ the nine count is not read.
 **The four small rings** read −1, 3, 0, 0 and the allocator's `0xCDCD` (or 0) in their slots in 537 of the 539:
 never pushed. In Alexah's played Full Simulation jungle (its `New Save.TPWS` and `autosave.TPWS`, the same in both)
 they hold catalogue item numbers a hundred to a ring: 1102, 1104, 1108; 1208, 1202, 1206; 1304, 1309, 1307; 1435,
-1407, 1434. What pushes them is not read.
+1407, 1434. They are the rides', the shops', the sideshows' and the features' rings of the recently researched, in
+that order (the items' `Info.WhichUIType`): a finished research project pushes its item into its tab's ring, the entry
+stepping on and wrapping to the first slot past the third, and the buy list stars a row whose item is one of a ring's
+three newest. In Alexah's park the rides' ring stands on slot 2 and has wrapped (so 1108 is the newest, then 1104,
+1102), the shops' on 1, wrapped, the sideshows' on 2, not wrapped (three pushed), the features' on 1, wrapped. What the
+game does with them is OpenTPW's `docs/exe/park-engine.md`, "The lab at work", and `docs/exe/hud.md`, "What the buy list
+actually filters on". A park OpenTPW wrote just after the stock Lost Kingdom park's first finish (`q702`) holds the rides'
+ring at `mCurrentEntry` 0, unwrapped, 1150 (Dino Karts) in its first slot and the file's `0xCDCD` in the other two.
 
 **Sixteen rings of dwords** lie 62,598 bytes into the record, one after another, 589 bytes each: `mCurrentEntry` (4,
 −1 before the first month is closed), `mNumEntries` (4, 144), `mWrappedAround` (1), `mTemp` (4, the month so far) and

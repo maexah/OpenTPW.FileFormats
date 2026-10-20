@@ -108,7 +108,11 @@ files show:
   `usTrackEdge`, `usBlendToCSPointBlockIndex`, `fBlendLength`); `asCrossSectionSelects[n]` choose one by the
   track's pitch (`usCrossSectionIndex`, `fPitchRangeMin`, `fPitchRangeMax`, `usBlendFrom/ToCrossSectionIndex`).
 - `asPylonControls[n]` name the supports: `pcMeshFilename` `StdPylon` (`uiPylonTypeUniqueID` 1186), with a radius,
-  an incline multiplier, the most pylons stacked, a least and greatest height and three costs.
+  an incline multiplier, the most pylons stacked, a least and greatest height and three costs. All twelve files give
+  their first pylon `fMinHeight` 10 and `fMaxHeight` 100, and `fInclineAnimMultiplier` 4.5 (seven), 3.0 (`coasta`), -3.0
+  (`cat_co`, `c_scat`) or -4.5 (`megacost`, `moonshot`). None sets `sCoasterType.fCurviness`, a loft or rotate
+  multiplier, or any clip's start cap, end cap or add, so the game's defaults hold for all of them (OpenTPW's
+  `docs/exe/ride-operation.md`, "A coaster's highest track point").
 
 **The track's own textures are in a `GTexture` folder.** The twelve coaster WADs, and no other, ship one: 42 members,
 a `qickload.txt` in each (`coaster1`'s lists `Trak_sec2.wct` and `Trak_sec3.wct`). `coaster.sam` names them `.tga`

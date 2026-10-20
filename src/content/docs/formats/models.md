@@ -336,6 +336,17 @@ each hide the same twelve nodes: 5 `Ticket`, 6 `MAP`, 12 `Ticket2`, 16 to 23 and
 20 hide 22 nodes, the fly itself among them). The jungle's `Standard.sam` names the helmet as the theme's
 costume: `ThemeAdvisorCostumes[0].AddOns 4`, with `SubOffs` 19 and 20, the other model's antennae.
 
+**A coaster's track records** (Q706's rest; OpenTPW's `docs/exe/ride-operation.md`, "A coaster's highest track
+point"). The twelve coaster wads' station and pylon models name their track nodes in space `0x400000`. Every one of the
+twelve station models has three, ids 1, 2 and 3, flags `0x01400031`, then `0x00c00031` or `0x03400031`, then
+`0x02400031` (`minecart` and `megacost`'s `Railnode01`..`03`, `coasta`'s the same; `enter track`, `mid track` and
+`exit track` in `b_drip`, `candy_c` and `cat_co`; `EndPylonPosn`, `MidPylonPosn` and `StartPylonPosn` in the other
+five). A standard pylon has either three, ids 1 to 3, its centre id 2 and the two ends 1 and 3 (`TrackCentreDummy` or
+`TrackDummyCentre` `0x03c00031`, `0x00c00071` in `coaster1` and `c_hade`, `0x03c00071` in `shocker`; the ends
+`0x01400031` and `0x02400031`), or one, its centre id 1 (`0x03c00031`, in `coaster3` and `megacost`). A loop pylon has one, id 1 (`0x03c00031`). Bits `0x1000000` and `0x2000000` mark a pylon's two ends and
+`0x800000` its centre: `minecart`'s pylon carries two `0x1000000` records (the centre and the incoming end), `coaster1`'s
+one (the incoming end, its centre lacking the bit), `coaster3`'s one (its centre).
+
 #### Which records have a position
 
 A ride script asks for a node's position by id and flag (a walk node `0x800`, a head `0x80`, a sound

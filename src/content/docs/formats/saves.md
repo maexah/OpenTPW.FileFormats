@@ -2780,6 +2780,28 @@ loader `FUN_00437b60`). In both of Alexah's played jungle parks the module is 1,
 only with bit 0 set, bit 1 clear and no clash. The module holds no rating of the ride: the game works the ride's
 excitement out again after a load.
 
+**A piece** is one of the coaster's pylons, in the order of its track from the station; the loader (`0x00437b60`) puts
+each back as a node after the station's own three (OpenTPW's `docs/exe/ride-operation.md`, "A coaster's highest track
+point"). Measured on the Temple Of Gloom's 38 in Alexah's jungle `New Save`, every value against the running original's:
+
+| Offset | Size    | Description                                                                                                | Temple Of Gloom's first |
+| ------ | ------- | ---------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `0x00` | 4 bytes | Flags: `0x1` the yaw is kept, `0x2` the incline, `0x4` the bank (otherwise the game works them out again); `0x10` reads `0x1d` in the bank's place; `0x8` and `0x40` to `0x800` other node flags (`0x00437de9`..`0x00437f4f`) | `0x400` |
+| `0x04` | 4 bytes | The pylon's model instance                                                                                 | 84 |
+| `0x08` | 2 bytes | Its cell's x on the ground heightfield's grid (96 to a row, 10 units a cell)                                | 26 |
+| `0x0a` | 2 bytes | Its cell's y                                                                                               | 35 |
+| `0x0c` | 1 byte  | Its stack ordinal                                                                                          | 0 |
+| `0x0d` | 4 bytes | Its loft, a float from 0 to 1: the pylon stands `fMinHeight + ( fMaxHeight - fMinHeight ) x loft` above the ground (the Minecart's 10 to 100) | 0.1 |
+| `0x11` | 4 bytes | Its bank, radians                                                                                          | 0 |
+| `0x15` | 4 bytes | Its incline, radians (positive is down)                                                                    | -0.7168 |
+| `0x19` | 4 bytes | Its yaw, radians                                                                                           | 1.5708 |
+| `0x1d` | 4 bytes | A loop pylon's rotation, read instead of the bank, with the incline nought, when the flags hold `0x10`        | 0 |
+| `0x21` | 1 byte  | How many crossing partners follow, u16 each                                                                | 0 |
+
+The floats are unaligned. The yaw, incline and bank are the values the game had worked out when it saved, so they equal
+the running game's after a load, kept or not. None of the 38 is stacked, a loop pylon or kept but for the bank and incline
+of three (flags `0x6`).
+
 ## The advisor, sound and advisor scoring modules (`SVDA`, `NUOS`, `CSDA`)
 
 **The advisor** (`FUN_00599c30`), between `SAOC` and `SVDA`: the magic `ADV_`, the dword `0x168`, 360 bytes of

@@ -546,6 +546,16 @@ and Space's 6 by 4 at `(45, 15)`. Every gate's own `Info.Shape` picture is a sin
 comes from these keys alone. The cell count those give agrees with the item's
 [footprint file](/formats/hmp/).
 
+### `UsageInfo.ConstrainCamera` and `Info.FirstPersonSprites`: the ride view
+
+Two keys belong to the ride view, the camera put on a model's own camera record (id 1 under `0x1000`,
+[models](/formats/models/)). Of all 312 `.wad` files, `UsageInfo.ConstrainCamera 1` is set by twelve items, three in
+each theme: the `end` feature, the `gates`, and one camera feature (jungle's `camera`, hallow's `horcam`, space's
+`spacam`, fantasy's `seccam`). No file sets it to anything else. `Info.FirstPersonSprites` appears only as `0`, in the
+four tour rides (jungle's and hallow's `tourride`, fantasy's `twetours`, space's `scitour`), so every item reads `0`.
+What the engine does with each, and the end feature's own camera record (End.MD2's node `camera`, its record 0, flag
+word `0x1031`), is OpenTPW's `docs/exe/park-engine.md`, "The End feature's view".
+
 ## Info.Shape is a block, not a value
 
 Most keys are `key <whitespace> value`, but a few are followed by a fenced block: a line of three

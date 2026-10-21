@@ -102,6 +102,8 @@ These are the options as they stand whenever the file is written, and they repla
 
 **Golden keys.** The game counts a player's golden tickets: every nonzero player-wide ticket byte, plus every nonzero ticket byte of each park record whose theme has a `global.sam`. The player holds a key for every three tickets, plus the keys given outright. A new *Full Simulation* player is given one key outright when they first leave the player slots; an *Instant Action* player is given none, and can enter every park.
 
+**Spending tickets.** The tickets a player has left are the tickets counted above less the spent count, with no floor. A ride with a golden-ticket cost (`UsageInfo.GoldenTicketCost` in its `.sam`) whose id is not in the ride-id list is offered as a mystery ride and can be bought only while the cost is at most the tickets left. Buying it adds its id to the list and its cost to the spent count, and takes no money; every later one of that ride is bought with money. The list and the count live in the running game and reach the file at its next write, as when a park is saved. Measured in the original: a player with four tickets and two spent bought Lost Kingdom's Jurassic Tours (id 1170, cost 1) and the saved file then held a spent count of 3 and the one id 1170. How the game does it is OpenTPW's `docs/exe/hud.md`, "Spending golden tickets".
+
 **Loading.** The game refuses only a file whose version is below `12`. A file that ends early, or has two parks with one name, stops loading where it fails. The game never checks for that, so the player keeps whatever was read and the rest stays at its defaults. A missing `gms.dat` still leaves the player in their slot.
 
 ## Open questions

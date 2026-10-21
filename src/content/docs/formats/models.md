@@ -1326,10 +1326,14 @@ ushort at descriptor +0x12 is the key count, and the slot at +0x20 points at tha
 | 4 bytes | Scale Z |
 
 The engine finds the two keys the current frame falls between, blends the three scales linearly, and
-sets the lengths of the node's three basis axes to them (`0x00471d8d`, then `FUN_0046f910`). All 644
+sets the lengths of the node's three basis axes to them (`0x00471d8d`, then `Matrix_SetAxisLengths`, `0x0046f910`). All 644
 scale tracks in the game have strictly ascending frames. The values run from 0.00015 to 14.53, and
 most sit near 1. The advisor's squash and stretch is one user: `Advisor_FANm17` keys his body at
 (1.243, 0.838, 0.838) and then (1, 1, 1).
+
+Lost Kingdom's advisor grows his golden ticket by one: `Advisor_JUNm18` keys `Ticket2` from (0.748, 0.964, 1.158) at
+frame 0 to (12.093, 11.486, 8.958) at frame 70, `Advisor_JUNm19` holds that, and `Advisor_JUNm20` takes it to (3.023,
+2.872, 2.239) at frame 25. 128 of the 644 are in Lost Kingdom's wads, in 54 clips of 19 wads.
 
 ### Path progress (bit 0x200)
 

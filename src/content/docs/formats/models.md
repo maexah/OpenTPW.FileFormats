@@ -1327,8 +1327,14 @@ ushort at descriptor +0x12 is the key count, and the slot at +0x20 points at tha
 
 The engine finds the two keys the current frame falls between, blends the three scales linearly, and
 sets the lengths of the node's three basis axes to them (`0x00471d8d`, then `Matrix_SetAxisLengths`, `0x0046f910`). All 644
-scale tracks in the game have strictly ascending frames. The values run from 0.00015 to 14.53, and
-most sit near 1. The advisor's squash and stretch is one user: `Advisor_FANm17` keys his body at
+scale tracks in the game have strictly ascending frames, and every one sets `0x100` with `0x80`. The values run from
+0.00015 to 14.53, and most sit near 1.
+
+Before a track's first key the key search answers nought and no scale is set. 623 of the 644 tracks start at frame 0;
+21 start later (from 10 to 140; Lost Kingdom's `volcanol` keys node 1 from 25, `wateridec` nodes 15 and 16 from 69).
+632 tracks end on their clip's declared last frame and 12 past it. 562 of the tracks also carry rotation and 563 position.
+Three clips carry a scale track and no rotation, morph or UV track: Lost Kingdom's `tvsime` and `tvsims` and fantasy's
+`sign1c`. The advisor's squash and stretch is one user: `Advisor_FANm17` keys his body at
 (1.243, 0.838, 0.838) and then (1, 1, 1).
 
 Lost Kingdom's advisor grows his golden ticket by one: `Advisor_JUNm18` keys `Ticket2` from (0.748, 0.964, 1.158) at

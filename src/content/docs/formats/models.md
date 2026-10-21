@@ -693,6 +693,15 @@ a pair comes first varies: the Sun God's brazier plates (jungle `rides/incagod.w
 material `Inc_Saucer`, faces 124 to 139) put each underside first, the jungle gate's pillar faces (`features/gates.wad`,
 `gates.MD2`, mesh `gateway`, material `md_pill01`, faces 0 to 15) the top first.
 
+**The interface's meshes (`data/ui.wad`) face the screen clockwise.** Read in the file's x and y (y up), after the
+node chain, a face is drawn when its corners A, B, C turn clockwise (OpenTPW `docs/exe/render-states.md`, "Which draws
+the test covers": the game's UI matrix turns y over before the same test). Of the wad's 278 models, 1,185 meshes and
+6,310 faces, 5,888 turn clockwise and 422 the other way, none edge-on, in 13 meshes of three models: `s_X1.md2`'s ten
+(the price's "x 1" to "x 5", gold and grey: 24 to 50 faces a mesh), `s_key.MD2`'s two (the gold and grey key, 14 of 82
+each) and `warnlite.MD2`'s root mesh `warnlite` (both its faces). The key and the "x N" are closed solids, so those are
+their far walls. `ui.wad`'s one mesh with faces on the same three points, `worldlob`, has two such pairs, each turned
+the same way (OpenTPW's harness `lib/uiwinding.py`).
+
 #### Open questions
 
 

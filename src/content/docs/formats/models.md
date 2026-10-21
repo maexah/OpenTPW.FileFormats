@@ -1340,12 +1340,18 @@ sets the lengths of the node's three basis axes to them (`0x00471d8d`, then `Mat
 scale tracks in the game have strictly ascending frames, and every one sets `0x100` with `0x80`. The values run from
 0.00015 to 14.53, and most sit near 1.
 
-Before a track's first key the key search answers nought and no scale is set. 623 of the 644 tracks start at frame 0;
+Before a track's first key the key search answers nought and no scale is set, so the node keeps whatever
+lengths its matrix holds after the turn is written that frame (`Anim_PoseTrack` writes the turn first: a rotation track copies
+three fresh rows over the matrix, `0x0046fbb0`, so a node with one has the rotation's lengths there). Where no turn is written,
+the lengths are the rest's after a change of clip and the last key's of the clip's previous pass when the same clip comes
+round, as for a position track. That reading is by analogy with the position track and is not measured: Lost Kingdom's three late
+tracks (`volcanol` node 1, which has a rotation track, and `wateridec` nodes 15 and 16, which have none) were not watched in the
+original. No advisor track starts late. 623 of the 644 tracks start at frame 0;
 21 start later (from 10 to 140; Lost Kingdom's `volcanol` keys node 1 from 25, `wateridec` nodes 15 and 16 from 69).
 632 tracks end on their clip's declared last frame and 12 past it. 562 of the tracks also carry rotation and 563 position.
 Three clips carry a scale track and no rotation, morph or UV track: Lost Kingdom's `tvsime` and `tvsims` and fantasy's
 `sign1c`. The advisor's squash and stretch is one user: `Advisor_FANm17` keys his body at
-(1.243, 0.838, 0.838) and then (1, 1, 1).
+(1.243, 0.838, 0.838), then (1, 1, 1) at frames 9 and 15, and (1.2112, 0.8592, 0.8592) at 19, its declared end.
 
 Lost Kingdom's advisor grows his golden ticket by one: `Advisor_JUNm18` keys `Ticket2` from (0.748, 0.964, 1.158) at
 frame 0 to (12.093, 11.486, 8.958) at frame 70, `Advisor_JUNm19` holds that, and `Advisor_JUNm20` takes it to (3.023,

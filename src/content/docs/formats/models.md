@@ -683,6 +683,16 @@ The face table (offset given in the mesh record) is *face count* records of 8 by
 Each record is one triangle. Winding order needs to be reversed from how it's stored to render
 correctly with a standard right-handed culling convention.
 
+**A face seen from both sides is stored twice**: two records on the same three points, wound opposite ways, each with
+corners of its own in the vertex order (so its own UVs and normals). The game
+draws only the one wound toward the eye (OpenTPW `docs/exe/render-states.md`, "The software back-face test"), so the
+two sides are lit apart. Counted over the 2,123 `.md2` files under `data/` (wad members and loose files): 1,419 meshes
+hold 27,937 such groups, 27,930 of them turned opposite ways and 27,853 two records one straight after the other
+(OpenTPW's harness `lib/twinfaces.py --sweep`). Which of
+a pair comes first varies: the Sun God's brazier plates (jungle `rides/incagod.wad`, `incagod.MD2`, mesh `Body`,
+material `Inc_Saucer`, faces 124 to 139) put each underside first, the jungle gate's pillar faces (`features/gates.wad`,
+`gates.MD2`, mesh `gateway`, material `md_pill01`, faces 0 to 15) the top first.
+
 #### Open questions
 
 

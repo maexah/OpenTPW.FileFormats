@@ -2816,7 +2816,7 @@ that length began, at +12+L: a loader with no sound skips them by L less the 4 i
 The two dwords are the sound's "initialised" word (`0x00802bd4`, which the loader reads into a local only) and its
 "enabled" word (`0x00802bc8`, which the loader writes back; with the first nought it puts back the value from before the load).
 The dword `0x54` is a length, and the 84 bytes are 21 little-endian words, the sound's own state at `0x00803aa0`: four
-volumes (set at `+0x18` to `+0x24`), the crowd's voice handle (`+0x4`, `0x00803aa4`, nought with no crowd voice; the voice list below holds the voice), the three on-flags (set at `+0x38`, `+0x3c`, `+0x40`), the reverb preset (`+0x14`), the crowd level
+volumes (set at `+0x18` to `+0x24`), the music voice's handle (`+0x0`, `0x00803aa0`), the crowd's voice handle (`+0x4`, `0x00803aa4`, nought with no crowd voice; the voice list below holds the voice), another voice's handle (`+0xc`, `0x00803aac`), the three on-flags (set at `+0x38`, `+0x3c`, `+0x40`), the reverb preset (`+0x14`), the crowd level
 (`+0x10`, 0 to 35), a u16 music dip at `+0x30` and a u16 at `+0x32`, and words nothing reads (`+0x34`, `+0x44` to `+0x50`).
 In all 558 different park bodies on hand the volumes read 100, 75, 60 and 75, the three flags 1, 1 and 1, the dip 0, the
 reverb preset 0 (3 in the Halloween Full Simulation autosave) and the word at `+0x32` 1 in most (0 in the restart and autosave files).
@@ -2828,13 +2828,13 @@ dword unless a size says otherwise.
 
 | Size | Description |
 | ---- | ----------- |
-| 12 | Three floats the loader reads and drops. The second is 10,000.0 in 577 of the 580 different park bodies on hand (the height a paused park lifts the listener to), 46.8 in two the original saved and nought in one |
+| 12 | Three floats the loader reads and drops. The second is 10,000.0 in 577 of the 580 different park bodies on hand (10,000.0 is also the height a paused park lifts the listener to; whether the word is the listener's height is not established, Q560's prediction of it missed on 3 files), 46.8 in two the original saved and nought in one |
 | 4 | **L**, the length, which counts **itself**: the list ends L bytes after L began |
 | 4 | The voice count |
 | 4 | The category record's length: the bytes after this dword and the next |
-| 4 | **N**, the category slots (19 in every file) |
+| 4 | **N**, the category slots (19 in the shipped `Easymode.TPWI` and the files that carry its block unchanged, 16 in the files the original wrote here but one, 18 in a Full Simulation Halloween `restart.INTS`) |
 | 4 × N | Noughts |
-| N × (1 + n) | Each slot: a byte n, then n bytes of its file name with its nought (`SoundLibrary_WriteCategories`, `0x006c0dc0`). A voice names its category by its slot here. Lost Kingdom's: slot 0 an empty name, 1 to 5 `\data\global\sound\cat_ambient`, `cat_rides`, `cat_ui`, `cat_kids`, `cat_staff`, 6 `\data\global\speech\cat_speech`, 7 to 9 the level's `sound\cat_ambient`, `sound\cat_rides` and `speech\cat_speech`, 10 its `music\cat_music`; 11 to 18 empty slots (n nought) |
+| N × (1 + n) | Each slot: a byte n, then n bytes of its file name with its nought (`SoundLibrary_WriteCategories`, `0x006c0dc0`). A voice names its category by its slot here. Lost Kingdom's: slot 0 an empty name, 1 to 5 `\data\global\sound\cat_ambient`, `cat_rides`, `cat_ui`, `cat_kids`, `cat_staff`, 6 `\data\global\speech\cat_speech`, 7 to 9 the level's `sound\cat_ambient`, `sound\cat_rides` and `speech\cat_speech`, 10 its `music\cat_music`; 11 to 18 empty slots (n nought). The slots are not fixed: by file and theme a category moves (Halloween's ambient is at 8, Fantasy's speech at 10), `cat_music` may be absent, and the lobby's `cat_globallobbysfx` and `cat_locallobbysfx` can take slot 9 or 13; a reader names a slot by its file name, not its number |
 | 4 | The voice pool's blocks of 100 slots (1 in every file) |
 | per voice | Its handle, its **type**, and its record (below) |
 
@@ -2843,10 +2843,10 @@ high 16. The reader puts the voice back into the free slot of that number and gi
 (`0x006b6efd`, `0x006b6fc3`), so a handle kept elsewhere in the file names the same voice after a load.
 
 **The type** is the voice's class: 1 the music's class (effect flags `0x2`, `0x4`, `0x400`), 2 the class of flag
-`0x10`, 3 a one-shot (no `0x4`), 4 the chain of any variation (`0x4` alone), 5 the plain class (`0x2` and `0x4`), 6 the
+`0x10`, 3 a one-shot (no `0x4`), 4 the chain of any variation (`0x4` alone), 5 the plain class (`0x2` and `0x4`; a second class, vtable `0x0070a8d0`, also writes 5 and the reader rebuilds it as the plain one; when it is made is not settled), 6 the
 held chain (`0x4` and `0x400`); a child is 7 (of a chain of any variation) or 9 (of a held chain). The class of flag
 `0x100` writes 10, which the reader has no case for: its record would not be read, and the rest of the list would be
-read wrong. No file on hand holds a 10 or a 2; over the 580 bodies the voices are 2,304 one-shots, 1,955 plain,
+read wrong. So would a voice whose handle's number has no free slot (`0x006b6f04`); no file on hand has one. No file on hand holds a 10 or a 2; over the 580 bodies the voices are 2,304 one-shots, 1,955 plain,
 1,193 of the music's class, 682 held chains (627 with a child) and 2 chains of any variation (each with a child).
 
 **A voice's record** (`Voice_WriteRecord`, `0x006bccf0`; `Voice_ReadRecord`, `0x006bd0a0`):
@@ -2857,7 +2857,7 @@ read wrong. No file on hand holds a 10 or a 2; over the 580 bodies the voices ar
 | `0x04` | 12 | The place: x, height, z as floats. A voice with no place (effect flag `0x200`) holds the whole words 0, 1, 0 |
 | `0x10` | 4 | Nought in every file the original wrote; the shipped `Easymode.TPWI` holds small floats here (0.01 to 0.71). The reader drops it |
 | `0x14` | 4 | The voice's own range, a float: nought for none (97 and 19 for the level's placed sounds) |
-| `0x18` | 4 | The category's slot in the list above; nought for none found, and then the record stops here (no file holds one) |
+| `0x18` | 4 | The category's slot in the list above; nought for none found. The writer then writes the type and nothing of the record (`0x006bcd6d`), and the reader takes the next voice's handle for the mark, gives up on this record and reads the rest of the list from the wrong bytes (no file holds one) |
 | `0x1c` | 4 | The effect's place in its category's effect table, from nought |
 | `0x20` | 4 | The variation's place among the effect's, from nought |
 | `0x24` | 4 | The sample's place among the variation's, from nought |
@@ -2869,8 +2869,8 @@ read wrong. No file on hand holds a 10 or a 2; over the 580 bodies the voices ar
 | | 4 | The handle again; the reader drops it. A child has none of its own, and this word holds whatever its memory held |
 | | 4 | The child's type, nought for none; then the type again and the child's own record, laid out the same way |
 
-The records stand newest first: the writer walks the live list from its tail, and the reader links each voice at the
-head. The reader stops every live voice first, then, with sound on, rebuilds each and sets it up as a new voice of its
+The records stand oldest first: the writer walks the live list from its tail (the oldest voice) to its head, and the
+reader links each voice at the head, so the live order comes back as it was. The reader stops every live voice first, then, with sound on, rebuilds each and sets it up as a new voice of its
 effect, variation and sample would be, at its place and range.
 
 **What the shipped park holds.** `Easymode.TPWI`'s ten voices, as the original puts them back on entering it (read in
@@ -2884,7 +2884,7 @@ handles 14 and 7); and kids 91, the crowd, whose handle is also the sound block'
 **Who else keeps a voice's handle.** A script's object-list record (types 3 to 10, "The object list" above): over the
 580 bodies 1,394 of 1,581 such records name a saved voice, and the other 187 name none (their voices had ended or were
 left out). The sound block's word at `+0x4` (the crowd's voice) names a saved voice in all 569 bodies where it is
-not nought; the weather's `mRainSoundHandle` is set in one, and names a saved voice.
+not nought; the weather's `mRainSoundHandle` is set in one, and names a saved voice. The block's `+0x0` (the music voice's) names a saved music-class voice in 59 of the 65 different lists on hand and is nought in 6; `+0xc` names a saved voice in 1 and is nought in 59, a handle with no voice in 5.
 
 All 580 bodies parse so and end exactly at L; 31 different lists among them (fork watch 2026-10-20, `verify-world.md`
 M2, for the length; Q560 for the records; the code is OpenTPW's `docs/exe/audio.md`, "A park file's voices").

@@ -2781,17 +2781,17 @@ only with bit 0 set, bit 1 clear and no clash. The module holds no rating of the
 excitement out again after a load.
 
 **A piece** is one of the coaster's pylons, in the order of its track from the station; the loader (`0x00437b60`) puts
-each back as a node after the station's own three (OpenTPW's `docs/exe/ride-operation.md`, "A coaster's highest track
+each back as a node after the station's own (three where the coaster type's flag `0x20` is set, as it is on every type shipped; two without it; OpenTPW's `docs/exe/ride-operation.md`, "A coaster's highest track
 point"). Measured on the Temple Of Gloom's 38 in Alexah's jungle `New Save`, every value against the running original's:
 
 | Offset | Size    | Description                                                                                                | Temple Of Gloom's first |
 | ------ | ------- | ---------------------------------------------------------------------------------------------------------- | ----------------------- |
-| `0x00` | 4 bytes | Flags: `0x1` the yaw is kept, `0x2` the incline, `0x4` the bank (otherwise the game works them out again); `0x10` reads `0x1d` in the bank's place; `0x8` and `0x40` to `0x800` other node flags (`0x00437de9`..`0x00437f4f`) | `0x400` |
+| `0x00` | 4 bytes | Flags: `0x1` the yaw is kept, `0x2` the incline, `0x4` the bank (otherwise the game works them out again); `0x10` reads `0x1d` in the bank's place; `0x8` is not a node flag: it calls `FUN_00442cd0` (`0x00437de9`), which sets a global and no node field, and no piece in the parks on hand carries it; `0x40` to `0x800` go to the node's own flag word (`0x00437ed0`..`0x00437f58`) | `0x400` |
 | `0x04` | 4 bytes | The pylon's model instance                                                                                 | 84 |
 | `0x08` | 2 bytes | Its cell's x on the ground heightfield's grid (96 to a row, 10 units a cell)                                | 26 |
 | `0x0a` | 2 bytes | Its cell's y                                                                                               | 35 |
 | `0x0c` | 1 byte  | Its stack ordinal                                                                                          | 0 |
-| `0x0d` | 4 bytes | Its loft, a float from 0 to 1: the pylon stands `fMinHeight + ( fMaxHeight - fMinHeight ) x loft` above the ground (the Minecart's 10 to 100) | 0.1 |
+| `0x0d` | 4 bytes | Its loft, a float from 0 to 1, how far up its pylon's range it stands: the pylon model's loft clip at that share puts the pylon's knot between the type's lowest and highest height above the ground (10 to 100 for the Minecart, 15.56 to 95.56 for the Gorilla Thrilla, not `fMinHeight` to `fMaxHeight`, which only hold a height asked for) | 0.1 |
 | `0x11` | 4 bytes | Its bank, radians                                                                                          | 0 |
 | `0x15` | 4 bytes | Its incline, radians (positive is down)                                                                    | -0.7168 |
 | `0x19` | 4 bytes | Its yaw, radians                                                                                           | 1.5708 |

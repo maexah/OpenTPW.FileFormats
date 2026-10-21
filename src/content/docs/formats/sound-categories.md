@@ -69,6 +69,10 @@ called `sound`, and hallow's rides ask for `Sound\ride` when the file is `rideHD
 case-insensitive filesystem this was authored on, neither mattered.
 
 Bank order matters — sample records index into this list.
+A category's banks need not be its own: the global kids category lists three, `Sound\Kids`, `Sound\UI` and
+`Sound\xKids`, so its effect 208 (one variation, volume 42, range 60) names bank 2's entry 8, `cashD2b.mp2`
+(1,158 ms) in `UIHD.sdt`, a bank the ui category lists too. It is the till a guest sounds on paying (OpenTPW's
+`docs/exe/audio.md`, "The charge's sound").
 
 ## The SFX file
 

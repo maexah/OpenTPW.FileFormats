@@ -2335,8 +2335,41 @@ Proton, 2026-10-08).
 **A queue cell's `mMeshInstance` is a slot of this module too**, plus one. Its record's item id is 17000 plus the
 cell's tile index (17001 to 17007), its cell is the cell, and its script handle is nought. A queue cell holding
 nought there is drawn black by the game, piece and ground both, and still works as a queue (measured under Proton,
-2026-10-08). The other records - most of them, items 173xx in the shipped park (143 of its 161) and 171xx too in a
-played one - are named by no thing and no cell's `mMeshInstance`.
+2026-10-08). The other records are named by a cell's track sub-record: most of them, items 173xx (143 of the
+shipped park's 161), are the boundary's pieces, below; 171xx in a played park are named by cells of track type 11.
+
+### A boundary piece's record
+
+**The wall between the park and the land not bought is one model to an anchor**, a cell whose track sub-record's
+`mType` is 25 (the three other cells of its two by two hold 12 and name it as their `mParentID`). The anchor's track
+sub-record names its piece and says which it is:
+
+| Track sub-record | Value |
+|---|---|
+| `mMeshInstance` | the piece's slot in this module, plus one |
+| `mTileData` | set 5; index the piece's row of the game's hoarding table; angle its turn, 0, 90, 180 or 270 |
+| `mType` | 25 |
+| `mHoardingNeighbours` | which of the four cells two away are anchors too: `0x01` at y − 2, `0x04` at x + 2, `0x10` at y + 2, `0x40` at x − 2 (520 of 520 anchors in four parks; the gate's two ends name the one side they have) |
+
+and the piece's record holds:
+
+| Offset | Value |
+|---|---|
+| `0x01` | 17300 plus the nearest row at or above the piece's that the game's table names: a row the table names no model for draws the row before's, whose item it is |
+| `0x05`, `0x09` | the anchor, moved one on in y for a turn of 90, in x and y for 180, in x for 270 |
+| `0x0d`, `0x11` | 2 and 2 |
+| `0x15` | `0x33A` |
+| `0x27` | 360 less the turn, 360 folded to 0 |
+
+The items the table can make and the model each draws, from the theme's `hoarding.wad` (all four ship the same nine
+names): 17300, 17302 and 17304 `ho_fos1` (17302 the straight, 17304 for rows 4 to 8), 17301 `ho_end1`, 17303 `ho_fob1`
+(a corner), 17309, 17312 and 17315 (each for its row and the two after it) and 17318 `ho_fos4`, 17319 `ho_fob2` (a corner),
+17320 and 17323 `ho_fos2` and `ho_fos3` (a straight's two variants, each for its row and the two after it), 17326
+`ho_fob3`, 17327 `ho_fob4`. The files hold 17302, 17303, 17309, 17319, 17320, 17323 and 17326. **Measured on every park file to hand**, seven files of five parks and three
+themes (the shipped Lost Kingdom park, Alexah's Full Simulation saves of jungle, fantasy and Hallowe'en): 563 anchors,
+each naming a record of its own whose item, cell and angle are exactly these. The shipped park's 143: 90 `ho_fos1`,
+19 `ho_fos2`, 13 `ho_fos3`, 12 `ho_fob1`, 8 `ho_fob2` and one `ho_fos4`. What the executable does with them is
+OpenTPW's `docs/exe/park.md`, "The boundary hoarding's piece".
 
 ### A queue piece's record
 

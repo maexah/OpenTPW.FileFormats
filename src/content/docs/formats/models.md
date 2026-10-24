@@ -724,7 +724,7 @@ records:
 | 2 bytes | Face count: how many faces are in the run (never 0)                     |
 | 2 bytes | Start index: first reordered vertex index using this material          |
 | 2 bytes | End index: last reordered vertex index using this material (inclusive) |
-| 4 bytes | Unknown                                                                 |
+| 4 bytes | **Unlit.** 0 or 1. Where 1, the engine draws the material's vertices white, not with their lit colours (engine-confirmed). See below |
 
 The face run is measured over all 4,923 meshes of the 2,125 version-`0xDD` files: the run never
 passes the mesh's face count, and each of its faces' three corners lies inside the material's
@@ -732,6 +732,14 @@ start..end range. The runs tile the mesh's faces `[0, face count)` when the mate
 first face (4,922 of 4,923 meshes; the exception is `costume.MD2`'s mesh 1 in Space's `costume.wad`,
 whose materials 6 and 7 share faces 54 to 57). In the file's own order they do **not** tile in 1,301
 meshes, so a reader must sort first (upstream look 2026-10-19, `verify-models.md` L1).
+
+**The last word marks a material drawn unlit.** The engine gives a material's vertices their lit colours only where
+bit `0x1` of this word is clear; where it is set, each vertex takes the colour mask (white in play), so the texture is
+drawn at its own brightness whatever the light (OpenTPW's `docs/exe/park-engine.md`, "The water is drawn unlit, not
+half lit"). Measured over every static `.md2` of the game, wad members and loose files (841 models, 12,954 material
+uses): the word is 0 in 12,031 uses and 1 in 923, in 650 meshes, and never anything else. In the jungle's
+`terrain.wad` `base.MD2` the ten uses that carry it are the river's water (each `surface*` mesh's water material and
+`falls02`'s, all on frame word `0x33`); the beds and banks under them carry 0.
 
 A material with a non-zero frame offset also has a 4-byte flags word, read directly from that
 frame offset in the file. The frame offset does double duty: it locates both the frame table entry

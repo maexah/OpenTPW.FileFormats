@@ -453,7 +453,7 @@ Verified against `coconut.wad`, `junspray.wad` and the Jungle's two category fil
 | `LitterEffect` | 50 | *(absent)* | 5 shops | Added |
 | `SpecialIngredient` | 3 | *(absent)* | 0 shops | `0` none, `1` Fat, `2` Salt, `3` Ice, `4` Sugar |
 | `AppearanceEffect` | *(absent)* | *(absent)* | 0 shops | `1` Balloon, `2` Costume |
-| `ShopType` | 4 | *(absent)* | — | Every shop sets its own; no category file declares it |
+| `ShopType` | 4 | *(absent)* | — | Every shop sets its own and nothing else does (all 32 shops of the four themes): `1` four times, `2` twelve, `3` to `6` four each. In Lost Kingdom the gift shop 1, the burger, ice-cream and fries 2, the steak restaurant 3, the drinks shop 4, the costume shop 5, the balloon shop 6. The advisor reads 2 as food, 3 a restaurant, 4 drinks, 1, 5 and 6 the other shops |
 | `ExcitementLevel` | *(absent)* | 35 | 30 sideshow | |
 | `RideHandlesSprite` | 1 | 1 | 0 rides, shops and sideshow | "If the script handles the person sprite". The other three themes' `SideShow.sam` declare 1 |
 | `NumSimultAnims` | *(absent)* | 3 | 1 | How many animations it may run at once |

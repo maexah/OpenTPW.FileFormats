@@ -21,7 +21,7 @@ II**. Of their 3,739 entries, 2,650 are Layer I and 1,089 are Layer II:
 
 So a decoder needs Layers I and II, but never Layer III — which is the layer that needs a bit
 reservoir, Huffman tables and an MDCT — and it has to read the layer out of the stream's frame
-header rather than assume it. Every frame of an entry has the same version, layer, bitrate,
+header rather than assume it. The **version** is as much part of the header as the layer: bits 3 and 4 of the second byte (3 is MPEG-1, 2 is MPEG-2), and the two versions have different bitrate tables for the same index. The five MPEG-1 entries (`keyexplode` in `SfxHD.sdt`; `tp_riderepaired`, `tp_sideshowwin_`, `mortar_2` and `mortar_3` in `RideHD.sdt`; header `ffff22c0`) are index 2, 64 kbit/s in MPEG-1's Layer I table, where MPEG-2's would read 48. Every frame of an entry has the same version, layer, bitrate,
 sample rate and channel mode, so the first frame header describes the whole stream. The wad's
 bank holds the only two entries that are not MPEG, `drumloop.wav` and `error.wav`: they are PCM,
 sound type 2 (see below).

@@ -35,8 +35,10 @@ game's base models ship theirs only this way. See
 > been checked against the game's full model data, not inferred from one or two examples. The
 > game ships 2,129 `.md2` files. 2,118 are inside the game's `.wad` archives. The other 11 are
 > loose: the two arrows in `data/generic/dynamic/` (below), and three UI meshes (`bankrupt`,
-> `congrats`, `paused`), each copied identically into three language folders. Counts on this page
-> are over the archives unless a sentence says otherwise.
+> `congrats`, `paused`), each copied identically into three language folders. Each of the three carries
+> one node name, `s_bkrupt`, `s_congrats` and `s_paused`: the end of a park's banner, the End's and the
+> pause overlay's, which the game finds by the node name's hash. Counts on this page are over the
+> archives unless a sentence says otherwise.
 >
 > Items marked **(engine-confirmed)** were also checked against the original game's own
 > pointer-relocation routine (`FUN_0046d6d0`). That routine walks a freshly loaded `.md2` and turns

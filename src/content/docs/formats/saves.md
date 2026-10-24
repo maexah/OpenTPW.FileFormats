@@ -2887,7 +2887,9 @@ left out). The sound block's word at `+0x4` (the crowd's voice) names a saved vo
 not nought; the weather's `mRainSoundHandle` is set in one, and names a saved voice. The block's `+0x0` (the music voice's) names a saved music-class voice in 59 of the 65 different lists on hand and is nought in 6; `+0xc` names a saved voice in 1 and is nought in 59, a handle with no voice in 5.
 
 All 580 bodies parse so and end exactly at L; 31 different lists among them (fork watch 2026-10-20, `verify-world.md`
-M2, for the length; Q560 for the records; the code is OpenTPW's `docs/exe/audio.md`, "A park file's voices").
+M2, for the length; Q560 for the records; the code is OpenTPW's `docs/exe/audio.md`, "A park file's voices"). OpenTPW
+reads the list (`ParkVoices`), puts back its held chains and counts the other classes (Q612); its writer writes the loaded
+file's list less each voice put back and let go since (`ParkVoices.Without`).
 
 **Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
 nought in three of the played files and 113 to 258 in the rest. It is the advisor's poll cursor: the row of his

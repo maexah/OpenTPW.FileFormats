@@ -229,7 +229,7 @@ frame forever. The "converged" branch, which would fall back to the fog colour, 
 
 ### `RAINY(n)`
 
-A rain level. Only hallow sets it, to 1.
+A flag: the original reads it only as zero or non-zero (`0x005e0e5d`), never as a level. Only hallow sets it, to 1. The drop count follows the camera's distance to every `RAINY` island (see "How the weather is scoped").
 
 ### `LIGHTNING(n)`
 
@@ -273,9 +273,13 @@ closes in starts at `SPINRADIUS` (upstream look 2026-10-19, `verify-sound-ui.md`
 
 Rain, lightning and sky colour are **not** properties of a place. The lobby tick works out which
 island is nearest the camera and then, every frame, copies that island's `SKYCOLOUR` into the
-lobby camera's target colour, its `RAINY` value into a single global rain level, and rolls its
-`LIGHTNING` mask. There is one sky, one rain system and one bolt for the whole lobby; selecting a
-park is what changes them.
+lobby camera's target colour and rolls its `LIGHTNING` mask. Rain does not copy a value: each frame
+the lobby camera update (`FUN_005e0470`, `0x005e0e46` to `0x005e0f18`) takes the mean `m` of
+`dx^2 + dz^2` (horizontal) from the camera to every island whose `RAINY` is not zero, and sets the
+drop count to `1e17 / m^4` (`FUN_0057d910`): 0 below 20, at most 400. Rain starts about 92 units
+away and is full inside about 63, so with only hallow `RAINY` it is the distance to Halloween's
+island, whichever island is current. There is one sky, one rain system and one bolt for the whole
+lobby; selecting a park is what changes the sky and the bolt.
 
 Fog is separate and is not driven by any of this. `FUN_005d8b50` sets the lobby's fog colour to a
 constant `0xFF44DDFF` with a near of 50 and a far of 300, and the island view then turns fog

@@ -60,6 +60,15 @@ through the formula for a two-byte character, as if the low byte were the lead b
 the one after it, and keeps the result as the bound (`0x006ada90`). That gives 64005 for the English
 table and 63750 for the american one, so no one-byte index is refused (`0x006afe80`).
 
+The two-byte formula, in 16 bits, for a lead byte `b` and a trailing byte `t`, with `L` the header's
+byte 4 and `[table+8]` = `0xff - L` (`0x006adae8`): a byte `b` is a single character when `b - 1 < [table+8]`;
+otherwise the index is `(b + 0x100) * 255 - 254 * [table+8] + t` (`0x006afec5` to `0x006afedf`), which
+reduces to `255b + 254L + t + 510`. The bound is the same formula run on header bytes 6 and 7. Other readers'
+one-based forms (`(255 - L) + (b - (256 - L)) * 255 + (t - 1)`) are the same number. On a Polish header
+(`01 00 FF 4B`, from another disc, not here) the bound comes to 328, so the table's 329th entry would
+be refused by the original while a reader that bounds by the entry count accepts it. This is **unproven**: no Polish disc
+is on hand.
+
 ### UniToMB.dat
 
 `UniToMB.dat` has its own magic, `BFUM` (`42 46 55 4d`), and no count: after the magic, from

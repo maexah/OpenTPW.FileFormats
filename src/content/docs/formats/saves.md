@@ -610,7 +610,7 @@ lines — a walkway can be more than one cell across, and Lost Kingdom's entranc
 | 3 | **4** | **queue** |
 | 10 | **1** | **the far end of a footprint** |
 
-Types 7, 0 and 2 are still recorded as observed rather than named.
+Type 2 is the 240 river cells, every one a heightfield hole (`0x1`), as are 853 of the type-7 cells and all 66 of type 30 (jungle only; fork watch 2026-10-25). Types 7 and 0 are still recorded as observed rather than named.
 
 ### 4, 9 and 10 are one thing: a built thing's footprint
 

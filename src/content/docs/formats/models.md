@@ -1457,8 +1457,11 @@ clears `0x10` on every node of the model, locked or not.
 Unless the caller suppresses it, `FUN_00472310` also puts back the rest pose of whatever the
 outgoing clip moved, from the model as loaded. It skips any channel the incoming clip also carries on
 the same node. It copies the node's transform where the outgoing track carried position, rotation,
-scale or path progress (`0x289`), the vertices for vertex morph, and the UVs for UV animation. It has
-no case for visibility, so visibility is never put back.
+scale or path progress (`0x289`), the vertices for vertex morph, and the UVs for UV animation. It
+copies no visibility keys: what a clip hid comes back only through the clear of `0x10` above, on the nodes
+the outgoing clip lists or tracks (`0x00472486`). The seaplane's take-off (`seaplanem3`) hides its five
+meshes from frame 396 of 400, and its landing (`seaplanem1`) has no visibility track, so that clear is
+what shows it on its next visit.
 
 ### Which animation file a model takes
 

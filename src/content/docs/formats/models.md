@@ -724,7 +724,7 @@ records:
 | 2 bytes | Face count: how many faces are in the run (never 0)                     |
 | 2 bytes | Start index: first reordered vertex index using this material          |
 | 2 bytes | End index: last reordered vertex index using this material (inclusive) |
-| 4 bytes | **Unlit.** 0 or 1. Where 1, the engine draws the material's vertices white, not with their lit colours (engine-confirmed). See below |
+| 4 bytes | **Unlit.** 0 or 1. Where 1, the engine draws the material's vertices white, not with their lit colours (engine-confirmed: `DrawList_AddMaterialFaces`, `0x00580530`, which tests the bit at `0x00580c51`). See below |
 
 The face run is measured over all 4,923 meshes of the 2,125 version-`0xDD` files: the run never
 passes the mesh's face count, and each of its faces' three corners lies inside the material's
@@ -736,8 +736,9 @@ meshes, so a reader must sort first (upstream look 2026-10-19, `verify-models.md
 **The last word marks a material drawn unlit.** The engine gives a material's vertices their lit colours only where
 bit `0x1` of this word is clear; where it is set, each vertex takes the colour mask (white in play), so the texture is
 drawn at its own brightness whatever the light (OpenTPW's `docs/exe/park-engine.md`, "The water is drawn unlit, not
-half lit"). Measured over every static `.md2` of the game, wad members and loose files (841 models, 12,954 material
-uses): the word is 0 in 12,031 uses and 1 in 923, in 650 meshes, and never anything else. In the jungle's
+half lit"). Measured over every static `.md2` of the game, wad members and loose files (847 models, 12,960 material
+uses; the 841 under `data/` plus six copies of the three UI meshes in the language folders): the word is 0 in 12,031 uses and
+1 in 929, in 656 meshes, and never anything else. In the jungle's
 `terrain.wad` `base.MD2` the ten uses that carry it are the river's water (each `surface*` mesh's water material and
 `falls02`'s, all on frame word `0x33`); the beds and banks under them carry 0.
 
@@ -829,7 +830,6 @@ are true gradients. A renderer acting on this bit has to serve both.
 
 #### Open questions
 
-- The 4-byte field at the end of the material record (0 in 12,031 of the 12,960 materials, 1 in 929; no other value).
 - What `0x10` and `0x20` select, and what `0x40` means beyond being propagated to header 0x30.
 - Whether anything in the format distinguishes an alpha-tested cut-out material from a blended
   one, or whether the original engine drew both the same way.
@@ -1447,19 +1447,20 @@ target.
 
 ### Starting a clip
 
-Starting a clip is not a blanket reset (engine-confirmed, `FUN_00472f60`). The engine first clears
+Starting a clip is not a blanket reset (engine-confirmed, `FUN_00472f60`). Unless the start passes `0x4` or `0x8`, or the
+channel was idle, the engine first clears
 `0x10` on every node the *outgoing* clip names (`FUN_00472310`): every entry in its hide list, and
-every node one of its tracks targets. Then it hides every node in the *incoming* clip's hide list
+every node one of its tracks targets. Then, unless the start passes `0x8`, it hides every node in the *incoming* clip's hide list
 (`FUN_00472d70`). Nodes carrying `0x80000000` are left alone by both steps, with one exception: when
 the engine's animation object for the model carries flag `0x8` (at its +0x04), `FUN_00472310` first
 clears `0x10` on every node of the model, locked or not.
 
-Unless the caller suppresses it, `FUN_00472310` also puts back the rest pose of whatever the
+`FUN_00472310` also puts back the rest pose of whatever the
 outgoing clip moved, from the model as loaded. It skips any channel the incoming clip also carries on
 the same node. It copies the node's transform where the outgoing track carried position, rotation,
 scale or path progress (`0x289`), the vertices for vertex morph, and the UVs for UV animation. It
-copies no visibility keys: what a clip hid comes back only through the clear of `0x10` above, on the nodes
-the outgoing clip lists or tracks (`0x00472486`). The seaplane's take-off (`seaplanem3`) hides its five
+copies no visibility keys: what a clip hid comes back at the next clip through the clear of `0x10` above, on the nodes
+the outgoing clip lists (`0x00472401`) or tracks (`0x00472486`), or by a later visibility key. The seaplane's take-off (`seaplanem3`) hides its five
 meshes from frame 396 of 400, and its landing (`seaplanem1`) has no visibility track, so that clear is
 what shows it on its next visit.
 

@@ -2356,7 +2356,7 @@ and the piece's record holds:
 | Offset | Value |
 |---|---|
 | `0x01` | 17300 plus the nearest row at or above the piece's that the game's table names: a row the table names no model for draws the row before's, whose item it is |
-| `0x05`, `0x09` | the anchor, moved one on in y for a turn of 90, in x and y for 180, in x for 270 |
+| `0x05`, `0x09` | the anchor, moved one on in x for a turn of 90, in x and y for 180, in y for 270 (by the angle at `0x27`: y for 90, x for 270) |
 | `0x0d`, `0x11` | 2 and 2 |
 | `0x15` | `0x33A` |
 | `0x27` | 360 less the turn, 360 folded to 0 |
@@ -2365,8 +2365,8 @@ The items the table can make and the model each draws, from the theme's `hoardin
 names): 17300, 17302 and 17304 `ho_fos1` (17302 the straight, 17304 for rows 4 to 8), 17301 `ho_end1`, 17303 `ho_fob1`
 (a corner), 17309, 17312 and 17315 (each for its row and the two after it) and 17318 `ho_fos4`, 17319 `ho_fob2` (a corner),
 17320 and 17323 `ho_fos2` and `ho_fos3` (a straight's two variants, each for its row and the two after it), 17326
-`ho_fob3`, 17327 `ho_fob4`. The files hold 17302, 17303, 17309, 17319, 17320, 17323 and 17326. **Measured on every park file to hand**, seven files of five parks and three
-themes (the shipped Lost Kingdom park, Alexah's Full Simulation saves of jungle, fantasy and Hallowe'en): 563 anchors,
+`ho_fob3`, 17327 `ho_fob4`. The files hold 17302, 17303, 17309, 17319, 17320, 17323 and 17326. **Measured on every park file to hand**, seven files (four distinct parks, three
+themes: the shipped Lost Kingdom park, Alexah's Full Simulation saves of jungle, fantasy and Hallowe'en): 933 anchors (520 in the four distinct parks),
 each naming a record of its own whose item, cell and angle are exactly these. The shipped park's 143: 90 `ho_fos1`,
 19 `ho_fos2`, 13 `ho_fos3`, 12 `ho_fob1`, 8 `ho_fob2` and one `ho_fos4`. What the executable does with them is
 OpenTPW's `docs/exe/park.md`, "The boundary hoarding's piece".

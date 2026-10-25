@@ -74,6 +74,23 @@ A category's banks need not be its own: the global kids category lists three, `S
 (1,158 ms) in `UIHD.sdt`, a bank the ui category lists too. It is the till a guest sounds on paying (OpenTPW's
 `docs/exe/audio.md`, "The charge's sound").
 
+The global ui category (`data\global\sound\cat_uiSFX.map`) lists four banks, `Sound\sfUi`, `Sound\sUi`, `Sound\UI`
+and `Sound\Ride`. The effects the build tools play each have one variation, flags `0x0201`, and one sample record in
+bank 1, `sfUiHD.sdt` (entries counted from 0 here; the record holds the entry plus 1):
+
+| Effect | Volume | Entry | Sample | Length (ms) |
+| --- | --- | --- | --- | --- |
+| `0x5f` (95) | 100 | 1 | `tearup.mp2` | 323 |
+| `0x65` (101) | 100 | 7 | `rj_laypath_2.mp` | 123 |
+| `0x8b` (139) | 100 | 4 | `connectPath.mp2` | 212 |
+| `0x96` (150) | 100 | 12 | `laysmall.mp2` | 242 |
+| `0x97`, `0x98`, `0x99` | 100 | 8 | `bomb1.mp2` | 2,270 |
+| `0xaf` (175) | 35 | 0 | `blnl_error1.mp2` | 593 |
+
+`rj_laypath_2.mp` is the name as the bank stores it, cut to the name field's 15 characters ([`.sdt`](/formats/sounds/)).
+What the game plays each one for is OpenTPW's
+`docs/exe/park-engine.md` ("Building and deleting paths and queues").
+
 ## The SFX file
 
 ### Header

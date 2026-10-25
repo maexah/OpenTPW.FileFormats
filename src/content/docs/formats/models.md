@@ -790,6 +790,15 @@ Since the bits are put on the loaded texture, and the engine keeps one texture p
 model wraps is wrapped for every model using it while it is loaded: the 62 textures flagged one way by one model and
 another way by another are drawn by whichever bits reached them.
 
+**The research pump's run repeats its first picture.** `ui.wad`'s `res_fluid.md2` holds 64 meshes in the order the
+research screen steps through them: `fluid`, `fluid02` to `fluid32` (the run), then `empty01` to `empty32` (the drain
+and the fill). Each of the run's 32 is one quad of two faces, 156.84 by 67.78, on one material whose word is `0x11`, so
+wrapped, with the same `v` at each corner in every mesh. Its `u` runs from -0.499 to 1.499 at `fluid` and moves by
+-1/31 (-0.0322583) a mesh, so `fluid32` is `fluid` moved by exactly one repeat of the texture: drawn, the run has 31
+pictures, the last the first again, and a pump looping it shows that picture twice in a row at each turn. Filmed in the
+original, that is a hold of 160 to 167 ms once a loop where the other pictures last 62 to 104 ms (OpenTPW
+`docs/exe/hud.md`, "The pump").
+
 #### Bit 0x02 - drawn see-through
 
 This is the only bit whose meaning is established, and it is established from the data rather

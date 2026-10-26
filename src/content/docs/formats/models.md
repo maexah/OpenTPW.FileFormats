@@ -864,9 +864,14 @@ are true gradients. A renderer acting on this bit has to serve both.
 ### Normals
 
 The game's model lighter (`FUN_00574660`) takes one normal per vertex-order entry from the table at
-mesh 0x64, twelve bytes each: the same table a face's first word indexes. How many entries each
-file holds has not been counted across the models. OpenTPW does not read them for lighting yet: it
-accumulates each triangle's face normal onto its three vertices and re-normalizes.
+mesh 0x64, twelve bytes each: entry *i* lights vertex-order entry *i*, and it is the same table a face's first word
+indexes. Read in the running game (OpenTPW Q657): every normal the lighter used on the 25 meshes of
+`global/advisor/Advisor.md2` and the 18 of jungle `Advisor_JUN.md2` equals the file's entry for its vertex-order
+entry exactly, and in all five advisor models (the global one and the four themes') every mesh's table holds at
+least as many entries as its vertex order. How many entries the other models' tables hold has not been counted.
+The table is not the triangles' averaged planes: on the advisor's hands it stands a median 33 degrees from them, on
+his bow tie 90. OpenTPW lights the advisor by the table; every other model it lights by its own normals, each
+triangle's face normal accumulated onto its three vertices and re-normalised.
 
 **The entries the faces name are not always their triangles' planes in the file.** In `gates.MD2`'s first mesh
 (jungle `features/gates.wad`), 196 faces name 196 distinct entries of the table (the highest index is 595), 37 of those

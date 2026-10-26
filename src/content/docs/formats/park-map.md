@@ -28,7 +28,7 @@ The map's live overlay draws its people, litter and ranges with six small pictur
 |---|---|---|---|
 | `vsprite.tga` | 1,068 | 16 x 16 | a white disc with a dark edge, solid inside (alpha 255 across its middle) |
 | `ssprite.tga` | 1,068 | 16 x 16 | the same bytes as `vsprite.tga` |
-| `rsprite.tga` | 1,068 | 16 x 16 | a ring: the same white and dark edge, its middle clear (alpha 0 across six pixels of the middle row) |
+| `rsprite.tga` | 1,068 | 16 x 16 | a ring: the same white and dark edge, its middle clear (alpha 0 across four pixels of rows 7 and 8, columns 6 to 9; 5 or under across six) |
 | `lsprite.tga` | 16,428 | 64 x 64 | a soft disc: every pixel white (255, 255, 255), the alpha falling from 255 at the middle to 0, 2,966 pixels above 0 |
 | `esprite.tga` | 16,428 | 64 x 64 | the same bytes as `lsprite.tga` |
 | `gsprite.tga` | 16,428 | 64 x 64 | the same bytes as `lsprite.tga` |

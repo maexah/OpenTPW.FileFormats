@@ -2350,6 +2350,8 @@ sub-record names its piece and says which it is:
 | `mTileData` | set 5; index the piece's row of the game's hoarding table; angle its turn, 0, 90, 180 or 270 |
 | `mType` | 25 |
 | `mHoardingNeighbours` | which of the four cells two away are anchors too: `0x01` at y − 2, `0x04` at x + 2, `0x10` at y + 2, `0x40` at x − 2 (520 of 520 anchors in four parks; the gate's two ends name the one side they have) |
+| `mDirection` | in the same bits, the way the boundary was laid leaving the anchor, or for the last anchor laid the way it came (the 107 anchors of each of 34 fresh Lost Kingdom parks, in the order of their pieces' slots) |
+| `mFlags` | 1 on an anchor over water or hidden ground, 0 on every other in the files to hand: a straight's piece is then row 11 (`ho_fos4`), a corner's row 26 (`ho_fob3`; one, in Alexah's played jungle park, on land bought later); the fresh parks flag straights alone (one in Lost Kingdom, at (59,39)) |
 
 and the piece's record holds:
 
@@ -2370,6 +2372,12 @@ themes: the shipped Lost Kingdom park, Alexah's Full Simulation saves of jungle,
 each naming a record of its own whose item, cell and angle are exactly these. The shipped park's 143: 90 `ho_fos1`,
 19 `ho_fos2`, 13 `ho_fos3`, 12 `ho_fob1`, 8 `ho_fob2` and one `ho_fos4`. What the executable does with them is
 OpenTPW's `docs/exe/park.md`, "The boundary hoarding's piece".
+
+**A fresh park's pieces are slotted in the order the boundary was laid**: in each of 34 fresh Lost Kingdom parks the
+original wrote (Alexah's `restart.INTS` and 33 made under Proton), slot 3 is the anchor at (51,17), three cells right of
+the gate, and slot 109 the one at (43,17) on its left, the walk round the park between them; their 107 anchors' masks,
+directions, flags and the rows and turns of their tile data are the same in all 34 but for which straights take the
+variant rows 22 and 25, which differ from park to park.
 
 ### A queue piece's record
 

@@ -742,13 +742,14 @@ uses; the 841 under `data/` plus six copies of the three UI meshes in the langua
 `terrain.wad` `base.MD2` the ten uses that carry it are the river's water (each `surface*` mesh's water material and
 `falls02`'s, all on frame word `0x33`); the beds and banks under them carry 0.
 
-**A floor gives each footprint cell a frame of its own.** In a model exported with a procedural base (header bit
-`0x8`), the floor face the engine takes for each cell of the item's footprint is of a material whose frame no other
-cell's is, so the engine can put each cell's own blend of ground and floor in that frame (OpenTPW's `docs/exe/park-engine.md`,
+**A floor gives each footprint cell a frame of its own.** In the Lost Kingdom models exported with a procedural base
+(header bit `0x8`) measured so far, the floor face the engine takes for each cell of the item's footprint is of a material
+whose frame no other cell's is, so the engine can put each cell's own blend of ground and floor in that frame (OpenTPW's `docs/exe/park-engine.md`,
 "A built thing's floor is blended into the ground's tiles"). The Belly Bounce's `jb_floor`: twelve materials, one a
 cell of its 3 x 4, each on its own frame. Measured in the running original, which builds a table of the frame over each
 cell as it loads a model: of its 51 Lost Kingdom tables (41 item models, the seven queue models in eight loads, the two coaster
-pylon models), none names one frame for two cells. Most of these materials' UVs run 0..1 over their cell; 36 frames of eight
+pylon models), none names one frame for two cells. Only these 51, the tables the original built in the stock park, were
+measured: about twenty more Lost Kingdom models with a procedural base, and the other three themes', are unread. Most of these materials' UVs run 0..1 over their cell; 36 frames of eight
 rides' floors run past 1, and every one of those wraps (its flags word's `0x10` or `0x20`).
 
 A material with a non-zero frame offset also has a 4-byte flags word, read directly from that

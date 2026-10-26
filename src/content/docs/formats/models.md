@@ -797,7 +797,16 @@ wrapped, with the same `v` at each corner in every mesh. Its `u` runs from -0.49
 -1/31 (-0.0322583) a mesh, so `fluid32` is `fluid` moved by exactly one repeat of the texture: drawn, the run has 31
 pictures, the last the first again, and a pump looping it shows that picture twice in a row at each turn. Filmed in the
 original, that is a hold of 160 to 167 ms once a loop where the other pictures last 62 to 104 ms (OpenTPW
-`docs/exe/hud.md`, "The pump").
+`docs/exe/hud.md`, "The pump"). The 32 quads are the same size but laid side by side in the file, about 180 apart in
+`x`, so a mesh's place is its bounds, which the interface fits to the control.
+
+The drain and the fill are not a scroll. `empty01` is `fluid` again, and `empty16` and `empty17` are one quad of a second
+material (`empty17` with `u` 0.432 to 0.566, `empty16` the full -0.499 to 1.499). Between them each mesh
+is two quads split across the pump at an edge that moves 156.84 / 15 = 10.46 a mesh: draining (`empty02` to `empty15`),
+the empty quad grows from the left and the fluid's shrinks to the right, its left edge kept at `u` -0.499 at the run's
+scale (its right edge's `u` falls by 0.1333 a mesh), so the fluid slides out to the right with the edge; filling
+(`empty18` to `empty31`), the fluid's quad grows from the left, its right edge kept at `u` 1.5, so it slides in.
+`empty32` is one quad of the fluid. Measured on the shipped `ui.wad` (Q677).
 
 #### Bit 0x02 - drawn see-through
 

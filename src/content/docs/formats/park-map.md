@@ -18,3 +18,21 @@ over all four (`jungle`, `fantasy`, `hallow`, `space`; Q624):
 and `42` at `0x00703044`..`0x00703058`, OpenTPW `docs/exe/hud.md`, "The map's view"). The park gate is near the top
 of the picture as a viewer shows it; the game draws the picture upside down, so on the map screen the gate is at the
 bottom.
+
+## The overlay's six sprites (`data/2dmap/*.tga`)
+
+The map's live overlay draws its people, litter and ranges with six small pictures, the folder `data/2dmap/` (beside a
+`qickload.txt` naming the six). Measured over all six (Q664):
+
+| File | Bytes | Size | What it holds |
+|---|---|---|---|
+| `vsprite.tga` | 1,068 | 16 x 16 | a white disc with a dark edge, solid inside (alpha 255 across its middle) |
+| `ssprite.tga` | 1,068 | 16 x 16 | the same bytes as `vsprite.tga` |
+| `rsprite.tga` | 1,068 | 16 x 16 | a ring: the same white and dark edge, its middle clear (alpha 0 across six pixels of the middle row) |
+| `lsprite.tga` | 16,428 | 64 x 64 | a soft disc: every pixel white (255, 255, 255), the alpha falling from 255 at the middle to 0, 2,966 pixels above 0 |
+| `esprite.tga` | 16,428 | 64 x 64 | the same bytes as `lsprite.tga` |
+| `gsprite.tga` | 16,428 | 64 x 64 | the same bytes as `lsprite.tga` |
+
+All six are Truevision TGA image type 2, no image id, no colour map, 32 bits a pixel (B, G, R, A), descriptor `0x08`
+(eight alpha bits, origin bottom-left), with the 26-byte TGA 2.0 footer. Their colour is the game's: it tints each
+white picture per sprite (OpenTPW `docs/exe/hud.md`, "The map's overlay", has which colour and which scale each is drawn at).

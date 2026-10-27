@@ -276,11 +276,15 @@ The face anchor places the node on a face of its parent mesh (engine-confirmed):
 | 0x08   | 4 bytes | `v`, a float: the lerp from that point toward the third corner |
 | 0x0C   | 4 bytes | A float: how far the node stands off the face, along the face's normal |
 
-**End caps** (engine-confirmed). The word at `0x08` is non-zero in 128 of the game's 2,452 records, and only ever
-1, 4, 16 or 64 (53, 13, 50 and 12 records): one compass bit, north, east, south or west as the track grid's links
-are. All 128 are the end caps of the karts' and water rides' track pieces (`gk_trck*`, `wr_trck*` in each theme's
-`rides\gokarts.wad` and `rides\wateride.wad`) and of the ten track add-ons (`lavajump`, `mammtunn`, `watertun`,
-`beejump`, `honeypot`, `chopper`, `firepit`, `ogre`, `meteor`, `teleport`). A piece is made with its row's mask,
+**End caps** (engine-confirmed). The word at `0x08` is non-zero in 128 of the 2,452 records of the static models
+(the sweep covered the 838 static version-`0xDD` models only; the 1,278 `0xDD` models without a mesh table were
+skipped), and only ever 1, 4, 16 or 64 (53, 13, 50 and 12 records): one compass bit. Whether those four are north,
+east, south and west as the track grid's links are is not shown: the model's `0x01` cap sits at +z, while at turn 0
+the end links the grid's `0x10`. All 128 are end caps by their node names: those of the karts' and water rides' track
+pieces (`gk_trck*`, `wr_trck*` in each theme's `rides\gokarts.wad` and `rides\wateride.wad`) and of the ten track
+add-ons (`lavajump`, `mammtunn`, `watertun`, `beejump`, `honeypot`, `chopper`, `firepit`, `ogre`, `meteor`,
+`teleport`; `gk_end08`, `gk_end09` in `mammtunn`, `wr_end02`, `wr_end03` in `watertun`). That a mask is passed for the
+add-ons' caps is inferred, not read. A piece is made with its row's mask,
 the sides on which the track carries on, and every cap whose bit is in it is hidden, so one crossing model with one
 cap left standing is a junction, and a straight has both its caps hidden. The rows and their masks are OpenTPW's
 `docs/exe/park.md`, "A track piece's model, price and open end".

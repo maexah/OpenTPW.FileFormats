@@ -1390,7 +1390,10 @@ ushort at descriptor +0x12 is the key count, and the slot at +0x20 points at tha
 The engine finds the two keys the current frame falls between, blends the three scales linearly, and
 sets the lengths of the node's three basis axes to them (`0x00471d8d`, then `Matrix_SetAxisLengths`, `0x0046f910`). All 644
 scale tracks in the game have strictly ascending frames, and every one sets `0x100` with `0x80`. The values run from
-0.00015 to 14.53, and most sit near 1.
+0.00015 to 14.53, and most sit near 1. Every node a scale track keys rests in its model at axis lengths (1, 1, 1) but two, fantasy's
+`looC` doors (nodes 2 and 3) at (0.993, 1, 1.007), so a key of 1 draws the node as built. Seven clips carry a scale
+track and neither a position nor a route track: fantasy's `looC`, `mushroomC`, `sign1c` and `FruShyC`, hallow's
+`horsulooc`, space's `hoverbotc` and `hoverboti`; none in Lost Kingdom. (All 644 tracks measured, OpenTPW Q598.)
 
 Before a track's first key the key search answers nought and no scale is set, so the node keeps whatever
 lengths its matrix holds after the turn is written that frame (`Anim_PoseTrack` writes the turn first: a rotation track copies

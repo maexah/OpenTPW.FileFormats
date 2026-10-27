@@ -2383,8 +2383,9 @@ variant rows 22 and 25, which differ from park to park.
 
 **A kart or water ride's track is one model to a piece of two by two cells**, as the boundary's is. The piece's top-left
 cell, its anchor, carries a track sub-record of `mType` 11 (the karts) or 16 (the water rides), the station's two pieces
-13 or 18, and the three other cells of its two by two 12 or 17, each naming the anchor as its `mParentID` and holding
-nothing else. An anchor's track sub-record:
+13 or 18, and the three other cells of its two by two 12, each naming the anchor as its `mParentID` and holding
+nothing else. The file to hand holds karts alone; that a water piece's other cells are 12 as well, not 17, is the
+executable's (its laying stamps them 12 for both kits, and nothing in its track code was found writing 17), not a file's. An anchor's track sub-record:
 
 | Track sub-record | Value |
 |---|---|

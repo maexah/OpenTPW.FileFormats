@@ -2379,6 +2379,33 @@ the gate, and slot 109 the one at (43,17) on its left, the walk round the park b
 directions, flags and the rows and turns of their tile data are the same in all 34 but for which straights take the
 variant rows 22 and 25, which differ from park to park.
 
+### A kart or water track piece's record
+
+**A kart or water ride's track is one model to a piece of two by two cells**, as the boundary's is. The piece's top-left
+cell, its anchor, carries a track sub-record of `mType` 11 (the karts) or 16 (the water rides), the station's two pieces
+13 or 18, and the three other cells of its two by two 12 or 17, each naming the anchor as its `mParentID` and holding
+nothing else. An anchor's track sub-record:
+
+| Track sub-record | Value |
+|---|---|
+| `mMeshInstance` | the piece's slot in this module, plus one; nought on a station's anchor and on a cell with an add-on |
+| `mTileData` | set 3 (karts) or 4 (water); index the piece's row of the ride's kit; angle its turn, 0, 90, 180 or 270. A station's anchor holds 0, 0, 0 |
+| `mParentID` | the packed cell of the ride the track is laid for (its catalogue object's anchor) |
+| `mNeighbours` (`0x07`) | which of the four anchors two cells away the track runs on to: `0x01` at y − 2, `0x04` at x + 2, `0x10` at y + 2, `0x40` at x − 2 |
+| `mDirection` | in the same bits, the way the last run laid over the cell left it |
+| `mFlags` | `0x10` where the cell carries an add-on, whose model is not the kit's piece; the low four bits a hill (read from the executable; no hill in the file to hand) |
+| `mOverlapCounter` (`0x08`) | how many runs were laid over the piece after its own (0 or 1 in the file to hand); the cells of its two by two hold the same |
+
+and the piece's record holds item 17100 plus the nearest row at or above its own that the kit names (17200 on for the
+water ride's kit), on the anchor moved one on in x for a turn of 90, in x and y for 180 and in y for 270, at the angle 360
+less the turn: the boundary's rule. The rows, the models they draw from the theme's `rides\gokarts.wad` and
+`rides\wateride.wad`, and the end caps each row hides are OpenTPW's `docs/exe/park.md`, "A track piece's model, price and
+open end" ([Models](/formats/models/#end-caps)). **Measured** on the one park file to hand that holds such a track, Alexah's played
+Full Simulation Lost Kingdom (two saves of it): 33 anchors, the station's two at turn 180 (`mDirection` `0x40`,
+`mNeighbours` `0x44`) and 31 kart pieces, 28 of them with a record (15 of item 17102, 10 of 17103, 2 of 17119 and one of
+17104), each on its anchor moved by its turn at 360 less it; the three others carry `mFlags` `0x10` and no record. The
+water ride's records are read from the executable, not from a file.
+
 ### A queue piece's record
 
 Every queue piece's record is the same bytes but for four fields, so a writer can make one from the cell alone.

@@ -2383,8 +2383,11 @@ variant rows 22 and 25, which differ from park to park.
 
 **A kart or water ride's track is one model to a piece of two by two cells**, as the boundary's is. The piece's top-left
 cell, its anchor, carries a track sub-record of `mType` 11 (the karts) or 16 (the water rides), the station's two pieces
-13 or 18, and the three other cells of its two by two 12, each naming the anchor as its `mParentID` and holding
-nothing else. The file to hand holds karts alone; that a water piece's other cells are 12 as well, not 17, is the
+13 or 18, and the three other cells of its two by two 12, each naming the anchor as its `mParentID` and holding its
+overlap counter; in the file to hand 16 of the 99 also hold `mTileData` (0, 0x37, 0), and the rest nought. A cell whose
+piece was taken back (Backspace, or a sale) holds type 0, no links, no direction, no parent and `mTileData` set 0, index
+0x37, angle 0, the row the executable gives a cell of no track (`Track_ClearCell` then `Track_RetileCell`), and so do
+its two by two's cells. The file to hand holds karts alone; that a water piece's other cells are 12 as well, not 17, is the
 executable's (its laying stamps them 12 for both kits, and nothing in its track code was found writing 17), not a file's. An anchor's track sub-record:
 
 | Track sub-record | Value |

@@ -133,6 +133,8 @@ frame, the first 408 samples are a short blip, not silence (peak 0.18). The entr
 241, 246 to 281, 300, 301, 314 to 323, 367, 374, 378, 379, 382, 386, 411 to 413, 447, 448, 451, 455, 456, 458,
 472, 474, 475, 477, 480, 496 to 498, 503, 567, 568, 570 and 577.
 
+A second, different placeholder is 421 bytes: nine entries share audio with one SHA-256 (beginning `8A8E99FA`), named `blank.mp2` or `blank44.mp2` - space `AmbientHD` 0, `LobbySfxHD` 13 and `RideHD` 6, fantasy `LobbySfxHD` 9, hallow `LobbySfxHD` 13 and `rideHD` 242, jungle `RideHD` 112, global `KidsHD` 55 and 97 - and four more 421-byte entries carry other bytes (fantasy `RideHD` 69, global `RideHD` 17, global `StaffHD` 11, and `KidsHD` 495 `play117.mp2`). Counted over all 3,739 entries of the 47 banks. All thirteen are three whole 140-byte frames (MPEG-2 Layer I, 64 kbit/s, mono, 22,050 Hz) and a zero byte, with a play length of 376 to 380 bytes (`play117` 970), so a strict decoder that wants whole frames takes them where it refuses the 315-byte blob. Whether they are silent was not decoded.
+
 The same bank's last four entries are not numbered lines. Entry 638 is `z_error.mp2`: 3,485 bytes, 0.435 s, a
 burst of noise at full scale (peak 1.0, rms 0.47, where a spoken line's rms is 0.12 to 0.14). It is the stand-in
 for a line that was never recorded: the executable's response table names it for fourteen responses (OpenTPW's

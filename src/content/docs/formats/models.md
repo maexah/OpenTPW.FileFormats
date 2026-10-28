@@ -168,6 +168,7 @@ A reader converts an offset back to a node index by testing which table's range 
 | `0x2`        | On a mesh record, turns depth writes off for that mesh (`0x005817ba`). Set only on the five meshes named `heightfield` in the terrain models, all of which are empty |
 | `0x10`       | **Hidden.** Set only at runtime; no node in the shipped data carries it |
 | `0x20`       | Prune this node's children from the draw walk. Set only at runtime |
+| `0x1000000`  | **Run-time only: the table at mesh `0x64` is held as colours.** Set by the engine's hover tint and its model marking (`FUN_00469180`, `FUN_00469580`); no shipped record carries it: 0 of 4,923 mesh records and 0 of 2,606 transform-only records in all 2,129 `.md2`. While it is set the lighter skips the mesh (`Light_ModelSetup`, `0x0057aa30`) and the draw takes the `0x64` table as its colour stream (`0x00581d56`). It is not the `0x1000000` of the node-lookup record's word (see **Node lookup ids**) |
 | `0x80000000` | Locks the hidden flag against the clip-start hide lists (`FUN_00472310`, `FUN_00472d70`, `FUN_004726d0`; see [Starting a clip](#starting-a-clip)). A [visibility](#visibility-bit-0x20000) track still sets and clears `0x10` on a locked node: `FUN_00471860` does not test the bit. Set only at runtime |
 
 `0x10` and `0x20` are separate, and it matters. The draw walk tests `0x10` **after** computing the
@@ -620,7 +621,7 @@ one per mesh:
 | 0x5C   | 2 bytes  | Face count                                                                 |
 | 0x5E   | 2 bytes  | Vertex order length (see **Vertex order**, below)                         |
 | 0x60   | 4 bytes  | Vertex data offset                                                         |
-| 0x64   | 4 bytes  | Face normals offset: three floats each, indexed by each face's first word (see **Faces**; engine-confirmed) |
+| 0x64   | 4 bytes  | The normals table's offset: two runs of three floats each, twelve bytes an entry, the vertex-order length's entries (entry *i* lights vertex-order entry *i*), then the face count's (a face's first word indexes the whole table, and past the first run in 4,765 of 4,918 meshes with a table); in 4,707 of those 4,918 it is exactly 12 x (vertex-order length + face count) bytes to the next block, in the other 211 the gap is longer, never shorter (see **Faces**, **Normals**; engine-confirmed; counted over all 2,129 `.md2`) |
 | 0x68   | 4 bytes  | UV data offset                                                             |
 | 0x6C   | 4 bytes  | Material table offset                                                     |
 | 0x70   | 4 bytes  | Face data offset                                                           |
@@ -637,7 +638,7 @@ below.
 
 #### Open questions
 
-- The remaining unknown fields (0x74, 0x90, 0x98) and the pointer at 0x64. None has been narrowed
+- The remaining unknown fields (0x74, 0x90, 0x98). None has been narrowed
   down beyond "not used by anything this project's renderer needs".
 - What mesh flag bits `0x1` and `0x400` select.
 
@@ -882,7 +883,7 @@ mesh 0x64, twelve bytes each: entry *i* lights vertex-order entry *i*, and it is
 indexes. Read in the running game (OpenTPW Q657): every normal the lighter used on the 25 meshes of
 `global/advisor/Advisor.md2` and the 18 of jungle `Advisor_JUN.md2` equals the file's entry for its vertex-order
 entry exactly, and in all five advisor models (the global one and the four themes') every mesh's table holds at
-least as many entries as its vertex order. How many entries the other models' tables hold has not been counted.
+least as many entries as its vertex order. Counted over all 2,129 `.md2` (847 static version-`0xDD` models, 4,923 meshes, 4,918 with a table, 5 without): the table is two runs, the vertex-order length's entries and then one per face, and in 4,707 of the 4,918 it runs exactly 12 x (vertex-order length + face count) bytes to the next block in the file (in the other 211 the gap is longer, never shorter). Every face's first word (low 15 bits) is below vertex-order length + face count in all 4,918; in 4,765 meshes every face names an entry at or past the vertex-order length (in 2,936 of them face *j* names exactly vertex-order length + *j*), and in 153 all are below it.
 The table is not the triangles' averaged planes: on the advisor's hands it stands a median 33 degrees from them, on
 his bow tie 90. OpenTPW lights the advisor by the table; every other model it lights by its own normals, each
 triangle's face normal accumulated onto its three vertices and re-normalised.

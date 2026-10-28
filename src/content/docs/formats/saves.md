@@ -2984,3 +2984,48 @@ The eight played park files carry `00 00`, the five Full Simulation saves among 
 behind three first-use guards (the load, a rename and the first key), so in a fresh launch the first key that reaches the cheat
 check clears it and the cheat keys work from a later park of the same run (fork watch 2026-10-20, `verify-other-ui-audio.md`
 O-G; read from the bytes, not run in the original).
+
+## A park made fresh (`restart.INTS` at tick nought)
+
+The game writes `restart.INTS` as a park is first entered, before its first tick. For a player with no park file the
+park is a fresh world, so these files are the fresh world as the game writes it. Measured over seventeen Lost Kingdom
+files the game wrote (one on Windows, sixteen under Proton) and the Fantasy and Halloween ones beside them; what makes
+each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tick nought".
+
+- **The container** is version 500, and the preamble after it is the shipped `Easymode.TPWI`'s byte for byte, legal
+  text and all, in every theme. The payload is 1,560,670 to 1,561,505 bytes, against the shipped park's 1,608,309.
+- **The modules' lengths** are the same in every Lost Kingdom file, but the sound's: the action recording 143 (length
+  135), World 1,469,113, the sprite table 412, the particles 76,252, the message centre 196, the clock 8, the vanilla
+  time 4, the game system 36, the ride system 11,311 (11,307 Fantasy, 11,319 Halloween), the track rides 44, the
+  flyers 452, the ride scripts 1,176 (1,170, 1,152), the camera 40, the coasters 16, the advisor 372, the sound 1,017 to
+  1,484, the cheats 2, the advisor scoring 4 and the interface block 4.
+- **World.** Twelve things, ids 1 to 12, models 9, 10, 11, 12, 13, 14, 15, 16, 17, 19, 3 and 3; `mFirstObject` 12,
+  the gates 11, the lights 12, the five staff heads nought, tick 0, closed 1. The clock fields hold month 0 and day -1,
+  not the date of tick 0. The staff pool holds 22 candidates. Each manager's record is its constructor's: the analyser's
+  1,024 blocks each `(x, y, 4, 4)` with nine pairs of `(-999, 0)` (the first two as floats), its four small rings
+  `(-1, 3, ...)`, its six kept pairs `(-999, 0)`, its sixteen int rings opening `-1, 144` and its six stamps all
+  `125911584000000000` (2000-01-01); the advisor's 351 records all fresh. In about half the files the bytes no constructor
+  writes (the lab past its used projects, the advisor's records' unused bytes, the challenge manager's `+0x17c` to
+  `+0x393`, the two objects' day rings) hold leftover memory, the same in each such file; in the others they are
+  nought. The weather's location holds leftover memory in every file.
+- **The sprite table** has 100 slots, none live: `TPCS`, `0x118`, 100 and 400 bytes of nought.
+- **The particles** hold one emitter in use, slot 0 with the count 1 (handle `0x10000`): effect 20, `WaterFall`, at
+  (532, 4, 526). The live header's generator seed is `0x18be873a` in every file; the density is 1,500 on Windows and
+  1,000 under Proton.
+- **The message centre**'s sets: `0x01` and `0x02` thing 7; `0x05` 3; `0x07` 2, 4, 9; `0x08` 3, 9; `0x0a` 9; `0x0b`
+  10, 11, 12; `0x0c` 1, 4, 5, 8; `0x0d` 8; `0x0e` 1, 3; `0x0f` 9; `0x11` 3, 5, 6, 10; `0x12` 9; `0x13` 3, 4, 5, 8, 9;
+  `0x14` 4; `0x17` 3; `0x18` 4; `0x19` 3, 4; `0x1a` 10; `0x1b` 9; `0x1c` 9; the rest empty.
+- **The game system**'s dwords 6 to 8 are 11,864 under Proton and 2,235 to 3,000 on Windows; dwords 3 and 4 nought,
+  dword 5 the stack's 2.
+- **The ride system** holds 109 records: the gates', the lights' and 107 of the boundary's pieces, whose items vary
+  from file to file.
+- **The track rides** hold the stamp alone: `15:25:02` and `Mar 17 2000`, where the shipped park's reads `20:25:29` and
+  `Oct 21 1999`.
+- **The flyers** are set up with no flyer, the four values 190000, 70000, 140000 and 30000 in Lost Kingdom.
+- **The ride scripts** hold two records, the gates' (handle 1) and the lights' (handle 2), with no object; the next handle is 3.
+- **The camera**: zoom 110, rotation 0, flags 0, the point (475, 0, 175), the saved point and rotation nought.
+- **The coasters** read `0 0 0 1`; **the advisor** is `ADV_`, `0x168`, the advisor's 360 bytes (words at `+0x40` to
+  `+0xb4`, `+0x110` 5, `+0x12c` -1 and `+0x144` to `+0x158`) and the length nought; **the cheats** `00 00`; **the
+  advisor scoring** nought (258 in the Halloween file); **the interface block** a count of nought.
+- **The sound**'s voice list holds the land's five placed voices and whatever the game had playing as the park was
+  entered.

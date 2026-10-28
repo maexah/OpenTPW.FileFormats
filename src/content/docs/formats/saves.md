@@ -770,7 +770,7 @@ coordinates. Its record is **1,099 bytes**.
 | 218 | 2 bytes | `mExitPos` | packed like `mEntryPos` - the cell a guest is put down on when they leave |
 | 220 | 2 bytes | `mFirstInQ` | |
 | 222 | 4 bytes | `mIsTrackRideValid` | 1 on every object in the shipped park; 0 on Alexah's saved Temple Of Gloom, the one object in nine park files that reads 0 |
-| 226 | 2 bytes | `mUpgradeParent` | |
+| 226 | 2 bytes | `mUpgradeParent` | a track add-on's ride, by its thing id: the ride it was put down on (the original's builder's object at the placement); nought on every other object. Alexah's played Full Simulation Dino Karts Jump and Tunnel both read 289, the Dino Karts' id, and the original wrote 289 on a Tunnel and a Jump bought for it there (Q780) |
 
 After that come several ring buffers - each a `mCurrentEntry`, an `mNumEntries`, an `mWrappedAround` flag,
 an `mTemp` and then `mNumEntries` entries of `mData[`*i*`]` - interleaved with `mNumCustomers` and

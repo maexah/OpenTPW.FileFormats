@@ -1570,6 +1570,15 @@ is a fresh instance of the `P` model, playing that clip, where the item has one,
 model where it has none (OpenTPW's `docs/exe/park-engine.md`, "The object window's preview"). A `P`
 model leaves out what the preview should not show: the Inca Totem's pit under the ground, for one.
 
+**The karts' and the water rides' track pieces** (`gk_trck*`, `wr_trck*`) ship their `M` role bare, one clip a piece, or
+none. Counted over the eight kits (`rides\gokarts.wad` and `rides\wateride.wad` of each theme): 53 piece clips, 48 of
+them UV tracks alone (the water's scroll on the water pieces; spans 0..16, 0..50 or 0..100) and five with no
+readable span (Haunted Hallow's four `gk_trckH*m`, Space's `gk_trckh_am`). Every water kit ships one for each of its
+pieces; the Lost Kingdom and Fantasy karts ship none, Haunted Hallow's only for its four hill pieces, Space's for all but
+`gk_trckQ`. The game plays this
+role on a piece only when a walk of the track asks for it, and otherwise holds the piece at rest (OpenTPW's
+`docs/exe/park.md`, "The pieces' clips").
+
 #### Role 0 decides what a built item looks like
 
 The engine plays role 0 once, when the player builds the thing, and never again. A park loaded from

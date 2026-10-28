@@ -3006,17 +3006,18 @@ each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tic
   1,024 blocks each `(x, y, 4, 4)` with nine pairs of `(-999, 0)` (the first two as floats), its four small rings
   `(-1, 3, ...)`, its six kept pairs `(-999, 0)`, its sixteen int rings opening `-1, 144` and its six stamps all
   `125911584000000000` (2000-01-01); the advisor's 351 records all fresh. In about half the files the bytes no constructor
-  writes (the lab past its used projects, the advisor's records' unused bytes, the challenge manager's `+0x17c` to
-  `+0x393`, the two objects' day rings) hold leftover memory, the same in each such file; in the others they are
+  writes (the lab past its used projects, the advisor's records' unused bytes, its eight message slots and its kept slot, the challenge manager's `+0x17c` to
+  `+0x393`, the two objects' day rings and name words) hold leftover memory, the same in each such file but for 7 bytes
+  of the challenge manager's at `+0x28a`; in the others they are
   nought. The weather's location holds leftover memory in every file.
 - **The sprite table** has 100 slots, none live: `TPCS`, `0x118`, 100 and 400 bytes of nought.
 - **The particles** hold one emitter in use, slot 0 with the count 1 (handle `0x10000`): effect 20, `WaterFall`, at
-  (532, 4, 526). The live header's generator seed is `0x18be873a` in every file; the density is 1,500 on Windows and
+  (532.3, 4.9, 526.1), raw 34068, 312, 33668 (Lost Kingdom; Fantasy and Halloween hold no emitter). The live header's generator seed is `0x18be873a` in every Lost Kingdom file (seed 1 in the others), its `+0x1c` `0x803b68` and `+0x24` `0x5d60c0` in every fresh file (a load keeps the live system's two and ignores these); the density is 1,500 on Windows and
   1,000 under Proton.
 - **The message centre**'s sets: `0x01` and `0x02` thing 7; `0x05` 3; `0x07` 2, 4, 9; `0x08` 3, 9; `0x0a` 9; `0x0b`
   10, 11, 12; `0x0c` 1, 4, 5, 8; `0x0d` 8; `0x0e` 1, 3; `0x0f` 9; `0x11` 3, 5, 6, 10; `0x12` 9; `0x13` 3, 4, 5, 8, 9;
   `0x14` 4; `0x17` 3; `0x18` 4; `0x19` 3, 4; `0x1a` 10; `0x1b` 9; `0x1c` 9; the rest empty.
-- **The game system**'s dwords 6 to 8 are 11,864 under Proton and 2,235 to 3,000 on Windows; dwords 3 and 4 nought,
+- **The game system**'s dwords 6 to 8 are 11,864 under Proton (11,863 and 11,866 once each) and 2,235 to 2,992 on Windows, and the readings stand 33 ms (once 34) before the clock's first under Proton, 3 ms on Windows; dwords 3 and 4 nought,
   dword 5 the stack's 2.
 - **The ride system** holds 109 records: the gates', the lights' and 107 of the boundary's pieces, whose items vary
   from file to file.

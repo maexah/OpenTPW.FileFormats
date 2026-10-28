@@ -312,7 +312,7 @@ the last two against the running game's memory (the game's reader of them is its
 | `0x1C` | u32 | `mGameTick` when the first of the item was built, kept after the last is sold: 15 on nine records in Lost Kingdom's save, the Balloon Shop among them with a count of 0, and 604 for the bus. The game writes it only while it reads 0, so the gates and the traffic lights, made on tick 0, keep 0 |
 
 Across the six park files read (Lost Kingdom's and five played saves of three themes) every record with a
-count above 0 has a stamp, but for the gates and the lights. The other fields (`0x08` and the three bytes after `0x10`, all nought here) are not settled here.
+count above 0 has a stamp, but for the gates and the lights. The three bytes after `0x10` are nought here. **`0x08` (u32) is 5 on a ride, a shop or a sideshow and nought on a feature, a vehicle and the other items**: on 23 of `Easymode.TPWI`'s 50 records (its 12 rides, 6 shops, 4 sideshows and item 100, a ride of the rides folder that is not a buy-list item), on 29 to 32 of the 66 to 70 of Alexah's played Full Simulation saves and on 31 of the 70 of every fresh park's `restart.INTS` (17 of its 20 rides, which leave out the three track rides, items 1500 to 1502, the 8 shops, the 5 sideshows and item 100). What makes it, and what reads it, is not decoded; a file with nought in all of them is loaded by the game.
 **Buying one adds one to the count and stamps a record that reads 0; selling one takes one off and leaves the
 stamp**: a park the game saved after a Crazy Ape was bought on tick 924 holds count 1 and stamp 924 on item 1101,
 and saved again after the ape was sold, count 0 and stamp 924 (measured under Proton, 2026-10-08). The game fills a
@@ -2351,6 +2351,7 @@ sub-record names its piece and says which it is:
 | `mType` | 25 |
 | `mHoardingNeighbours` | which of the four cells two away are anchors too: `0x01` at y − 2, `0x04` at x + 2, `0x10` at y + 2, `0x40` at x − 2 (520 of 520 anchors in four parks; the gate's two ends name the one side they have) |
 | `mDirection` | in the same bits, the way the boundary was laid leaving the anchor, or for the last anchor laid the way it came (the 107 anchors of each of 34 fresh Lost Kingdom parks, in the order of their pieces' slots) |
+| `mOverlapCounter` | 1 on a corner, nought on a straight and on the ends: a clicked point of the laid boundary ends one run and starts the next, so its anchor is built over once (1,819 of 1,819 anchors in the seventeen fresh Lost Kingdom files, whose corners are the masks of two perpendicular sides but `0x11` and `0x44`) |
 | `mFlags` | 1 on an anchor over water or hidden ground, 0 on every other in the files to hand: a straight's piece is then row 11 (`ho_fos4`), a corner's row 26 (`ho_fob3`; one, in Alexah's played jungle park, on land bought later); the fresh parks flag straights alone (one in Lost Kingdom, at (59,39)) |
 
 and the piece's record holds:
@@ -3023,6 +3024,7 @@ each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tic
   `Oct 21 1999`.
 - **The flyers** are set up with no flyer, the four values 190000, 70000, 140000 and 30000 in Lost Kingdom.
 - **The ride scripts** hold two records, the gates' (handle 1) and the lights' (handle 2), with no object; the next handle is 3.
+- **The economy thing**'s `mLastBalance` (its word at `+0x20`) holds the starting cash, 50,000, as `mBalance` does, and the loans' table is the balance's.
 - **The camera**: zoom 110, rotation 0, flags 0, the point (475, 0, 175), the saved point and rotation nought.
 - **The coasters** read `0 0 0 1`; **the advisor** is `ADV_`, `0x168`, the advisor's 360 bytes (words at `+0x40` to
   `+0xb4`, `+0x110` 5, `+0x12c` -1 and `+0x144` to `+0x158`) and the length nought; **the cheats** `00 00`; **the

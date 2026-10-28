@@ -284,8 +284,11 @@ east, south and west as the track grid's links are is not shown: the model's `0x
 the end links the grid's `0x10`. All 128 are end caps by their node names: those of the karts' and water rides' track
 pieces (`gk_trck*`, `wr_trck*` in each theme's `rides\gokarts.wad` and `rides\wateride.wad`) and of the ten track
 add-ons (`lavajump`, `mammtunn`, `watertun`, `beejump`, `honeypot`, `chopper`, `firepit`, `ogre`, `meteor`,
-`teleport`; `gk_end08`, `gk_end09` in `mammtunn`, `wr_end02`, `wr_end03` in `watertun`). That a mask is passed for the
-add-ons' caps is inferred, not read. A piece is made with its row's mask,
+`teleport`; `gk_end08`, `gk_end09` in `mammtunn`, `wr_end02`, `wr_end03` in `watertun`). No mask is passed for an
+add-on's caps (engine-confirmed): an add-on is made as any placed thing, both caps shown, and the karts' and water rides'
+circuit walk then hides or shows each by the lookup record whose hide word is 1 or 16 (the walk's rule is OpenTPW's
+`docs/exe/park.md`, "The walk"). In each of the three Lost Kingdom add-ons the cap of word 1 is the one at the model's +z
+end: `gk_end02` of `lavajump`, `gk_end09` of `mammtunn`, `wr_end03` of `watertun`. A piece is made with its row's mask,
 the sides on which the track carries on, and every cap whose bit is in it is hidden, so one crossing model with one
 cap left standing is a junction, and a straight has both its caps hidden. The rows and their masks are OpenTPW's
 `docs/exe/park.md`, "A track piece's model, price and open end".

@@ -2489,7 +2489,7 @@ the game wrote (7,688 records of 95 items) ten of them appear:
 | `0x100` | That track moves the mesh's texture coordinates (`0x10000`) |
 | `0x800` | That track places, turns, scales or routes the node (any of `0x289`) |
 | `0x200` | The node's [lookup record](/formats/models/#node-lookup-ids) has a position: its flags in the model's file meet `0x30` |
-| `0x400` | The node is transform-only (its flags in the model's file hold `0x200`). A clip's hide list neither hides nor shows it; a visibility track still does. The coaster code sets it too, with `0x1`, on a pylon's node it hides (a stacked pylon's floor, the top of a stack's bridge), and shows the node again by taking off `0x1` alone, so a pylon shown again keeps `0x400`: two of the 40 pylon records of Alexah's played jungle park hold `0x408` on their floor, `mc_pylbase`, and the game draws that floor |
+| `0x400` | The node is transform-only (its flags in the model's file hold `0x200`). A clip's hide list neither hides nor shows it; a visibility track still does. The coaster code sets it too, with `0x1`, on a pylon's node it hides (a stacked pylon's floor, the top of a stack's node the type names for `0x400`: `mc_bridge` on `StdPylon`), and shows the node again by taking off `0x1` alone, so a pylon shown again keeps `0x400`: two of the 40 pylon records of Alexah's played jungle park hold `0x408` on their floor, `mc_pylbase`, and the game draws that floor |
 
 **A word can be worked out from the model's file and the clips its channels have run.** A model just made holds
 `0x400` and `0x1` on every transform-only node, and `0x200` and `0x2` where the rows above say. A clip bound to a

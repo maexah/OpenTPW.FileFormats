@@ -556,14 +556,18 @@ these files also carries a mesh named `heightfield` with no vertices and no face
 
 **A cell's diagonal: flags `0x2` and `0x4`.** Every ground cell (the record's low 16 bits without `0x1`) carries
 exactly one of `0x2` and `0x4`, in all five files: jungle 4,293 and 2,708 (7,001, beside 1,159 holes), fantasy
-4,527 and 2,889, hallow 5,164 and 2,206, space 4,674 and 2,620, the lobby's four ground cells all `0x2`. They name the
+4,527 and 2,889, hallow 5,164 and 2,206, space 4,674 and 2,620, the lobby's four ground cells all `0x2`. A hole (`0x1`)
+carries neither in the four parks (jungle 1,159, fantasy 744, hallow 790, space 866). They name the
 diagonal the cell's two triangles meet on: `0x2` the one from the near corner (x, y) to (x + 1, y + 1), `0x4` the
 other, (x + 1, y) to (x, y + 1). The engine draws the cell by `0x2` and takes heights by `0x4`, the same split
 (OpenTPW `docs/exe/park-engine.md`, "The triangle diagonal").
 
 No cell in the files carries `0x800` (32,640 park cells counted). The engine sets it at load on a cell whose two
 triangles are not in one plane, and its general height under a point (`FUN_004527f0`) splits only those cells by
-`0x4`, taking the plane through the near corner and its two neighbours on the rest.
+`0x4`, taking the plane through the near corner and its two neighbours on the rest. Its test is the two triangles' unit
+normals across (x + 1, y)-(x, y + 1) meeting with a dot under 0.9999, so a cell bent by less passes unflagged: jungle's file
+gives 566 flagged cells (158 ground) and 464 ground cells bent by at most 0.063 left plain (OpenTPW
+`tools/harness/dotnet/hfsamplers`).
 
 ### Textures
 

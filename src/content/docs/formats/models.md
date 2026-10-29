@@ -1268,6 +1268,17 @@ component(raw, shift, centre, step):
 > quantised into a box nearly twice as tall as in his other clips. Read into the mesh's bounding
 > box, they come out at a little over half their height and jump back when his next clip begins.
 
+#### Offsets, on an additive model
+
+On a model whose header word at 0x30 has bit `0x4` set (the coaster pylons: `StdPylon`'s is `0xd`), the engine **adds** a morph track's
+keys to the vertex where it otherwise assigns them (`Anim_PoseTrack`, `0x00471bef`, hands the model's `0x4` to `FUN_004714a0` as its last
+argument), and the texture track's keys to the UV likewise. The keys of such a model's clips are offsets from the rest. The Minecart's
+`StdPylonL` (the loft clip, frames 0 to 100) reads nought on every vertex of the column at its first frame and 90 up at its last on the
+vertices that rise, and its UV track adds up to 14.985 to the V of the top (one repeat of the lattice for every 6 units); `StdPylonI`
+and `StdPylonB` (frames 0 to 20) read about -3.49 up to +3.49 on the column's vertices by side, nought at frame 10 (the incline and
+bank clips tip the column's head). Several clips posed on one mesh add up: the loft, incline and bank clips of one pylon are three offsets
+on one rest (Q817, measured by decoding the three clips' tracks against the mesh's rest vertices).
+
 #### Raw vertex frames (bit 0x4000)
 
 When a morph track also sets `0x4000`, the slot at +0x28 points at a 16-byte record instead of a morph

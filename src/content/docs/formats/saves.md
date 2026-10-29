@@ -312,7 +312,13 @@ the last two against the running game's memory (the game's reader of them is its
 | `0x1C` | u32 | `mGameTick` when the first of the item was built, kept after the last is sold: 15 on nine records in Lost Kingdom's save, the Balloon Shop among them with a count of 0, and 604 for the bus. The game writes it only while it reads 0, so the gates and the traffic lights, made on tick 0, keep 0 |
 
 Across the six park files read (Lost Kingdom's and five played saves of three themes) every record with a
-count above 0 has a stamp, but for the gates and the lights. The three bytes after `0x10` are nought here. **`0x08` (u32) is 5 on a ride (but the three track rides, items 1500 to 1502), a shop or a sideshow and nought on a feature, a vehicle, a track ride and the other items**: on 23 of `Easymode.TPWI`'s 50 records (its 12 rides, 6 shops, 4 sideshows and item 100, a ride of the rides folder that is not a buy-list item), on 29 to 32 of the 66 to 70 of Alexah's played Full Simulation saves and on 31 of the 70 of every fresh park's `restart.INTS` (17 of its 20 rides, which leave out the three track rides, items 1500 to 1502, the 8 shops, the 5 sideshows and item 100). What makes it, and what reads it, is not decoded; a file with nought in all of them is loaded by the game.
+count above 0 has a stamp, but for the gates and the lights. The three bytes after `0x10` are nought here. **`0x08` (u32) is the item's `UsageInfo.FatigueEffect` as the record was made**, which only the category files declare: 5 in
+each theme's `Rides.sam`, `Shops.sam` and `SideShow.sam`, none in `Features.sam` or `Upgrades.sam`. So it is 5 on a ride, a shop or a
+sideshow and nought on a feature, a vehicle and the three add-ons of the upgrades folder (the jump and the two tunnels, items 1500 to
+1502): on 23 of `Easymode.TPWI`'s 50 records (its 12 rides, 6 shops, 4 sideshows and item 100, `mystery.wad` of the rides folder, not
+a buy-list item), on 29 to 32 of the 66 to 70 of Alexah's played Full Simulation saves and on 31 of the 70 of every fresh park's
+`restart.INTS` (its 17 rides, 8 shops, 5 sideshows and item 100). Nothing reads it back from the record; a file with nought in all of
+them is loaded by the game.
 **Buying one adds one to the count and stamps a record that reads 0; selling one takes one off and leaves the
 stamp**: a park the game saved after a Crazy Ape was bought on tick 924 holds count 1 and stamp 924 on item 1101,
 and saved again after the ape was sold, count 0 and stamp 924 (measured under Proton, 2026-10-08). The game fills a
@@ -2071,8 +2077,10 @@ the subsystem is set up, the tick counter behind every script's one-in-eight tur
 be given, the script count, and a list pointer from the saving session that means nothing on loading. The shipped
 park's read 1, 6,055, 16, 14 and a pointer. So a loaded park goes on counting ticks, and numbering new scripts, where
 the saved one left off. The fourth is not the count the records are walked by, which is the dword after the five
-discarded ones: an Instant Action save written after a load holds 28 in the header over fourteen records (29 over
-fifteen, with an arrival vehicle's script made since). A file
+discarded ones: the game counts it up for each record a load reads and each script it makes, and down for each one
+it destroys, and nothing walks by it, so an Instant Action save written after a load holds 28 in the header over
+fourteen records (29 over fifteen, with an arrival vehicle's script made since), and a fresh park's `restart.INTS` 2
+over its two. A file
 with the pointer set to `0xDEADBEEF` loads and runs (measured under Proton, 2026-10-08).
 
 Then one record per script, **newest first**: the saving session's list order, handles 15 down to 1 in the shipped
@@ -2135,7 +2143,7 @@ park files:
 | `0x8c` | The variable count — block 2's length over four |
 | `0x90` | The string blob's length |
 | `0x94` | A dword of the `.RSE` header, 50 on every record |
-| `0x98` | `-1` on 369 of 374 records, nought on five; `-1` on a record the game has just made |
+| `0x98` | The turn's budget: set from `0x94` as each turn begins, before anything reads it, so a load never reads it. `-1` on 369 of 374 records, nought on five; nought on a script that has had no turn (the gates' and the lights' in a fresh park's `restart.INTS`), `-1` on a record the game has just made that has run |
 | `0xac` | 2 bytes: the id of the thing the script belongs to; nought for a script with none |
 | `0xc0` | The speed word (below) |
 | `0xc8` | **The model handle of the script's thing** — the object's `MeshInstanceID`, a slot of the ride system module plus one; nought for a script with no thing |
@@ -2258,8 +2266,9 @@ of a queue; measured under Proton, 2026-10-08) is first in the module under the 
 holds the fields the loader sets, its name's offset (0: the script had named itself), `-1` at `0x98`, its thing
 and its thing's model handle, and the object's operating speed, 60, as the speed word. Its stack block is twenty
 dwords of `0xFFFFFFFF` but for what has been pushed, its head table sixteen noughts, its object list empty, and
-its directory `data\levels\jungle\Rides\monkey\`. A record written with the folder in lower case
-(`rides`) loads.
+its directory `data\levels\jungle\Rides\monkey\`. The folder is spelt as the game's own strings spell it,
+`Rides`, `Features`, `Upgrades`, `Shops` and `Sideshow`, in every park file read; a record written with the folder in
+lower case (`rides`) loads.
 
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
@@ -3024,7 +3033,15 @@ each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tic
 - **The track rides** hold the stamp alone: `15:25:02` and `Mar 17 2000`, where the shipped park's reads `20:25:29` and
   `Oct 21 1999`.
 - **The flyers** are set up with no flyer, the four values 190000, 70000, 140000 and 30000 in Lost Kingdom.
-- **The ride scripts** hold two records, the gates' (handle 1) and the lights' (handle 2), with no object; the next handle is 3.
+- **The ride system's** two first records, the gates' and the lights', are their models as made and never run: the gates'
+  six node words `0 0 0 0x601 0x601 0x401` with two lookup records `(9, -1)` and `(0x21, -1)` and shared flags 1, the
+  lights' nine words, eight noughts and `0x401`, with none; each one's channel idle with its two speeds nought, the
+  model maker's zeroed channel, as 1,216 of the 1,272 channels of the boundary's pieces in eight of the game's files hold
+  (the other 56 speed 1.0), where every placed feature's idle channel in Alexah's played save, its build clip played,
+  holds 1.0.
+- **The ride scripts** hold two records, the gates' (handle 1) and the lights' (handle 2), with no object; the next handle is 3
+  and the header's count 2. Neither has had a turn: each one's `0x98` is nought, its looping key `0xffff`, its folder
+  `data\levels\jungle\Features\gates\` and `...\lights\`.
 - **The economy thing**'s `mLastBalance` (its word at `+0x20`) holds the starting cash, 50,000, as `mBalance` does, and the loans' table is the balance's.
 - **The camera**: zoom 110, rotation 0, flags 0, the point (475, 0, 175), the saved point and rotation nought.
 - **The coasters** read `0 0 0 1`; **the advisor** is `ADV_`, `0x168`, the advisor's 360 bytes (words at `+0x40` to

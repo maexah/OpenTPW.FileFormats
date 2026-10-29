@@ -2299,7 +2299,7 @@ more slots than things stays small. A present record is:
 | `0x09`   | 4 bytes  | The cell, down                                                  |
 | `0x0d`   | 4 bytes  | Its footprint in cells, across                                  |
 | `0x11`   | 4 bytes  | Its footprint, down                                             |
-| `0x15`   | 4 bytes  | The flags it was made with: `0x32F` a placed object, `0x361` a fixed one (gates, traffic lights, an arrival vehicle), `0x33A` a piece of queue |
+| `0x15`   | 4 bytes  | The flags it was made with: `0x32F` a placed object, `0x361` a fixed one (gates, traffic lights, an arrival vehicle), `0x33A` a piece of queue, `0x3FA` a coaster's pylon, `0x101` a ride's car (a played jungle park's 24 Minecart cars, four go-karts and one of the tour ride's) |
 | `0x19`   | 4 bytes  | **The script handle of the thing it is the model of** - the object's `mRideScriptHandle`; nought for a piece of queue and other scenery |
 | `0x1d`   | 4 bytes  | Packed model flags; low seven bits are the hoarding state below |
 | `0x21`   | 2 bytes  | Not described; nought on every object's record in six park files |
@@ -2621,10 +2621,16 @@ two lanes whose clips ended 47 and 25 seconds before the save; a toilet's, ended
 So a held channel's `0x10` is not kept for good, and a reader must take both forms as held.
 
 > **The module does not say how many channels a thing has**, and the walk cannot step over a record
-> without knowing. The count is the item's own `NumSimultAnims` — the Jungle Spray runs three lanes and
-> everything else one. This is not a detail: walked with one channel for everything, the cursor lands
-> **5,786 bytes short** of the module's end; with the real counts it lands **exactly** on it across all
-> 161 records, which is what makes the layout above trustworthy.
+> without knowing. The count follows the record's item id: an item's own model has its `NumSimultAnims` (the
+> Jungle Spray runs three lanes, most things one), a coaster's pylon has **five** (each id a `coaster.sam`
+> names as an `asPylonControls[n].uiPylonTypeUniqueID`, 21 over the twelve coasters), and every other id one:
+> a coaster's car (`asCarTypes[n].uiCarTypeUniqueID`), an item's extra mesh, a queue, track or hoarding piece.
+> This is not a detail: walked with one channel for everything, the cursor lands **5,786 bytes short** of the
+> shipped park's end; with the real counts it lands **exactly** on it across all 161 records, which is what makes
+> the layout above trustworthy. With these counts it lands on the end in all 45 park files to hand that the game
+> wrote (7,688 records); a played jungle park with a Minecart holds 40 pylon records (item 1181, five channels each)
+> and 24 of its cars (1183, one), and with the pylons read as one its walk stops after 202 records. Where the
+> engine takes the count from is OpenTPW's `docs/exe/saves.md`, "How many channels a saved model has".
 
 In the shipped park **15 of 163 channels hold a real role** and the other 148 hold the sentinel — most
 records are scenery with nothing to animate. The fourteen placed things are saved as: Gates role 5

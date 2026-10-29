@@ -896,6 +896,11 @@ indexes. Read in the running game (OpenTPW Q657): every normal the lighter used 
 `global/advisor/Advisor.md2` and the 18 of jungle `Advisor_JUN.md2` equals the file's entry for its vertex-order
 entry exactly, and in all five advisor models (the global one and the four themes') every mesh's table holds at
 least as many entries as its vertex order. Counted over all 2,129 `.md2` (847 static version-`0xDD` models, 4,923 meshes, 4,918 with a table, 5 without): the table is two runs, the vertex-order length's entries and then one per face, and in 4,707 of the 4,918 it runs exactly 12 x (vertex-order length + face count) bytes to the next block in the file (in the other 211 the gap is longer, never shorter). Every face's first word (low 15 bits) is below vertex-order length + face count in all 4,918; in 4,765 meshes every face names an entry at or past the vertex-order length (in 2,936 of them face *j* names exactly vertex-order length + *j*), and in 153 all are below it.
+Those 153 are all in `ui.wad` (the interface's buttons, lights and sliders: 496 faces, 18 of them, `handle.MD2`'s, more than
+1 degree off their triangle): no park model's face names an entry of the first run. The game works every face's entry out
+again from the triangle's corners when it places a model, and its lighter reads only the first run, so in a park the
+faces' entries never light anything (OpenTPW `docs/exe/park-engine.md`, "The recomputed face normals never reach the
+lighting", Q819; the count is OpenTPW's `tools/harness/lib/facenormals.py --sweep`).
 The table is not the triangles' averaged planes: on the advisor's hands it stands a median 33 degrees from them, on
 his bow tie 90. OpenTPW lights the advisor by the table; every other model it lights by its own normals, each
 triangle's face normal accumulated onto its three vertices and re-normalised.

@@ -75,11 +75,23 @@ Run `npm run build` before you commit.
 
 ## Contributing
 
-Contributions are very welcome:
+Contributions are very welcome, and you do not need the pages' tooling to give us a finding.
 
-1. Fork the [original project](https://github.com/OpenTPW/OpenTPW.FileFormats).
-2. Create a branch named `YourName/FeatureName`.
-3. Open a pull request when you are ready.
+**Two ways to send a finding**
+
+1. **Write the page yourself.** Fork [maexah/OpenTPW.FileFormats](https://github.com/maexah/OpenTPW.FileFormats),
+   branch as `YourName/FeatureName` off `master`, follow "Writing a page" above, and open a pull request. If your work
+   changed or relied on code in [OpenTPW](https://github.com/maexah/OpenTPW), link the two pull requests to each other.
+2. **Put the finding in your pull request to OpenTPW, and we write it up.** Say the field (offset, size, meaning), how
+   you measured it and over how many files. The maintainer writes it into the right page here. This is fine for
+   anyone who would rather not set up the site.
+
+**What a finding must hold**
+
+- Checked across every shipped file of that kind, with the count. One file is a lead, not a fact.
+- In your own words and numbers. Do not paste bytes from the game's files, a dump of one, or decompiler output; this
+  repository describes the files and never contains them.
+- What the game does with a field belongs in OpenTPW's `docs/exe/`, not here.
 
 ## License
 

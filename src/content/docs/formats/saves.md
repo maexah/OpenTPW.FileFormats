@@ -2299,7 +2299,7 @@ more slots than things stays small. A present record is:
 | `0x09`   | 4 bytes  | The cell, down                                                  |
 | `0x0d`   | 4 bytes  | Its footprint in cells, across                                  |
 | `0x11`   | 4 bytes  | Its footprint, down                                             |
-| `0x15`   | 4 bytes  | The flags it was made with: `0x32F` a placed object, `0x361` a fixed one (gates, traffic lights, an arrival vehicle), `0x33A` a piece of queue, `0x3FA` a coaster's pylon, `0x101` a ride's car (a played jungle park's 24 Minecart cars, four go-karts and one of the tour ride's) |
+| `0x15`   | 4 bytes  | The flags it was made with: `0x32F` a placed object, `0x361` a fixed one (gates, traffic lights, an arrival vehicle), `0x33A` a piece of queue, a boundary hoarding piece or a kart track piece, `0x3FA` a coaster's pylon, `0x101` a ride's car (a played jungle park's 24 Minecart cars, four go-karts and one of the tour ride's) |
 | `0x19`   | 4 bytes  | **The script handle of the thing it is the model of** - the object's `mRideScriptHandle`; nought for a piece of queue and other scenery |
 | `0x1d`   | 4 bytes  | Packed model flags; low seven bits are the hoarding state below |
 | `0x21`   | 2 bytes  | Not described; nought on every object's record in six park files |
@@ -2350,22 +2350,14 @@ shipped park's 161), are the boundary's pieces, below; 171xx in a played park ar
 ### An animation channel
 
 Each of the record's channels is eleven 4-byte words, 44 bytes, which the loader (`0x004647a0`) copies onto the
-running channel word for word, in this order (`0x00464bcb`..`0x00464c17`; OpenTPW's `docs/exe/park.md`, "The
-animation channel", names the running fields):
-
-| Word | What it is |
-|---:|---|
-| 0 | Flags: `0x1` looping, `0x2` frozen on its first frame, `0x4` held on its last frame, `0x8` a role-nought clip has run past its end; a held channel gains `0x10` as it loads |
-| 1 | Role (12 is none: an idle channel) |
-| 2 | Entry within the role |
-| 3, 4, 5 | The three clock stamps: the start, the time and the time that does not pause |
-| 6 | Speed, a float (1.0 is the clip's own pace) |
-| 7, 8, 9, 10 | The queued clip: role (12 is none), entry, flags and speed (a float) |
+running channel word for word (`0x00464bcb`..`0x00464c17`; the fields are the table under "A channel is 11 dwords",
+below, and OpenTPW's `docs/exe/park.md`, "The animation channel", names the running fields).
 
 The park gate's record (item 1601, slot 1) holds channel 0 held on its opening clip, flags `0x4`, role 5, entry 1,
-speed 1.0 and nothing queued, in `Easymode.TPWI` and in both of a played Full Simulation jungle park's files, and the
-game draws its doors open from it (measured under Proton, 2026-10-29; OpenTPW's `docs/exe/park-gate.md`, "What draws
-the doors").
+speed 1.0 and nothing queued, in `Easymode.TPWI` and in both of a played Full Simulation jungle park's files. A park
+that restores it draws the doors open, and one that restores none draws them shut (measured under Proton and in
+OpenTPW, 2026-10-29; the node flag words are restored by the same load, so the channel alone was not isolated; OpenTPW's
+`docs/exe/park-gate.md`, "What draws the doors").
 
 ### A boundary piece's record
 

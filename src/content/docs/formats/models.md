@@ -306,17 +306,7 @@ for walk nodes, `0x80` for heads and `0x20000` for lights (the light instruction
 `0x1000` (engine-confirmed): 100 of the 2,129 shipped models carry such a record, 25 in jungle, 20 in fantasy, 26 in
 hallow and 29 in space, most often with the flag word `0x1031` (69 records), then `0x10b1` (12) and `0x41071` (9);
 three records with `0x1000` have id 2. `0x211` marks the gates' `sound node`, and `0x111` most
-particle emitters.
-
-**Two flags say how a mesh meets sloped ground** (engine-confirmed; what the game does with them is OpenTPW's
-`docs/exe/park-engine.md`, "Where a placed object's model stands"). The model loader turns a record's `0x8` into its node's
-run-time `0x40` and its `0x10000` into `0x20000`. A placed model's mesh with `0x8` has its vertices on its plot's outline
-raised or lowered to the ground along the cell line; one with `0x10000` follows the ground vertex by vertex. Over every
-`.wad` the game ships, `0x8` is on 34 mesh records and on no transform-only one, all in the kart and water rides and their
-track add-ons of the four themes (in Lost Kingdom `gk_TRACK01` of `gokarts.md2`; `wr_log1`, `wr_log2`, `wr_water3`,
-`wr_water4` of `wateride.md2`; `gk_brdge` of `lavajump`; `wr_mwater1`, `wr_mwater2`, `wr_mwater04` of `watertun`), each
-record's word `0x9` or `0xf`; `0x10000` is on one, `gk_mam1` of the jungle's `mammtunn.md2` (`0x10007`). No static model's
-header flag word (`0x30`) carries `0x80` or `0x100` in its file. The costume code asks for bit `0x400`, and dresses a character by setting and
+particle emitters. The costume code asks for bit `0x400`, and dresses a character by setting and
 clearing a node's hidden flag, bit `0x10` of the node's own flag word.
 
 The advisor (`Advisor.MD2` in `data\global\advisor.wad`) shows it best. Every one of his 14
@@ -375,6 +365,15 @@ five). A standard pylon has either three, ids 1 to 3, its centre id 2 and the tw
 `0x01400031` and `0x02400031`), or one, its centre id 1 (`0x03c00031`, in `coaster3` and `megacost`). A loop pylon has one, id 1 (`0x03c00031`). Bits `0x1000000` and `0x2000000` mark a pylon's two ends and
 `0x800000` its centre: `minecart`'s pylon carries two `0x1000000` records (the centre and the incoming end), `coaster1`'s
 one (the incoming end, its centre lacking the bit), `coaster3`'s one (its centre).
+
+**Two flags say how a mesh meets sloped ground** (engine-confirmed; what the game does with them is OpenTPW's
+`docs/exe/park-engine.md`, "Where a placed object's model stands"). The model loader turns a record's `0x8` into its node's
+run-time `0x40` and its `0x10000` into `0x20000`. A placed model's mesh with `0x8` has its vertices on its plot's outline
+raised or lowered to the ground along the cell line; one with `0x10000` follows the ground vertex by vertex. Over the 838 models with a mesh table (the shipped `.wad` files hold 2,118 `.md2` members; the other 1,280 are companions with no mesh table), `0x8` is on 34 mesh records and on no transform-only one, all in the kart and water rides and their
+track add-ons of the four themes (in Lost Kingdom `gk_TRACK01` of `gokarts.md2`; `wr_log1`, `wr_log2`, `wr_water3`,
+`wr_water4` of `wateride.md2`; `gk_brdge` of `lavajump`; `wr_mwater1`, `wr_mwater2`, `wr_mwater04` of `watertun`), each
+record's word `0x9` or `0xf`; `0x10000` is on one, `gk_mam1` of the jungle's `mammtunn.md2` (`0x10007`). No static model's
+header flag word (`0x30`) carries `0x80` or `0x100` in its file.
 
 #### Which records have a position
 

@@ -568,7 +568,7 @@ triangles are not in one plane, and its general height under a point (`FUN_00452
 across (x + 1, y)-(x, y + 1), each one's two edges made unit vectors, crosses them and does **not** make the products
 unit, and flags the cell where the dot of the two products is under 0.9999 (OpenTPW `docs/exe/park-engine.md`, "Which
 height each asker takes"). A cell bent by less passes unflagged: jungle's file gives 589 flagged cells (158 ground, 431
-holes) and 464 ground cells bent by at most 0.063 left plain; the original's live heightfield with the stock jungle park
+holes) and 14 ground cells bent by 0.001 to 0.063 left plain (the rest that bend at all bend by float rounding, under 1e-5); the original's live heightfield with the stock jungle park
 loaded flags the same 589 cells and no other (OpenTPW `tools/harness/dotnet/hfsamplers`, `original/livecells.sh`).
 
 ### Textures

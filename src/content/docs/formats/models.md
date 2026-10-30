@@ -564,10 +564,12 @@ other, (x + 1, y) to (x, y + 1). The engine draws the cell by `0x2` and takes he
 
 No cell in the files carries `0x800` (32,640 park cells counted). The engine sets it at load on a cell whose two
 triangles are not in one plane, and its general height under a point (`FUN_004527f0`) splits only those cells by
-`0x4`, taking the plane through the near corner and its two neighbours on the rest. Its test is the two triangles' unit
-normals across (x + 1, y)-(x, y + 1) meeting with a dot under 0.9999, so a cell bent by less passes unflagged: jungle's file
-gives 566 flagged cells (158 ground) and 464 ground cells bent by at most 0.063 left plain (OpenTPW
-`tools/harness/dotnet/hfsamplers`).
+`0x4`, taking the plane through the near corner and its two neighbours on the rest. Its test takes, for the two triangles
+across (x + 1, y)-(x, y + 1), each one's two edges made unit vectors, crosses them and does **not** make the products
+unit, and flags the cell where the dot of the two products is under 0.9999 (OpenTPW `docs/exe/park-engine.md`, "Which
+height each asker takes"). A cell bent by less passes unflagged: jungle's file gives 589 flagged cells (158 ground, 431
+holes) and 464 ground cells bent by at most 0.063 left plain; the original's live heightfield with the stock jungle park
+loaded flags the same 589 cells and no other (OpenTPW `tools/harness/dotnet/hfsamplers`, `original/livecells.sh`).
 
 ### Textures
 

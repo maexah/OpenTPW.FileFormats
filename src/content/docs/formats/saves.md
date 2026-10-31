@@ -441,7 +441,7 @@ can measure each cell and skip it.
 
 The map sub-record is a **29-byte tile base** followed by a **23-byte litter block**. The track
 sub-record repeats the same tile base field for field and adds `mSegmentNumber`, two bytes, for its 31 -
-`0xffff` on every cell of the shipped park.
+`0xffff` on every cell of the shipped park; a played kart's anchors hold the walk's step instead (below).
 
 **The effects sub-record is five signed 16-bit words**: happiness, illness, hunger, security and attraction,
 the balance file's `RegionFX` keys in its own order. A cell's words are the sum of what the things round it
@@ -2429,6 +2429,7 @@ executable's (its laying stamps them 12 for both kits, and nothing in its track 
 | `mDirection` | in the same bits, the way the last run laid over the cell left it |
 | `mFlags` | `0x10` where the cell carries an add-on, whose model is not the kit's piece; the low four bits a hill (read from the executable; no hill in the file to hand) |
 | `mOverlapCounter` (`0x08`) | how many runs were laid over the piece after its own (0 or 1 in the file to hand); the cells of its two by two hold the same |
+| `mSegmentNumber` | the walk's step to the anchor, from 0 at the first section: the walk stores it with `TrackCell_SetStep` (`0x0053aef0`, called at `0x0052b295`), so a cell the walk meets twice, a crossing, holds its last visit's. In Alexah's played file the 33 anchors read 0 to 0x21 (the station's first 0, then 1, 2 ...), 0x0a absent because the crossing's second visit overwrote it with 0x12. A park the shipped file makes holds `0xffff` here; the getter (`0x0053aec0`) is compared signed by the closed-loop edit (`0x005268d4`..`0x005268e6`) |
 
 and the piece's record holds item 17100 plus the nearest row at or above its own that the kit names (17200 on for the
 water ride's kit), on the anchor moved one on in x for a turn of 90, in x and y for 180 and in y for 270, at the angle 360
@@ -2675,6 +2676,16 @@ is the module's length, and every other chunk is its child:
 A ride's chunks are together and in that order: the ride, its sections, each car followed by its riders,
 the two lists, the close. The rides are in the order of their slots.
 
+**The words a ride holds before anything has happened to it** are its template's, 14 of them in the executable's
+data, one per `BumperType` from -1 (`0x764178`, `0xd0` bytes each): duration, first mesh, mesh count and performance
+50, then the item's speed word replaces the performance (60 in a played Dino Karts' and a bought Hot Pot's file). The
+Hot Pot (-1) is 4350 ticks and mesh 1 of 1; the Dino Karts (-4) -3, meshes 0 to 3; the water ride (-5) -1 and the one
+mesh; the other themes' karts and water rides are in OpenTPW's `docs/exe/saves.md`, "OpenTPW's writer, a kart's or water ride's record". A ride bought and saved
+before its loop is closed holds no section until the track tool's closing click walks it, so its module is the ride and its close;
+the walk lays the sections in circuit order, each a chunk of 28 bytes right after the ride's, and a walk that does not come back
+leaves the sections it reached (the closing click, an add-on's put-down and the closed-loop edit each run it and store its answer in the
+object's `mIsTrackRideValid`, which the place commit sets 0 for every queued item with a track type (a coaster as well as a kart or water ride) and the constructor 1).
+
 **A ride** (type 3), after the header:
 
 | Offset | Size    | Description                                                                 |
@@ -2686,7 +2697,7 @@ the two lists, the close. The rides are in the order of their slots.
 | 32     | 4 bytes | Performance, 0 to 100: the ride's operating speed                           |
 | 36     | 4 bytes | The first of the item's supplemental meshes a car is drawn as               |
 | 40     | 4 bytes | How many of them the cars cycle through                                     |
-| 44     | 4 bytes | Duration: what a car's timer is set to, in ticks of 31 ms                   |
+| 44     | 4 bytes | Duration: what a car's timer is set to, in ticks of 31 ms; **negative for the karts' and the water ride's, minus the laps** (-3 a Dino Karts, -1 the water ride) |
 | 48     | 4 bytes | State: 0 closed, 1 loading, 2 running                                       |
 
 **A car** (type 5), after the header:

@@ -2131,7 +2131,9 @@ park files:
 | Offset | Description |
 | ------ | ----------- |
 | `0x00`, `0x04` | The list links, and `0x18` to `0x38` nine pointers to the blocks that follow, and `0xb0` the object list's head: addresses of the saving session, which the game replaces on loading |
-| `0x0c`, `0x10`, `0x14` | Other scripts' handles, set on a few records in pairs (a ride's script and its companion's); nought otherwise |
+| `0x0c` | The handle of the script this one made with `SPAWNCHILD` (its child), nought for none; the parent's side of the link |
+| `0x10` | The handle of the script that made this one with `SPAWNCHILD` (its parent), nought for none; the child's side |
+| `0x14` | The handle of the script this one made with `SPAWNSOUND`, nought for none. The sound child carries no link back and no thing (`0xac` nought) |
 | `0x4c` | The head slot count — the head table's length over four |
 | `0x58`, `0x60` | The limbo slot count (block 4's length over eight) and how many are taken |
 | `0x64` | The bounce slot count (block 5's length over sixteen) |
@@ -2147,6 +2149,12 @@ park files:
 | `0xac` | 2 bytes: the id of the thing the script belongs to; nought for a script with none |
 | `0xc0` | The speed word (below) |
 | `0xc8` | **The model handle of the script's thing** — the object's `MeshInstanceID`, a slot of the ride system module plus one; nought for a script with no thing |
+
+**A script made by another is a record of its own, and the loader makes it from the file.** The three link words, over the 130 records of a played Full Simulation Lost Kingdom park (measured
+2026-10-31 on `New Save.TPWS`, with the original's list read live after loading it, `0x008791b0`): `0x0c` is set on three records and `0x10` on the three they name (Mumbo's 122 and its child 123, the Pork Pie's 40
+and 41, the TV Sim's 38 and 42), `0x14` on three parents, whose sound children carry nought in all three words and have no thing (the Minecart's 115 and 116, the Dino Karts' 110 and 111, the Tour Ride's 90 and 91). The children's scripts
+are the ones the parents' own `SPAWNCHILD` and `SPAWNSOUND` name (`Effects.rse` at word 10, `worn.rse` at 5, `torches.rse` at 10 and 211, `EventMap.rse` at 2), and all 130 records are in the original's script list after the load,
+the links as the file has them, so a loaded park runs its companions at the counters the file left them.
 
 A record whose struct holds only what the loader sets (the handle, the counts, the call index at the stack size
 less one, `0x70`, `0x74`, the two words at `0x88`, the looping key `0xffff`, the thing, the speed word 50, the

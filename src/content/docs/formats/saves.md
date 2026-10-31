@@ -3074,6 +3074,6 @@ each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tic
   `+0xb4`, `+0x110` 5, `+0x12c` -1 and `+0x144` to `+0x158`) and the length nought; **the cheats** `00 00`; **the
   advisor scoring** nought (258 in the Halloween file); **the interface block** a count of nought.
 - **The sound**'s voice list holds the land's five placed voices and whatever the game had playing as the park was
-  entered. In 16 of the 17 that is the music's voice, first in the list, with the sound state's `+0x0` naming it: type 1,
+  entered. In 16 of the 17 that is the music's voice, before the land's five in 14 and behind a lobby one-shot (category 13) in 2, with the sound state's `+0x0` naming it: type 1,
   the music's category (slot 10), effect index 0, variation 0, sample 0 to 14 (a draw), no place, its controller block
   present with key `4` and everything else nought, not held. The one Windows file holds none and its `+0x0` is nought.

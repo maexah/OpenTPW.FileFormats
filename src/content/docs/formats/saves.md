@@ -3044,7 +3044,7 @@ each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tic
   writes (the lab past its used projects, the advisor's records' unused bytes, its eight message slots and its kept slot, the challenge manager's `+0x17c` to
   `+0x393`, the two objects' day rings and name words) hold leftover memory, the same in each such file but for 7 bytes
   of the challenge manager's at `+0x28a`; in the others they are
-  nought. The weather's location holds leftover memory in every file.
+  nought. The weather's location and its forecast's quality, which its constructor does not write, hold leftover memory in every file.
 - **The sprite table** has 100 slots, none live: `TPCS`, `0x118`, 100 and 400 bytes of nought.
 - **The particles** hold one emitter in use, slot 0 with the count 1 (handle `0x10000`): effect 20, `WaterFall`, at
   (532.3, 4.9, 526.1), raw 34068, 312, 33668 (Lost Kingdom; Fantasy and Halloween hold no emitter). The live header's generator seed is `0x18be873a` in every Lost Kingdom file (seed 1 in the others), its `+0x1c` `0x803b68` and `+0x24` `0x5d60c0` in every fresh file (a load keeps the live system's two and ignores these); the density is 1,500 on Windows and
@@ -3074,4 +3074,6 @@ each value is OpenTPW's `docs/exe/saves.md`, "A park made fresh: its file at tic
   `+0xb4`, `+0x110` 5, `+0x12c` -1 and `+0x144` to `+0x158`) and the length nought; **the cheats** `00 00`; **the
   advisor scoring** nought (258 in the Halloween file); **the interface block** a count of nought.
 - **The sound**'s voice list holds the land's five placed voices and whatever the game had playing as the park was
-  entered.
+  entered. In 16 of the 17 that is the music's voice, first in the list, with the sound state's `+0x0` naming it: type 1,
+  the music's category (slot 10), effect index 0, variation 0, sample 0 to 14 (a draw), no place, its controller block
+  present with key `4` and everything else nought, not held. The one Windows file holds none and its `+0x0` is nought.

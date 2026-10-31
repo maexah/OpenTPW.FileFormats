@@ -8,7 +8,7 @@ bubbles and particles - are sprites, kept in `data\esprites.wad`. Each folder th
 same name holding the pictures.
 
 Some banks have a `.FPC` beside the `.TPC`: the same figure seen from ground level, for first person,
-where the `.TPC` is seen from above. It is not a level of detail. **Both are version 3** - every one of the
+where the `.TPC` is seen from above (set 6 of the staff and entertainer banks is the exception: see "Eight headings from five pictures"). It is not a level of detail. **Both are version 3** - every one of the
 archive's 46 `.TPC` and 29 `.FPC` files is, so the layout below reads either. 28 of the 29 pairs hold the
 same number of pictures; `Jungle\Entertainers\SPR_EX` holds 219 in its `.TPC` and 210 in its `.FPC`. In
 all 29 pairs the `.FPC`'s pictures are taller for their width on average (the kids' 1.56 to 1.62 against
@@ -132,6 +132,12 @@ A guest's bank - `Generic\Kids\SPR_BE`, and the seven beside it - is 175 picture
 
 Sets 12, 14 and 6 have the same frame counts in all twelve guest banks, these eight and the four themes'
 `Costumes`. Every staff and entertainer bank has a set 6 and neither 12 nor 14.
+
+Set 6 of the `.FPC` is not always the same figure. Measured over all 29 `.FPC` banks: in 16 of them (the five staff
+banks and eleven entertainer banks) set 6 is 20 pictures, every one 2 x 2 pixels and 6 bytes, palette index 0, alpha 0:
+clear, a placeholder that draws nothing. `Jungle\Entertainers\SPR_EX` is the exception: its set 6 is 25 pictures, of which 16 are 2 x 2 and 9 are real, and its `.FPC` holds 9 fewer pictures than its `.TPC`, so the
+two banks' sets are misaligned. The 12 kid and costume `.FPC` banks hold real pictures in set 6, and so
+do the 17 `.TPC` set 6 measured.
 
 ## Banks by kind
 

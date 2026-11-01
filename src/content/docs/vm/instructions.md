@@ -880,7 +880,7 @@ Four things about it are easy to get wrong:
 - **The name already carries its extension, and its case will not match the file.** Every shipped use asks for something ending `.rse`, and not one of the eleven distinct names matches an on-disk name exactly - scripts ask for `Effects.rse`, `clock.rse`, `worn.rse` and `anims.rse` where the archives hold `effects.RSE`, `Clock.RSE`, `Worn.RSE` and `Anims.RSE`. The original gets away with it by opening the concatenated path on a case-insensitive filesystem. Resolution must be case-insensitive or every spawn fails.
 - **There is one child slot and spawning does not empty it.** A second `SPAWNCHILD` overwrites the slot and the first child runs on with nothing holding it. The four shipped scripts that spawn inside a loop all run `REMOVECHILD` first, so it is the content that keeps the slot tidy rather than the engine.
 - **It writes no result.** Unlike nearly every other instruction here it never touches the result register, so whatever was there survives.
-- An operand that is not tagged as a string makes the whole instruction a silent no-op, and a load that fails leaves the child slot untouched.
+- An operand that is not tagged as a string makes the whole instruction a silent no-op, and a load that fails writes nought into the child slot and links nothing (`0x0055512b`, then the test at `0x0055512e`).
 
 ### Operands
 
@@ -895,7 +895,7 @@ Four things about it are easy to get wrong:
 The slot it fills is not the child slot, and the differences matter:
 
 - **It links nothing.** The spawned script is not told who spawned it, so it can never use `GETVARINPARENT` or `SETVARINPARENT`, and no instruction can reach it the way `SETVARINCHILD` reaches a child.
-- **It stores unconditionally**, where `SPAWNCHILD` tests the loader's answer first - so a load that fails writes a nought into the slot and empties it.
+- **It stores whatever the loader answered** and returns, as `SPAWNCHILD` stores before it tests, so a load that fails writes a nought into the slot and empties it; it links nothing.
 - **Nothing ever clears it.** There is no counterpart to `REMOVECHILD` for this slot; a script can detach its child but never its sound script, which is released only when the script itself dies. Calling `SPAWNSOUND` twice orphans the first one entirely.
 
 No instruction ever reads the slot back, and it is still not dead storage: the engine resolves it from outside the interpreter, taking a script id and a variable index, following that script's sound slot and answering one of the spawned script's variables. So the purpose of `SPAWNSOUND` is to publish a block of variables the ride and sound code reads by id - which is why every use loads the same file.

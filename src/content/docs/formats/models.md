@@ -398,7 +398,7 @@ The pointer at 0x0C is read only for a record whose flags meet `0x40040`, and on
 mesh carries runtime flag `0x200000`, which a vertex-morph clip sets on the mesh it animates: the
 position is then taken from a face of that mesh, as the morph has posed it. The point is the face's
 first corner lerped toward its second by `u`, that lerped toward the third by `v`, then the face's
-normal (from the table at mesh 0x64, which the morph routine does not write) times the offset. So a rider's head
+normal (from the table at mesh 0x64, which the morph routine does not write, though for a morphing parent the pose walk rewrites it from the posed corners before a head reads it: the original's `FUN_00473a40`, `docs/exe/park-engine.md`) times the offset. So a rider's head
 on Mumbo's tentacle moves with the tentacle. At rest the rule lands on the node's own place: measured
 over all 248 anchors in the game's 2,073 readable models, 247 within 0.05 units; the Squark's `Head04`
 is 0.26 off.

@@ -650,6 +650,20 @@ appears once, on that ride's far end, which is its `mExitPos`. The fountain and 
 nobody is sent to, carry neither. Nothing in the file names the two types; what is *measured* is that all
 three belong to a footprint rather than to the ground, and that `9` and `10` fall on exactly those cells.
 
+**Which cells a placed object's footprint marks.** They are the cells of its item's `Info.Shape` picture that are not
+empty (kind `.`, 0), swept from the cell its model stands on, which is its `mTopLeft` (the anchor less the item's
+`Info.MapOffsetX` and `Y`, turned with the object), each column and row turned by the object's angle; each holds the
+object's anchor as its `mParentID`. (A ride's entrance and exit cells, and a queue's, beyond the picture carry the
+anchor too.) For an item with no map offset that is the anchor's own rectangle less the picture's empty cells; for the
+Huge Hollow Rock (1427, `Info.MapOffsetY 1`) it is the five by five that stands a row above the anchor, less its two
+empty corners (23 cells), and for the Dino Karts Tunnel (1501) the three by four at its map offset, less two (10).
+**Measured over the 861 distinct park files on one machine** (every `.TPWS` and `.INTS` the project's tools had written
+or been given): each of the 33 objects of item 1426 (the Huge Leafy Rock, two empty corners), 34 of 1427 and 34 of 1501
+owns exactly its picture's non-empty cells, all inside the rectangle its model covers. The other items whose picture has
+an empty cell, the Large Rock Pillar (1422) and three tools never built (100 to 102), are placed in none of them. The
+original's own purchase of a rock typed the same 23 cells and nothing else in the map (OpenTPW `docs/exe/park-engine.md`,
+"A purchase types the model's cells").
+
 > **This matters to anyone drawing a park.** Every one of the 44 carries a real ground texture index in
 > `base.MD2` — not one is the "something covers this" index 0 — and yet each is already covered, because
 > every item this park is built with opens its model with a flat floor plate exactly as wide as its

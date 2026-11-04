@@ -2171,7 +2171,7 @@ park files:
 | `0x94` | A dword of the `.RSE` header, 50 on every record |
 | `0x98` | The turn's budget: set from `0x94` as each turn begins, before anything reads it, so a load never reads it. `-1` on 369 of 374 records, nought on five; nought on a script that has had no turn (the gates' and the lights' in a fresh park's `restart.INTS`), `-1` on a record the game has just made that has run |
 | `0xac` | 2 bytes: the id of the thing the script belongs to; nought for a script with none |
-| `0xc0` | The speed word (below) |
+| `0xc0` | The speed word (below): 2 bytes, signed (the game reads it with `movsx` at `0x00551cc3` and `0x0055a341` and stores a word at `0x00558c3c`) |
 | `0xc8` | **The model handle of the script's thing** — the object's `MeshInstanceID`, a slot of the ride system module plus one; nought for a script with no thing |
 
 **A script made by another is a record of its own, and the loader makes it from the file.** The three link words, over the 130 records of a played Full Simulation Lost Kingdom park (measured

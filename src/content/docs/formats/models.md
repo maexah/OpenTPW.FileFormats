@@ -272,7 +272,7 @@ The face anchor places the node on a face of its parent mesh (engine-confirmed):
 | Offset | Size    | Description |
 | ------ | ------- | ----------- |
 | 0x00   | 2 bytes | The face, an index into the parent mesh's faces |
-| 0x02   | 2 bytes | How far back from this record a turn is kept, which the engine applies with flag `0x40000`; not decoded further |
+| 0x02   | 2 bytes | How far back from this record its **kept turn** is: three floats, angles in radians about x, y and z, which the engine applies with flag `0x40000` (below). Zero exactly where the flag word lacks `0x40000` (248 of 248 anchors) |
 | 0x04   | 4 bytes | `u`, a float: the lerp from the face's first corner toward its second |
 | 0x08   | 4 bytes | `v`, a float: the lerp from that point toward the third corner |
 | 0x0C   | 4 bytes | A float: how far the node stands off the face, along the face's normal |
@@ -403,10 +403,18 @@ on Mumbo's tentacle moves with the tentacle. At rest the rule lands on the node'
 over all 248 anchors in the game's 2,073 readable models, 247 within 0.05 units; the Squark's `Head04`
 is 0.26 off.
 
+**The kept turn** (engine-confirmed). The 126 anchors with `0x40000`, in 12 models, each point back to a 16-byte entry of one table that
+ends where the model's first anchor begins, the entries in the anchors' order: the x, y and z angles and a fourth float, zero in all 126.
+Under the flag the engine gives the node the rotation rows Rz · Ry · Rx · F, the turns about z, y and x by the third, second and first
+angle (row vectors), where F's rows are n × e, the face's normal n and e, the unit vector from the face's first corner to the point the
+two lerps reach (before the offset). At rest that lands within 0.1 degrees of the node's own turn for 42 of the 126 and within 1 degree
+for 93; the worst is 14.9 (the Rat Race's `Head07`). The engine's steps are OpenTPW's `docs/exe/park.md`, "Where a head on a morphing face
+stands".
+
 #### Open questions
 
-- The word at 0x08, the turn the face anchor steps back to, and what the flag bits this page does
-  not name select.
+- The word at 0x08, why 33 of the kept turns stand more than a degree from their node's own turn at rest, and what the flag bits this
+  page does not name select.
 
 ### The surface a point stands on
 

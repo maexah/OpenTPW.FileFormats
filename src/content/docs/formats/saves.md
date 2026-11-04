@@ -2281,6 +2281,12 @@ lower case (`rides`) loads.
 > The struct's speed word at `0xc0` (dword 48) reads 50 for thirteen of the fourteen and **60** for
 > the one ride. That is not a misalignment: 50 is what the *loader* writes, and the game pushes an
 > object's own operating speed over it — that ride's `mOperatingSpeed` is 60 in the same file.
+> The word is a 16-bit short; the high half of dword 48 is nought in the four files measured (the shipped `Easymode.TPWI`, and three Full Simulation saves: the jungle New Save and autosave, and the fantasy New Save). Over the shipped park and three
+> Full Simulation saves (310 objects), every object whose `mOperatingSpeed` is above nought has that number as its
+> script's word (60, and 75 and 80 for two rides, items 1100 and 1180; that they were upgraded or adjusted is an inference, the data show the items, not why), every other object's script reads 50, a
+> `SPAWNCHILD` child its parent's, and the four records bound to no thing (each in a ride's folder: the Minecart's, the Go-Karts', the tour ride's, fantasy's `bbugs`) 50. The game
+> reads the word back as it is and nothing on a load writes it, so the two fields agree only because every writer of
+> one writes the other.
 
 ## The ride system module (`SYSR`)
 

@@ -522,9 +522,10 @@ Nothing has been dropped in the shipped park: `mLitter`, `mLitterCollector`,
 `mTimeMarkedForLitterCollection` and `mPylonIndex` are nought on every one of the 16,384 cells. That is a
 fact about a save nobody has played rather than a gap in the reading.
 
-**A littered cell in a played park.** The 89 park files the original wrote that OpenTPW keeps for reference
-(2026-11-04) hold 72 littered cells: kind 7 on 61, kind 2 and kind 5 on three each, kind 3 on two, kinds 1, 4 and 8
-on one each, kind 6 on none. On all 72 the first `mLitterScript` names a sprite of the park's sprite table of kind 11
+**A littered cell in a played park.** 89 park files OpenTPW keeps for reference (79 the original wrote on one
+machine, 8 from another computer's Full Simulation play, and 2 copies of the shipped `Easymode.TPWI`, which hold no litter;
+2026-11-04) hold 72 littered cells in 19 files, 13 distinct cells (four kind-7 cells recur in 15 files each): by instance, kind 7 on 61, kind 2 and kind 5 on three each, kind 3 on two, kinds 1, 4 and 8
+on one each, kind 6 on none. On all 72 instances the first `mLitterScript` names a sprite of the park's sprite table of kind 11
 (`litter`), bank 0, whose program shows set *kind* - 1 ([Sprites](../sprites/#litter)), and the sprite stands at
 (10x + 1 + a, 10y + 1 + b) in world units, a and b the game's random generator's first two draws, each mod 9, after
 it is seeded with the cell's packed id (y × 128 + x + 1): the same place every time that cell is littered. The second

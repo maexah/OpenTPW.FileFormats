@@ -336,4 +336,6 @@ The horizontal chain carries one further factor, and it is **not** a world measu
 viewport's: the same value divides the frustum's half-height to give its half-width, which makes it
 height over width. It reads as zero in the file on disk because it is filled in when the display is set
 up. A reader that has a projection matrix of its own already accounts for that and should not apply it a
-second time.
+second time, **except for a sprite laid flat on the ground** (draw flag `0x80000`, every litter sprite): there the
+factor lands on the sprite's width in *world* x before the draw matrix, so the picture is `20 / 128 × 0.75` a
+pixel across and `20 / 128` a pixel down, and a reader must apply the 0.75 itself.

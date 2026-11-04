@@ -259,6 +259,24 @@ The executable names a thought picture by one number, the bank in its high bits 
 The blue bubbles are guests' and the pink ones staff's. Which thought shows which is the executable's table, in
 OpenTPW's `docs/exe/ride-operation.md`.
 
+## Litter
+
+One bank, `Generic\Litter\SPR_LI` (a 2,793-byte `.tpc` of 8 pictures, no `.fpc`). Sets 0 to 7 are one picture each,
+facing nowhere; sets 0 to 5 are pictures 0 to 5, but set 6 is picture 7 and set 7 picture 6. The executable draws a
+cell's litter of kind *k* (1 to 8) from set *k* - 1, laid flat on the ground rather than facing the camera (OpenTPW's
+`docs/exe/ride-operation.md`, "A cell's litter"); the kind is the cell's `mLitter` in a saved park ([Saves](../saves/)).
+
+| Set | Picture | Size | What it shows |
+| --- | --- | --- | --- |
+| 0 | 0 | 10 x 7 | a small brown-yellow peel-like shape |
+| 1 | 1 | 12 x 13 | a carton |
+| 2 | 2 | 11 x 13 | a cup |
+| 3 | 3 | 11 x 10 | a grey paper ball |
+| 4 | 4 | 17 x 14 | a red wrapper |
+| 5 | 5 | 9 x 8 | a small grey scrap (kind 6, which nothing in the executable drops) |
+| 6 | 7 | 17 x 12 | a green-yellow splat (kind 7, a sick guest's) |
+| 7 | 6 | 34 x 21 | a large see-through yellow cloud, no texel above alpha 230 (kind 8, a stink bomb) |
+
 ## Pictures (*.tpc)
 
 | Offset | Size | Description |

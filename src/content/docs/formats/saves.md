@@ -477,10 +477,10 @@ cells round it then read under nought.
 | 12 | 12 bytes | `mTileData` - three dwords: set, index, angle |
 | 24 | 4 bytes | `mType` |
 | 28 | 1 byte | `mHoardingNeighbours` |
-| 29 | 4 bytes | `mLitter` |
+| 29 | 4 bytes | `mLitter` - the kind of litter on the cell, 1 to 8; nought for none |
 | 33 | 2 bytes | `mLitterCollector` |
-| 35 | 4 bytes | `mLitterScript` |
-| 39 | 4 bytes | `mLitterScript` **again** |
+| 35 | 4 bytes | `mLitterScript` - the handle of the litter's sprite in the park's sprite table |
+| 39 | 4 bytes | `mLitterScript` **again** - the handle of a stink bomb's particle effect; nought for every other kind |
 | 43 | 2 bytes | `mPylonIndex` |
 | 45 | 1 byte | `mStatusFlags` |
 | 46 | 4 bytes | `mTimeMarkedForLitterCollection` |
@@ -521,6 +521,15 @@ do not share offsets.
 Nothing has been dropped in the shipped park: `mLitter`, `mLitterCollector`,
 `mTimeMarkedForLitterCollection` and `mPylonIndex` are nought on every one of the 16,384 cells. That is a
 fact about a save nobody has played rather than a gap in the reading.
+
+**A littered cell in a played park.** The 89 park files the original wrote that OpenTPW keeps for reference
+(2026-11-04) hold 72 littered cells: kind 7 on 61, kind 2 and kind 5 on three each, kind 3 on two, kinds 1, 4 and 8
+on one each, kind 6 on none. On all 72 the first `mLitterScript` names a sprite of the park's sprite table of kind 11
+(`litter`), bank 0, whose program shows set *kind* - 1 ([Sprites](../sprites/#litter)), and the sprite stands at
+(10x + 1 + a, 10y + 1 + b) in world units, a and b the game's random generator's first two draws, each mod 9, after
+it is seeded with the cell's packed id (y × 128 + x + 1): the same place every time that cell is littered. The second
+`mLitterScript` is nought on 71 of them and set on the one cell of kind 8. The two names are the serialiser's for
+two different fields, then: the sprite and the stink bomb's particle effect.
 
 `mNeighbours` and `mDirection` are **stored, not computed**, so a renderer does not have to derive a
 neighbour mask from the cells around it. They share one compass: over the shipped park's path cells

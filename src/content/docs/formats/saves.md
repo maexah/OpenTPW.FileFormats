@@ -2619,7 +2619,7 @@ with head nodes (lookup flag `0x80`), bought or shipped, but not on an arrival v
 | 7     | The role queued to play next, or 12 for none                                        |
 | 8     | Its clip                                                                            |
 | 9     | The flags it was queued with — a caller's flags, and left behind when the queue empties |
-| 10    | Its speed, a float                                                                  |
+| 10    | Its speed, a float. Not cleared when the queue empties: after each turn of the script its model runs, the game writes `0.5 + 0.01 × the script's speed word` (the script record's word at `0xc0`) into dword 10 of every channel of the model, and a channel of a model with no script holds 0. Over the original's own 45 park files: 2,193 of 2,208 scripted channels with nothing queued hold their script's value (34 of them, at word 60, `0x3f8ccccc`, one ulp below the others' `0x3f8ccccd`, all from one computer), the other 15 hold 0; all 11,028 channels of scriptless models hold 0 (OpenTPW's `docs/exe/park.md`, "The word at `+0xe4`"). If `+0xe4` is not 1000 (`TRIGANIMSPEED`) the value is that times `+0xe4` / 1000; the Gates' 4000 is in none of the files |
 
 Dword 4 less dword 3 is how far into its clip the channel was: 1,376 ms for the Belly Bounce's saved loop, played at
 1.1. In the shipped park no channel has a clip queued, though three running channels keep the loop flag of a queue that

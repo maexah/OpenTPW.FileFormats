@@ -62,7 +62,9 @@ hallow).
 
 `name` is the park name, but only the jungle's is what the player is shown - the other three are
 `"Fantasy"`, `"Halloween"` and `"Space"` where the game displays Wonder Land, Halloween World and
-Space Zone. The displayed names are not in the shipped data at all.
+Space Zone. The displayed names are rows of `Language/<lang>/THEMENAMES.str` (0 Lost Kingdom,
+1 Halloween World, 2 Wonder Land, 3 Space Zone); which of the two the original's lobby sign reads is
+the open question in [Park signs](../sgn/).
 
 ### `FLYINGMESH(dir, model, count, x, y, z, speed)`
 

@@ -253,8 +253,10 @@ the park's money through this very accessor.
 `4` in six places, among them the game's own state machine and the build-a-park menu. The shipped park
 holds `0`, which is not in that set - and so does every one of the eight played park files, the two saves
 of a jungle park played to `mGameTick` 19,004 and 19,007 among them. So zero is what a park carries while
-it is played, at least as saved, and not only before it is first entered. What it means is not settled,
-and naming it would be a guess.
+it is played, at least as saved, and not only before it is first entered. **4 means the park has ended**:
+the end of the park (`FUN_005168f0`, six thirty-day months in the red) writes 4 at `0x00516939`, and the
+bank's end handler and the thing sweep test it (`0x004d030d`, `0x00516395`) to end nothing again and give
+no thing a turn. A park saved after its end holds 4. What 1 and 2 mean is not settled.
 
 ### The arrival vehicles
 

@@ -2592,18 +2592,19 @@ the record, the game takes one off the count at `0x33` as each such rider walks 
 stays short from then on.
 
 **A lookup record's runtime flags** say whether the game keeps its node's position
-([Models](/formats/models/#which-records-have-a-position)): `0x1` it has one, `0x20` its node has no children, `0x8`
-it is posed all the same, `0x2` something is attached to it, `0x4` the ride view is on it, `0x10` its node carries
-`0x400`. The shipped park's Jungle Spray saves `0x29` on eleven records and `0x21` on its `camera`, which is posed only
-while the ride view is on it; a played park's Aztec Mayhem saves `0x29` on 34 of its 39 records and `0x2b`, with a
-handle, on the five heads carrying a rider: all 39 carry `0x8`.
+([Models](/formats/models/#which-records-have-a-position)): `0x1` it has one, `0x20` its node has no children, `0x8` it
+is posed all the same, `0x2` something is attached to it, `0x4` the ride view is on it, `0x10` it has a position and its
+node carries `0x400`. The shipped park's Jungle Spray saves `0x29` on eleven records and `0x21` on its `camera`, which
+is posed only while the ride view is on it; a played park's Aztec Mayhem saves `0x29` on 34 of its 39 records and
+`0x2b`, with a handle, on the five heads carrying a rider: all 39 carry `0x8`.
 
-Over the same 870 records, with nothing attached, every pair follows from the model's file: `0x1` where the
-record's flags there meet `0x30`, `0x8` where they meet `0x580f00` or the item's description sets
-`Info.DoHeadProcessing`, `0x10` where the node's own flags hold `0x400`, `0x20` where the node has no child; the
-handle is `-1` for a record with a position and nought for one without. The shared flags at `0x2f` are `0x1`
-where some record has a position, `0x8` where some record's flags hold `0x2`, and `0x2` on every record of a ride
-with head nodes (lookup flag `0x80`), bought or shipped, but not on an arrival vehicle's (the ferry's four records).
+Over the same 870 records, with nothing attached, every pair follows from the model's file: `0x1` where the record's
+flags there meet `0x30`, `0x8` where they meet `0x580f00` or the item's description sets `Info.DoHeadProcessing`, `0x10`
+where the record has a position and the node's own flags hold `0x400` (`0x0044a924`, inside the `0x30` branch), `0x20`
+where the node has no child; the handle is `-1` for a record with a position and nought for one without. The shared
+flags at `0x2f` are `0x1` where some record has a position, `0x8` where some record's flags hold `0x2`, and `0x2` on
+every record of a ride with head nodes (lookup flag `0x80`), bought or shipped, but not on an arrival vehicle's (the
+ferry's four records).
 
 **A channel is 11 dwords**, in the order the game copies them back onto the running channel:
 

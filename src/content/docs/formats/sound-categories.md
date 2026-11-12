@@ -204,7 +204,8 @@ Four ride variations hold the pair the wrong way round (fantasy 156, jungle 216 
 **The controllers.** A game call sets a voice's parameter by id; the variation's two controllers each answer to one
 id, and their masks say what the value drives. A driven volume or pitch is `value × (high − low) / 100 + low` over
 the variation's range; one that nothing drives is drawn at random within it. Over all 1,595 variations the masks use
-bits 1, 2 and 4 alone, and the second byte of each id field is zero. Jungle's ride effect 194, a bumper ride's
+bits 1, 2 and 4, but for the 645 speech variations' second mask of 100 (id 0), and the second byte of each id field is
+zero. Jungle's ride effect 194, a bumper ride's
 engine, answers to parameter 16 with mask 2 over a pitch of -24 to 36, at volume 68; the game sets parameter 16 to a
 boat's speed / 3. The 645 speech variations carry `+0x1c` = 100 with no id, which nothing reaches.
 

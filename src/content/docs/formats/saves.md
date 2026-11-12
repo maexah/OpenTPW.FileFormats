@@ -3039,7 +3039,8 @@ not nought; the weather's `mRainSoundHandle` is set in one, and names a saved vo
 All 580 bodies parse so and end exactly at L; 31 different lists among them (fork watch 2026-10-20, `verify-world.md`
 M2, for the length; Q560 for the records; the code is OpenTPW's `docs/exe/audio.md`, "A park file's voices"). OpenTPW
 reads the list (`ParkVoices`), puts back its held chains and counts the other classes (Q612); its writer writes the loaded
-file's list less each voice put back and let go since (`ParkVoices.Without`).
+file's list less each voice put back and let go since (`ParkVoices.Without`), and, where the park ran with no sound
+device, less each held chain a script named at the load and none written names (OpenTPW Q655).
 
 **Advisor scoring** (`FUN_0059c890`), between the cheats' `STHC` and `CSDA`: one dword, 277 in `Easymode.TPWI`,
 nought in three of the played files and 113 to 258 in the rest. It is the advisor's poll cursor: the row of his
